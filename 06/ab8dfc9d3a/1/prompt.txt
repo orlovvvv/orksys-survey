@@ -1,0 +1,402 @@
+Implement the following plan:
+
+# Landing Page Theme Overhaul Plan
+
+## Context
+
+The landing page components have been implemented but use hardcoded Tailwind color classes (`violet-*`, `neutral-*`, `zinc-*`, `white`, etc.) instead of shadcn's CSS variable-based theming system. This plan focuses on migrating all hardcoded colors to use semantic theme variables, enabling:
+
+1. **Dark mode support** - Components automatically adapt to theme changes
+2. **Consistency** - Colors come from a single source of truth
+3. **Maintainability** - Theme changes propagate automatically
+4. **Flexibility** - Easy to rebrand by changing CSS variables
+
+## Current State Analysis
+
+### Hardcoded Color Audit Summary
+
+| Color Family | Usage | Files Affected |
+|--------------|-------|----------------|
+| `violet-*` | Primary brand, buttons, accents | All 10 components |
+| `neutral-*` | Backgrounds, text, borders | All 10 components |
+| `zinc-*` | Navigation bar | navigation.tsx |
+| `white` / `black` | Direct references | Multiple components |
+| `blue-*` | Badges, links, avatars | core-features.tsx, survey-mockup.tsx |
+| `green-*` | Status indicators | core-features.tsx, survey-mockup.tsx |
+| `red-*` | Status indicators | core-features.tsx |
+| `orange-*` | Avatars | core-features.tsx |
+| `purple-*` | Badges, avatars | core-features.tsx |
+| `pink-*` | Badges, avatars | core-features.tsx, survey-mockup.tsx |
+| `emerald-*` | Badges | core-features.tsx |
+
+### Existing Theme Variables
+
+The `apps/web/src/index.css` already has these variables:
+
+```
+--primary / --primary-foreground    (violet brand color)
+--background / --foreground         (page bg/text)
+--card / --card-foreground          (card surfaces)
+--popover / --popover-foreground    (popovers)
+--secondary / --secondary-foreground
+--muted / --muted-foreground        (subtle text, backgrounds)
+--accent / --accent-foreground      (highlighted elements)
+--destructive / --destructive-foreground
+--border / --input / --ring
+--chart-1 through --chart-5
+```
+
+### Missing Variables
+
+Need to add semantic variables for:
+- `--success` / `--success-foreground` (green)
+- `--warning` / `--warning-foreground` (orange/yellow)
+- `--info` / `--info-foreground` (blue)
+
+---
+
+## Implementation Steps
+
+### Phase 1: Add Missing Semantic Variables
+
+**File:** `apps/web/src/index.css`
+
+Add semantic color variables for status indicators:
+
+```css
+:root {
+  /* Existing variables... */
+
+  /* Success (green) */
+  --success: oklch(0.60 0.18 145);
+  --success-foreground: oklch(0.98 0 0);
+
+  /* Warning (orange/amber) */
+  --warning: oklch(0.70 0.18 60);
+  --warning-foreground: oklch(0.15 0 0);
+
+  /* Info (blue) */
+  --info: oklch(0.55 0.18 250);
+  --info-foreground: oklch(0.98 0 0);
+}
+
+.dark {
+  /* Dark mode variants */
+  --success: oklch(0.65 0.18 145);
+  --success-foreground: oklch(0.15 0 0);
+
+  --warning: oklch(0.75 0.18 60);
+  --warning-foreground: oklch(0.15 0 0);
+
+  --info: oklch(0.60 0.18 250);
+  --info-foreground: oklch(0.15 0 0);
+}
+```
+
+Add Tailwind theme mappings in `@theme inline`:
+
+```css
+@theme inline {
+  /* Existing mappings... */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+}
+```
+
+### Phase 2: Fix Mesh Gradient
+
+**File:** `apps/web/src/index.css`
+
+The mesh gradient uses hardcoded colors. Replace with theme variables:
+
+```css
+.mesh-gradient {
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(at 0% 0%, hsla(var(--primary), 0.05) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(var(--primary), 0.08) 0, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(var(--primary), 0.1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(var(--primary), 0.06) 0, transparent 50%);
+}
+```
+
+*Note: Using oklch variables directly in radial-gradient requires careful handling. May need to create CSS variables for gradient stops.*
+
+### Phase 3: Component Color Migration
+
+#### 3.1 Navigation (`navigation.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-zinc-900` | `bg-card` (with dark variant) |
+| `text-violet-500` | `text-primary` |
+| `text-neutral-400` | `text-muted-foreground` |
+| `text-white` | `text-card-foreground` |
+| `border-white/10` | `border-border` |
+| `from-violet-500 to-violet-600` | `bg-primary` |
+| `shadow-violet-500/30` | `shadow-primary/30` |
+
+#### 3.2 Hero Section (`hero-section.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-white/50` | `bg-background/50` |
+| `text-neutral-500` | `text-muted-foreground` |
+| `from-neutral-900 to-neutral-700` | `from-foreground to-foreground/80` |
+| `from-violet-600 to-violet-500` | `text-primary` |
+| `text-neutral-600` | `text-muted-foreground` |
+| `border-neutral-200` | `border-border` |
+| `focus:border-violet-500/40` | `focus:border-primary/40` |
+| `focus:ring-violet-500/10` | `focus:ring-primary/10` |
+| `from-violet-500 to-violet-600` | `bg-primary` |
+| `shadow-violet-500/30` | `shadow-primary/30` |
+| `text-violet-500/60` | `text-primary/60` |
+
+#### 3.3 Survey Mockup (`survey-mockup.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-white` | `bg-card` |
+| `bg-neutral-100` | `bg-muted` |
+| `bg-violet-500` | `bg-primary` |
+| `hover:bg-violet-600` | `hover:bg-primary/90` |
+| `text-violet-500` | `text-primary` |
+| `border-violet-500/20` | `border-primary/20` |
+| `bg-violet-50` | `bg-primary/10` |
+| `text-neutral-500` | `text-muted-foreground` |
+| `border-neutral-200` | `border-border` |
+| `stroke="#8b5cf6"` | `stroke="hsl(var(--primary))"` |
+| `stroke="#eee"` | `stroke="hsl(var(--muted))"` |
+| Avatar colors (pink/blue/green/orange) | Use semantic colors or keep as-is for illustration |
+
+*Note: Avatar colors in mockups may stay as accent colors for visual interest.*
+
+#### 3.4 Social Proof (`social-proof.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `backgroundColor: "black"` | `backgroundColor: "hsl(var(--foreground))"` |
+| `text-neutral-400` | `text-muted-foreground` |
+
+#### 3.5 Bento Features (`bento-features.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-white` | `bg-card` |
+| `bg-neutral-50` | `bg-muted` |
+| `bg-violet-500/10` | `bg-primary/10` |
+| `text-violet-500` | `text-primary` |
+| `text-neutral-900` | `text-foreground` |
+| `text-neutral-600` | `text-muted-foreground` |
+| `border-neutral-200` | `border-border` |
+| `bg-neutral-950` | `bg-card` (inverted) or create `--inverted` variable |
+| `stroke="#8b5cf6"` | `stroke="hsl(var(--primary))"` |
+| `hover:shadow-violet-500/5` | `hover:shadow-primary/5` |
+
+#### 3.6 Core Features (`core-features.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-white` | `bg-card` |
+| `bg-violet-500` | `bg-primary` |
+| `text-violet-500` | `text-primary` |
+| `text-blue-600` | `text-info` |
+| `bg-blue-50` | `bg-info/10` |
+| `text-emerald-600` | `text-success` |
+| `bg-emerald-50` | `bg-success/10` |
+| `bg-purple-50` | `bg-accent/10` |
+| `text-purple-600` | `text-accent-foreground` |
+| `bg-pink-50` | `bg-secondary` |
+| `text-pink-600` | `text-secondary-foreground` |
+| `stroke="#8b5cf6"` | `stroke="hsl(var(--primary))"` |
+| Avatar colors | Keep as semantic or accent colors |
+
+#### 3.7 Testimonials (`testimonials.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-neutral-50` | `bg-muted` |
+| `from-violet-600 to-violet-500` | `bg-primary` |
+| `text-violet-500` | `text-primary` |
+| `text-neutral-900` | `text-foreground` |
+| `text-neutral-600` | `text-muted-foreground` |
+| `text-white` | `text-primary-foreground` |
+
+#### 3.8 Pricing (`pricing.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-white` | `bg-card` |
+| `border-violet-500` | `border-primary` |
+| `bg-neutral-950` | `bg-card` (dark variant) or use `bg-primary` for featured |
+| `bg-violet-600` | `bg-primary` |
+| `hover:bg-violet-700` | `hover:bg-primary/90` |
+| `text-violet-500` | `text-primary` |
+| `text-neutral-900` | `text-foreground` |
+| `text-neutral-600` | `text-muted-foreground` |
+| `border-neutral-200` | `border-border` |
+
+#### 3.9 CTA Section (`cta-section.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-neutral-100` | `bg-muted` |
+| `bg-violet-100` | `bg-primary/10` |
+| `text-violet-700` | `text-primary` |
+| `text-violet-600` | `text-primary` |
+| `text-violet-500` | `text-primary` |
+| `text-neutral-900` | `text-foreground` |
+| `text-neutral-600` | `text-muted-foreground` |
+| `text-neutral-700` | `text-foreground/80` |
+
+#### 3.10 Footer (`footer.tsx`)
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-neutral-950` | `bg-card` (dark) or create footer-specific variable |
+| `bg-violet-600` | `bg-primary` |
+| `hover:bg-violet-700` | `hover:bg-primary/90` |
+| `bg-neutral-900` | `bg-muted` |
+| `border-neutral-800` | `border-border` |
+| `text-white` | `text-card-foreground` |
+| `text-neutral-400` | `text-muted-foreground` |
+| `text-neutral-300` | `text-foreground/80` |
+
+---
+
+## Color Mapping Quick Reference
+
+### Semantic Mappings
+
+| Tailwind Class | Theme Variable |
+|----------------|----------------|
+| `bg-white` | `bg-background` or `bg-card` |
+| `bg-neutral-50` | `bg-muted` |
+| `bg-neutral-100` | `bg-muted` |
+| `bg-neutral-950` | `bg-card` (inverted section) |
+| `text-neutral-900` | `text-foreground` |
+| `text-neutral-700` | `text-foreground/80` |
+| `text-neutral-600` | `text-muted-foreground` |
+| `text-neutral-400` | `text-muted-foreground` |
+| `border-neutral-200` | `border-border` |
+| `border-neutral-800` | `border-border` (dark mode) |
+| `violet-500/600` | `primary` |
+| `violet-100` | `primary/10` or `bg-primary/10` |
+| `blue-*` | `info` or `accent` |
+| `green-*` | `success` |
+| `red-*` | `destructive` |
+| `orange-*` | `warning` |
+| `pink-*` / `purple-*` | `accent` or `secondary` |
+
+---
+
+## Files to Modify
+
+1. `apps/web/src/index.css` - Add semantic variables, fix mesh gradient
+2. `apps/web/src/components/landing/navigation.tsx`
+3. `apps/web/src/components/landing/hero-section.tsx`
+4. `apps/web/src/components/landing/survey-mockup.tsx`
+5. `apps/web/src/components/landing/social-proof.tsx`
+6. `apps/web/src/components/landing/bento-features.tsx`
+7. `apps/web/src/components/landing/core-features.tsx`
+8. `apps/web/src/components/landing/testimonials.tsx`
+9. `apps/web/src/components/landing/pricing.tsx`
+10. `apps/web/src/components/landing/cta-section.tsx`
+11. `apps/web/src/components/landing/footer.tsx`
+
+---
+
+## Special Cases
+
+### Avatar/Badge Accent Colors
+
+The mockup components use various accent colors (pink, blue, green, orange, purple) for visual interest.
+
+**Decision:** Keep avatar colors hardcoded. These are decorative illustrations, not semantic UI elements. They provide visual variety and don't need theme support.
+
+### Dark Sections (Footer, Pricing Business tier)
+
+Some sections use dark backgrounds (`bg-neutral-950`) regardless of theme. Options:
+
+1. **Always dark** - Keep these sections dark in both themes
+2. **Theme-aware** - Use `bg-card` with proper dark mode styling
+3. **CSS variable** - Create `--surface-inverted` for intentional inversions
+
+**Recommendation:** Use theme variables but accept that dark sections will look different in light mode. Consider using `bg-primary` for featured elements.
+
+### Hardcoded SVG Colors
+
+Some components use inline SVG with hardcoded stroke colors:
+
+```tsx
+stroke="#8b5cf6"  // violet-500
+stroke="#eee"     // neutral-200
+```
+
+**Solution:** Use `stroke="currentColor"` with a text color class, or use CSS variables via `style`:
+
+```tsx
+<circle style={{ stroke: "hsl(var(--primary))" }} />
+```
+
+---
+
+## Verification
+
+1. **Visual comparison:**
+   - Take screenshots before/after
+   - Verify no visual regressions
+   - Test light/dark mode toggle
+
+2. **Build check:**
+   - `pnpm build` - ensure no errors
+   - `pnpm check-types` - TypeScript passes
+
+3. **Manual testing:**
+   - `pnpm dev:web`
+   - Test all sections in both themes
+   - Check hover/focus states
+
+4. **Color audit:**
+   - Grep for remaining hardcoded colors:
+     - `violet-`, `neutral-`, `zinc-`, `slate-`
+     - Hex codes like `#fff`, `#000`
+
+---
+
+## Implementation Order
+
+1. **Phase 1:** Update CSS variables in `index.css`
+2. **Phase 2:** Fix mesh gradient
+3. **Phase 3:** Migrate components in order of complexity:
+   - Simple: social-proof, cta-section, testimonials
+   - Medium: navigation, footer, pricing, hero-section
+   - Complex: bento-features, core-features, survey-mockup (most colors)
+
+---
+
+## Notes
+
+- Some colors in illustrations/mockups may intentionally stay hardcoded for visual effect
+- Dark mode support requires testing the mesh gradient carefully
+- Avatar colors in mockups should remain varied for visual interest
+- Focus on semantic meaning rather than exact color matching
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.claude/projects/-Users-orksys-Projects-orksys-survey/7a035927-edac-4c5a-b777-e474104059d3.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+I would like you to plan phase 1 from @PLAN.md, use team of @"Plan (agent)" for each thing and then orhestrate a team of @"general-purpose (agent)" for the tasks. 
+
+It is vital to break tasks into even smaller tasks to perform, use available vercel skills for composition, react best pracitces and perform parallel work in separate git worktrees per feature branch for each task that is part of phase 1. Plan entire approach first and load up on needed skills
+
+---
+
+[Request interrupted by user for tool use]

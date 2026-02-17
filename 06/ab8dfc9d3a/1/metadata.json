@@ -1,12 +1,12 @@
 {
   "cli_version": "0.4.4",
   "checkpoint_id": "06ab8dfc9d3a",
+  "session_id": "e169def5-9809-4be2-a6d9-2aecebdb7288",
   "strategy": "manual-commit",
+  "created_at": "2026-02-17T15:17:51.088748Z",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 1,
   "files_touched": [
-    "apps/web/next.config.ts",
-    "apps/web/src/app/page.tsx",
     "apps/web/src/components/landing/bento-features.tsx",
     "apps/web/src/components/landing/core-features.tsx",
     "apps/web/src/components/landing/cta-section.tsx",
@@ -19,27 +19,22 @@
     "apps/web/src/components/landing/testimonials.tsx",
     "apps/web/src/index.css"
   ],
-  "sessions": [
-    {
-      "metadata": "/06/ab8dfc9d3a/0/metadata.json",
-      "transcript": "/06/ab8dfc9d3a/0/full.jsonl",
-      "context": "/06/ab8dfc9d3a/0/context.md",
-      "content_hash": "/06/ab8dfc9d3a/0/content_hash.txt",
-      "prompt": "/06/ab8dfc9d3a/0/prompt.txt"
-    },
-    {
-      "metadata": "/06/ab8dfc9d3a/1/metadata.json",
-      "transcript": "/06/ab8dfc9d3a/1/full.jsonl",
-      "context": "/06/ab8dfc9d3a/1/context.md",
-      "content_hash": "/06/ab8dfc9d3a/1/content_hash.txt",
-      "prompt": "/06/ab8dfc9d3a/1/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
   "token_usage": {
-    "input_tokens": 717893,
+    "input_tokens": 368110,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 9350912,
-    "output_tokens": 47386,
-    "api_call_count": 133
-  }
+    "cache_read_tokens": 1145536,
+    "output_tokens": 26303,
+    "api_call_count": 19
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-17T15:17:50.396882Z",
+    "agent_lines": 0,
+    "human_added": 2880,
+    "human_modified": 1617,
+    "human_removed": 0,
+    "total_committed": 3223,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/e169def5-9809-4be2-a6d9-2aecebdb7288.jsonl"
 }
