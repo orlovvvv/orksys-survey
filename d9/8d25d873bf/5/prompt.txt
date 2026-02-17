@@ -1,0 +1,154 @@
+Implement the following plan:
+
+# Survey Builder UX Refinements Plan
+
+## Context
+Refining the survey builder UX to address:
+- Unreactive interface when adding questions (requires page refresh)
+- Missing drag-and-drop from sidebar to canvas
+- Non-responsive fixed-width layout
+- Lack of animations
+
+## Critical Files
+- `apps/web/src/components/survey-builder/index.tsx` - Context + DndContext
+- `apps/web/src/components/survey-builder/question-palette.tsx` - Bug location + drag source
+- `apps/web/src/components/survey-builder/builder-canvas.tsx` - Drop target + animations
+- `apps/web/src/components/survey-builder/question-card.tsx` - List item animations
+- `apps/web/src/components/survey-builder/properties-panel.tsx` - Panel animations
+- `apps/web/src/components/survey-builder/builder-header.tsx` - Tab animations
+
+---
+
+## Implementation
+
+### 1. Fix Unreactive Interface Bug
+**Root cause:** `QuestionPalette` only calls `invalidateQueries()` but doesn't update local state.
+
+**File: `question-palette.tsx`**
+```tsx
+// Line 110: Add onQuestionsChange to destructuring
+const { survey, questions, selectedQuestionId, setSelectedQuestionId, onQuestionsChange } =
+  useSurveyBuilder();
+
+// Line 116-119: Update mutation onSuccess
+onSuccess: (newQuestion) => {
+  onQuestionsChange([...(questions || []), newQuestion]); // ADD THIS LINE
+  setSelectedQuestionId(newQuestion.id);
+  queryClient.invalidateQueries({ queryKey: ["question"] });
+  toast.success("Question added");
+},
+```
+
+### 2. Add framer-motion Dependency
+```bash
+cd apps/web && pnpm add framer-motion
+```
+
+### 3. Implement Drag-from-Sidebar
+
+**Strategy:** Lift `DndContext` from `BuilderCanvas` to `SurveyBuilder` for cross-container drag.
+
+**File: `index.tsx`**
+- Add `activeDragType` state for palette drag tracking
+- Move `DndContext`, sensors, and handlers from canvas
+- Handle both palette-to-canvas (create) and canvas reordering
+- Add `DragOverlay` with palette preview component
+
+**File: `question-palette.tsx`**
+- Add `useDraggable` hook to `QuestionTypeButton`
+- Pass drag attributes/listeners to button
+- Add `isDragging` opacity state
+
+**File: `builder-canvas.tsx`**
+- Add `useDroppable` hook with id "canvas"
+- Remove local `DndContext` (use parent's)
+- Keep `SortableContext` for reordering
+
+### 4. Add Framer Motion Animations
+
+**File: `question-card.tsx`**
+```tsx
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, x: -100 }}
+  transition={{ duration: 0.2 }}
+  layout
+>
+```
+
+**File: `builder-canvas.tsx`**
+- Wrap question list with `<AnimatePresence mode="popLayout">`
+- Add staggered animation (delay: index * 0.05)
+- Animate empty state card
+
+**File: `question-palette.tsx`**
+- Add `whileHover={{ scale: 1.02 }}` and `whileTap={{ scale: 0.98 }}` to buttons
+
+**File: `builder-header.tsx`**
+- Add `layoutId="activeTab"` animated tab indicator
+
+**File: `properties-panel.tsx`**
+- Add slide-in animation on panel mount
+
+### 5. Responsive Layout
+
+**Strategy:**
+- Mobile (<640px): Sheet overlays for sidebars
+- Tablet (640-1024px): Collapsible sidebars
+- Desktop (>1024px): Current three-column layout
+
+**File: `index.tsx`**
+- Create `useMediaQuery` hook
+- Add `paletteOpen`/`propertiesOpen` state
+- Conditionally render Sheet/collapsible/fixed sidebars
+
+**File: Create `apps/web/src/hooks/use-media-query.ts`**
+```tsx
+export function useMediaQuery(query: string) {
+  const [matches, setMatches] = React.useState(false);
+  React.useEffect(() => {
+    const media = window.matchMedia(query);
+    const listener = () => setMatches(media.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [query]);
+  return matches;
+}
+```
+
+**File: `builder-header.tsx`**
+- Add toggle buttons for sidebars on mobile/tablet
+
+---
+
+## Implementation Order
+1. Fix bug (question-palette.tsx) - immediate value
+2. Add framer-motion dependency
+3. Implement drag-from-sidebar (lift DndContext)
+4. Add animations to components
+5. Add responsive layout
+
+## Verification
+- [ ] Add question from palette - immediate UI update without refresh
+- [ ] Drag question type from palette to canvas - creates new question
+- [ ] Reorder questions still works
+- [ ] Delete question animates out
+- [ ] Mobile: sidebars as sheet overlays
+- [ ] Tablet: collapsible sidebars
+- [ ] Desktop: three-column layout
+- [ ] Tab switch animated
+- [ ] No layout shift during animations
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.claude/projects/-Users-orksys-Projects-orksys-survey/fa1af9e4-f2c1-4170-b40e-c22a51c571b0.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+i still cannot drag and drop from Question types into the canvas itself, clicking works though can you keep on working to address that as well?
+
+---
+
+[Request interrupted by user for tool use]
