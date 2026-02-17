@@ -1,0 +1,195 @@
+Implement the following plan:
+
+# Fix: Drag & Drop Insert Position Bug
+
+## Context
+The survey builder has a UX bug where:
+1. Visual animation shows items shifting to make room at the correct drop position
+2. **But the actual insertion always happens at the END of the array**
+
+This creates confusing UX - users see where the item will go, but it appears somewhere else.
+
+## Root Cause Analysis
+
+### Current Flow
+
+**In `builder-canvas.tsx`:**
+```tsx
+// Calculates visual drop index
+const dropIndex = overId
+    ? safeQuestions.findIndex((q) => q.id === overId)
+    : safeQuestions.length;
+
+// When overId is "canvas", findIndex returns -1
+// So dropIndex = -1, and ALL items shift (index >= -1 is always true)
+```
+
+**In `index.tsx` handleDragEnd:**
+```tsx
+// When dropping on canvas container
+if (active.data.current?.questionType && over.id === "canvas") {
+    createMutation.mutate({
+        order: questions.length,  // ← ALWAYS inserts at end!
+    });
+    return;
+}
+```
+
+### The Disconnect
+- Visual uses `dropIndex` calculated locally in builder-canvas
+- Insertion uses `over.id` to decide position in index.tsx
+- When `over.id === "canvas"`, it ignores where the user is hovering
+
+---
+
+## Implementation Plan
+
+### Task 1: Pass Drop Index to Parent
+
+**File:** `apps/web/src/components/survey-builder/index.tsx`
+
+Add a callback to receive the calculated drop index from builder-canvas:
+
+```tsx
+// Add state for drop index
+const [dropIndex, setDropIndex] = useState<number | null>(null);
+
+// Pass to BuilderCanvas
+<BuilderCanvas
+    questions={questions}
+    onQuestionsChange={setQuestions}
+    activeDragItem={activeDragItem}
+    overId={overId}
+    onDropIndexChange={setDropIndex}  // NEW
+/>
+```
+
+### Task 2: Report Drop Index from Canvas
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+Report the calculated drop index back to parent:
+
+```tsx
+interface BuilderCanvasProps {
+    // ... existing props
+    onDropIndexChange: (index: number | null) => void;
+}
+
+export function BuilderCanvas({ ..., onDropIndexChange }: BuilderCanvasProps) {
+    // Calculate and report drop index whenever it changes
+    useEffect(() => {
+        if (!isOver || !activeDragItem || activeDragItem.type !== "palette") {
+            onDropIndexChange(null);
+            return;
+        }
+
+        const dropIndex = overId
+            ? safeQuestions.findIndex((q) => q.id === overId)
+            : safeQuestions.length;
+
+        // If overId is "canvas", findIndex returns -1
+        // In this case, we want to insert at the end
+        const normalizedIndex = dropIndex === -1 ? safeQuestions.length : dropIndex;
+        onDropIndexChange(normalizedIndex);
+    }, [isOver, activeDragItem, overId, safeQuestions]);
+
+    // ... rest of component
+}
+```
+
+### Task 3: Use Drop Index for Insertion
+
+**File:** `apps/web/src/components/survey-builder/index.tsx`
+
+Update `handleDragEnd` to use the drop index:
+
+```tsx
+const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragItem(null);
+    setOverId(null);
+
+    if (!over) return;
+
+    // Handle palette drop (from question type palette)
+    if (active.data.current?.questionType) {
+        const questionType = active.data.current.questionType as Question["type"];
+        const insertIndex = dropIndex ?? questions.length;  // Use tracked drop index
+
+        createMutation.mutate({
+            surveyId: survey.id,
+            type: questionType,
+            title: `New ${questionTypeLabels[questionType]}`,
+            order: insertIndex,
+        });
+
+        setDropIndex(null);  // Reset
+        return;
+    }
+
+    // ... existing reorder logic
+};
+```
+
+### Task 4: Reorder After Insert
+
+The backend `question.create` creates at a specific order, but we need to also reorder existing questions. The existing code at lines 248-285 already handles this for "drop on specific question" case - we need similar logic for all palette drops.
+
+```tsx
+if (active.data.current?.questionType) {
+    const questionType = active.data.current.questionType as Question["type"];
+    const insertIndex = dropIndex ?? questions.length;
+
+    // Create question first
+    const newQuestion = await client.question.create({
+        surveyId: survey.id,
+        type: questionType,
+        title: `New ${questionTypeLabels[questionType]}`,
+        order: insertIndex,
+    });
+
+    // Build reordered array
+    const reorderedQuestions = [
+        ...questions.slice(0, insertIndex).map((q, i) => ({ ...q, order: i })),
+        { ...newQuestion, order: insertIndex },
+        ...questions.slice(insertIndex).map((q, i) => ({ ...q, order: insertIndex + 1 + i })),
+    ];
+
+    setQuestions(reorderedQuestions);
+    setSelectedQuestionId(newQuestion.id);
+
+    // Sync order with backend
+    reorderMutation.mutate({
+        questions: reorderedQuestions.map((q) => ({ id: q.id, order: q.order })),
+    });
+
+    setDropIndex(null);
+    return;
+}
+```
+
+---
+
+## Critical Files
+- `apps/web/src/components/survey-builder/index.tsx` - Main DnD coordination
+- `apps/web/src/components/survey-builder/builder-canvas.tsx` - Drop position calculation
+
+---
+
+## Verification
+- [ ] Drag palette item to beginning of list → inserts at index 0
+- [ ] Drag palette item to middle of list → inserts at correct position
+- [ ] Drag palette item to end of list → inserts at end
+- [ ] Visual drop indicator matches actual insertion position
+- [ ] Existing items animate to make room correctly
+- [ ] Backend reorders all questions to maintain consistency
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+commit work as is
