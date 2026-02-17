@@ -201,7 +201,9 @@ export function LogicRuleForm({
 			<form.Field name="operator">
 				{(field) => (
 					<div className="space-y-2">
-						<Label>Condition</Label>
+						<Label className="text-xs uppercase tracking-wide text-neutral-500">
+							Condition
+						</Label>
 						<Select
 							value={field.state.value}
 							onValueChange={(value) => field.handleChange(value)}
@@ -228,7 +230,9 @@ export function LogicRuleForm({
 						<form.Field name="conditionValue">
 							{(field) => (
 								<div className="space-y-2">
-									<Label>Value</Label>
+									<Label className="text-xs uppercase tracking-wide text-neutral-500">
+										Value
+									</Label>
 									{sourceOptions ? (
 										<Select
 											value={field.state.value}
@@ -263,7 +267,9 @@ export function LogicRuleForm({
 			<form.Field name="action">
 				{(field) => (
 					<div className="space-y-2">
-						<Label>Action</Label>
+						<Label className="text-xs uppercase tracking-wide text-neutral-500">
+							Action
+						</Label>
 						<Select
 							value={field.state.value}
 							onValueChange={(value) => field.handleChange(value)}
@@ -290,7 +296,9 @@ export function LogicRuleForm({
 						<form.Field name="targetQuestionId">
 							{(field) => (
 								<div className="space-y-2">
-									<Label>Target Question</Label>
+									<Label className="text-xs uppercase tracking-wide text-neutral-500">
+										Target Question
+									</Label>
 									<Select
 										value={field.state.value}
 										onValueChange={(value) => field.handleChange(value)}

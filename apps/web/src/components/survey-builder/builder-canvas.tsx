@@ -43,12 +43,12 @@ function DropIndicator({ questionType }: DropIndicatorProps) {
 			animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
 			exit={{ opacity: 0, height: 0, marginBottom: 0 }}
 			transition={{ type: "spring", stiffness: 400, damping: 30 }}
-			className="overflow-hidden"
+			className="overflow-hidden pointer-events-none"
 		>
-			<div className="relative flex min-h-[60px] items-center gap-3 rounded-xl border-2 border-violet-500 bg-violet-50 p-4">
+			<div className="relative flex min-h-[52px] items-center gap-2 rounded-xl border border-violet-500 bg-violet-50 p-3">
 				{/* Animated glow */}
 				<motion.div
-					className="absolute inset-0 rounded-xl border-2 border-violet-400"
+					className="absolute inset-0 rounded-xl border border-violet-400"
 					animate={{ opacity: [0.3, 0.7, 0.3] }}
 					transition={{
 						duration: 1.5,
@@ -56,7 +56,7 @@ function DropIndicator({ questionType }: DropIndicatorProps) {
 						ease: "easeInOut",
 					}}
 				/>
-				<div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100">
+				<div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100">
 					<Plus className="h-4 w-4 text-violet-600" />
 				</div>
 				<span className="relative font-medium text-sm text-violet-700">
@@ -74,7 +74,6 @@ interface BuilderCanvasProps {
 	onQuestionsChange: (questions: Question[]) => void;
 	activeDragItem: DragItem | null;
 	overId: string | null;
-	onDropIndexChange: (index: number | null) => void;
 }
 
 export function BuilderCanvas({
@@ -82,7 +81,6 @@ export function BuilderCanvas({
 	onQuestionsChange,
 	activeDragItem,
 	overId,
-	onDropIndexChange,
 }: BuilderCanvasProps) {
 	const { survey, selectedQuestionId, setSelectedQuestionId, activeTab } =
 		useSurveyBuilder();
@@ -95,24 +93,6 @@ export function BuilderCanvas({
 	});
 
 	const safeQuestions = questions || [];
-
-	// Calculate and report drop index whenever relevant state changes
-	useEffect(() => {
-		if (!isOver || !activeDragItem || activeDragItem.type !== "palette") {
-			onDropIndexChange(null);
-			return;
-		}
-
-		const rawDropIndex = overId
-			? safeQuestions.findIndex((q) => q.id === overId)
-			: safeQuestions.length;
-
-		// If overId is "canvas", findIndex returns -1
-		// In this case, we want to insert at the end
-		const normalizedIndex =
-			rawDropIndex === -1 ? safeQuestions.length : rawDropIndex;
-		onDropIndexChange(normalizedIndex);
-	}, [isOver, activeDragItem, overId, safeQuestions, onDropIndexChange]);
 
 	const createMutation = useMutation(
 		orpc.question.create.mutationOptions({
@@ -207,7 +187,7 @@ export function BuilderCanvas({
 				isOver ? "bg-violet-50/50" : ""
 			}`}
 		>
-			<div className="mx-auto w-full max-w-2xl space-y-4">
+			<div className="mx-auto w-full max-w-2xl space-y-3">
 				<AnimatePresence mode="popLayout">
 					{safeQuestions.length === 0 ? (
 						<motion.div
@@ -249,26 +229,24 @@ export function BuilderCanvas({
 								>
 									{(() => {
 										// Calculate drop position based on overId
-										const dropIndex = overId
+										const rawDropIndex = overId
 											? safeQuestions.findIndex((q) => q.id === overId)
-											: safeQuestions.length;
+											: -1;
+										const dropIndex =
+											rawDropIndex === -1 ? safeQuestions.length : rawDropIndex;
 
 										// Get the question type being dragged
-										const draggedQuestionType =
-											activeDragItem?.type === "palette"
-												? activeDragItem.questionType
-												: undefined;
+										const isDraggingPalette = activeDragItem?.type === "palette";
+										const draggedQuestionType = isDraggingPalette
+											? activeDragItem.questionType
+											: undefined;
 
 										// Build items array with drop indicator at correct position
 										const items: React.ReactNode[] = [];
 
 										safeQuestions.forEach((question, index) => {
 											// Add drop indicator before this question if dragging over it
-											if (
-												isOver &&
-												activeDragItem?.type === "palette" &&
-												index === dropIndex
-											) {
+											if (isDraggingPalette && index === dropIndex) {
 												items.push(
 													<DropIndicator
 														key="drop-indicator"
@@ -277,21 +255,18 @@ export function BuilderCanvas({
 												);
 											}
 
-											// Calculate if this item should shift down
-											const shouldShift =
-												isOver &&
-												activeDragItem?.type === "palette" &&
-												index >= dropIndex;
-
 											// Add the question card
+											const isDragging =
+												activeDragItem?.type === "question" &&
+												activeDragItem.id === question.id;
 											items.push(
 												<motion.div
 													key={question.id}
-													layout
+													layout={!isDragging}
 													initial={{ opacity: 0, y: 20, scale: 0.95 }}
 													animate={{
 														opacity: 1,
-														y: shouldShift ? 80 : 0,
+														y: 0,
 														scale: 1,
 													}}
 													exit={{
@@ -318,11 +293,7 @@ export function BuilderCanvas({
 										});
 
 										// Add indicator at end if hovering at last position or over canvas
-										if (
-											isOver &&
-											activeDragItem?.type === "palette" &&
-											dropIndex >= safeQuestions.length
-										) {
+										if (isDraggingPalette && dropIndex >= safeQuestions.length) {
 											items.push(
 												<DropIndicator
 													key="drop-indicator-end"

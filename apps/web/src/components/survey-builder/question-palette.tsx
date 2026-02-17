@@ -1,6 +1,6 @@
 "use client";
 
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { Question } from "@orksys-survey/db";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -17,6 +17,7 @@ import {
 	Phone,
 	Star,
 	Text,
+	Trash2,
 	TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -141,8 +142,21 @@ export function QuestionPalette() {
 		});
 	};
 
+	const { setNodeRef, isOver } = useDroppable({
+		id: "palette-cancel-zone",
+	});
+
 	return (
-		<div className="flex h-full w-64 flex-col overflow-y-auto border-neutral-100 border-r bg-white">
+		<div
+			ref={setNodeRef}
+			className="relative flex h-full w-64 flex-col overflow-y-auto border-neutral-100 border-r bg-white"
+		>
+			{isOver && (
+				<div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-red-50/90 text-red-600 backdrop-blur-sm">
+					<Trash2 className="mb-2 h-8 w-8" />
+					<p className="font-semibold text-sm">Drop to Cancel</p>
+				</div>
+			)}
 			<div className="p-4">
 				<h3 className="mb-4 font-bold font-sans text-[10px] text-neutral-900 uppercase tracking-widest">
 					Question Types
@@ -231,11 +245,14 @@ function QuestionTypeButton({
 			{...attributes}
 			{...listeners}
 			initial={{ opacity: 0, y: 10 }}
-			animate={{ opacity: isDragging ? 0.5 : 1, y: 0 }}
+			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.2, delay: index * 0.03 }}
 			whileHover={{ scale: 1.02 }}
 			whileTap={{ scale: 0.98 }}
-			className="group flex w-full cursor-grab items-center gap-3 rounded-xl border border-transparent bg-white p-3 text-left transition-colors hover:border-neutral-200 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+			className={cn(
+				"group flex w-full cursor-grab items-center gap-3 rounded-xl border border-transparent bg-white p-3 text-left transition-all hover:border-neutral-200 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 active:bg-violet-50 active:ring-2 active:ring-violet-500",
+				isDragging && "bg-violet-50 ring-2 ring-violet-500",
+			)}
 		>
 			<Icon className="h-5 w-5 shrink-0 text-neutral-400 transition-colors group-hover:text-violet-500" />
 			<div className="min-w-0 flex-1">
@@ -285,7 +302,7 @@ function QuestionTypeIconButton({
 			transition={{ duration: 0.2, delay: index * 0.02 }}
 			whileHover={{ scale: 1.05 }}
 			whileTap={{ scale: 0.95 }}
-			className="group flex flex-col items-center gap-1 rounded-lg border border-transparent bg-white p-2 text-center transition-colors hover:border-neutral-200 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+			className="group flex flex-col items-center gap-1 rounded-xl border border-transparent bg-white p-2 text-center transition-colors hover:border-neutral-200 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
 			title={config.label}
 		>
 			<Icon className="h-4 w-4 text-neutral-400 transition-colors group-hover:text-violet-500" />
@@ -319,24 +336,23 @@ function StructureItem({
 			animate={{ opacity: 1, x: 0 }}
 			transition={{ duration: 0.2, delay: index * 0.03 }}
 			className={cn(
-				"flex w-full items-center justify-between rounded-lg p-2 font-medium text-sm transition-colors",
+				"flex w-full items-center justify-between rounded-xl p-2 font-medium text-sm transition-colors",
 				isActive
 					? "border border-violet-500/20 bg-violet-50 text-neutral-900"
 					: "text-neutral-600 hover:bg-neutral-50",
 			)}
 		>
 			<div className="flex items-center gap-2">
-				<motion.div
-					layoutId={`structure-number-${number}`}
+				<div
 					className={cn(
-						"flex h-5 w-5 items-center justify-center rounded text-[10px]",
+						"flex h-5 w-5 items-center justify-center rounded text-[10px] transition-colors",
 						isActive
 							? "bg-violet-500 text-white"
 							: "bg-neutral-200 text-neutral-600",
 					)}
 				>
 					{number}
-				</motion.div>
+				</div>
 				<span className="truncate">{label}</span>
 			</div>
 			{isActive && (

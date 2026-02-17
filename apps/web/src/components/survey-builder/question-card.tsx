@@ -142,13 +142,14 @@ export function QuestionCard({
 			<Card
 				className={cn(
 					"group cursor-pointer transition-all",
+					!isSelected && "hover:border-violet-300 hover:bg-violet-50/30",
 					isSelected && "border-violet-500 ring-1 ring-violet-500",
 					isDragging && "opacity-50 shadow-lg",
 					isOver && "border-violet-400 border-dashed bg-violet-50",
 				)}
 				onClick={onSelect}
 			>
-				<CardContent className="flex items-start gap-3 p-4">
+				<CardContent className="flex items-start gap-2 p-3">
 					<button
 						type="button"
 						className="mt-1 cursor-grab touch-none"
@@ -159,7 +160,7 @@ export function QuestionCard({
 					</button>
 
 					<motion.div
-						className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-violet-100"
+						className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-violet-100"
 						whileHover={{ scale: 1.05 }}
 						transition={{ type: "spring", stiffness: 400, damping: 17 }}
 					>
@@ -201,7 +202,7 @@ export function QuestionCard({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8"
+								className="h-7 w-7"
 								onClick={(e) => {
 									e.stopPropagation();
 									setShowDeleteConfirm(false);
@@ -212,7 +213,7 @@ export function QuestionCard({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+								className="h-7 w-7 text-red-600 hover:bg-red-50 hover:text-red-700"
 								onClick={(e) => {
 									e.stopPropagation();
 									deleteMutation.mutate({ id: question.id });
@@ -226,7 +227,7 @@ export function QuestionCard({
 						<Button
 							variant="ghost"
 							size="icon"
-							className="h-8 w-8 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 data-[selected=true]:opacity-100"
+							className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 data-[selected=true]:opacity-100"
 							data-selected={isSelected}
 							onClick={(e) => {
 								e.stopPropagation();

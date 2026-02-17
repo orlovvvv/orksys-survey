@@ -61,7 +61,7 @@ function EmptyPropertiesPanel() {
 					<Settings className="h-4 w-4 text-neutral-400" />
 				</div>
 			</div>
-			<div className="flex flex-1 items-center justify-center p-6">
+			<div className="flex flex-1 items-center justify-center p-4">
 				<p className="text-center text-neutral-400 text-sm">
 					Select a question to edit its properties
 				</p>
@@ -154,7 +154,7 @@ function QuestionPropertiesPanel({ question }: QuestionPropertiesPanelProps) {
 					)}
 				</div>
 			</div>
-			<div className="flex-1 space-y-6 overflow-y-auto p-5">
+			<div className="flex-1 space-y-6 overflow-y-auto p-4">
 				{/* Title */}
 				<motion.div
 					className="space-y-2"

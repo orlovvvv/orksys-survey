@@ -1,6 +1,8 @@
 "use client";
 
 import type { QuestionConfig } from "@orksys-survey/db";
+import { Star } from "lucide-react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -57,17 +59,12 @@ function RatingScaleEditor({
 				<span className="text-neutral-600 text-sm">Preview:</span>
 				<div className="flex gap-1">
 					{Array.from({ length: config.max || 5 }).map((_, i) => (
-						<svg
+						<Star
 							// biome-ignore lint/suspicious/noArrayIndexKey: Static preview
 							key={i}
-							className="h-5 w-5 text-violet-500"
-							fill="currentColor"
-							viewBox="0 0 20 20"
+							className="h-5 w-5 text-violet-500 fill-violet-500"
 							aria-label="Star"
-							role="img"
-						>
-							<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-						</svg>
+						/>
 					))}
 				</div>
 			</div>
@@ -83,8 +80,8 @@ function NPSEditor({
 }) {
 	return (
 		<div className="space-y-4">
-			<div className="rounded-lg bg-blue-50 p-4">
-				<p className="text-blue-900 text-sm">
+			<div className="rounded-lg bg-neutral-50 p-4">
+				<p className="text-neutral-600 text-sm">
 					NPS uses a fixed 0-10 scale. Detractors (0-6), Passives (7-8),
 					Promoters (9-10).
 				</p>

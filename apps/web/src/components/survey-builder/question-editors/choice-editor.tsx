@@ -1,7 +1,7 @@
 "use client";
 
 import type { QuestionConfig } from "@orksys-survey/db";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,7 +136,6 @@ function OptionItem({
 }: OptionItemProps) {
 	return (
 		<div className="flex items-center gap-2">
-			<GripVertical className="h-4 w-4 shrink-0 cursor-grab text-neutral-300" />
 			<Input
 				value={label}
 				onChange={(e) => onChangeLabel(e.target.value)}

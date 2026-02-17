@@ -127,7 +127,6 @@ export function SurveyBuilder({
 	const [overId, setOverId] = useState<string | null>(null);
 	const [paletteOpen, setPaletteOpen] = useState(false);
 	const [propertiesOpen, setPropertiesOpen] = useState(false);
-	const [dropIndex, setDropIndex] = useState<number | null>(null);
 
 	// Responsive breakpoints
 	const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -207,10 +206,18 @@ export function SurveyBuilder({
 
 		if (!over) return;
 
+		// Handle cancel drop
+		if (over.id === "palette-cancel-zone") {
+			return;
+		}
+
 		// Handle palette drop (from question type palette) - use tracked drop index
 		if (active.data.current?.questionType) {
 			const questionType = active.data.current.questionType as Question["type"];
-			const insertIndex = dropIndex ?? questions.length;
+
+			// Calculate insert index based on over.id
+			const overIndex = questions.findIndex((q) => q.id === over.id);
+			const insertIndex = overIndex === -1 ? questions.length : overIndex;
 
 			// Create question and reorder
 			client.question
@@ -250,7 +257,6 @@ export function SurveyBuilder({
 					toast.error(error.message || "Failed to create question");
 				});
 
-			setDropIndex(null);
 			return;
 		}
 
@@ -303,10 +309,7 @@ export function SurveyBuilder({
 			{ opacity: 1, transform: CSS.Transform.toString(transform.initial) },
 			{
 				opacity: 0,
-				transform: CSS.Transform.toString({
-					...transform.final,
-					scale: 0.9,
-				} as any),
+				transform: CSS.Transform.toString(transform.initial),
 			},
 		],
 	};
@@ -319,17 +322,13 @@ export function SurveyBuilder({
 			const Icon =
 				questionTypeIcons[activeDragItem.questionType] || ClipboardList;
 			return (
-				<Card className="border-2 border-violet-300 bg-white/95 shadow-xl backdrop-blur-sm">
-					<CardContent className="flex items-center gap-3 p-4">
-						<div className="rounded bg-violet-100 p-1.5">
-							<Icon className="h-4 w-4 text-violet-600" />
-						</div>
-						<span className="font-medium">
-							{questionTypeLabels[activeDragItem.questionType] ||
-								activeDragItem.questionType}
-						</span>
-					</CardContent>
-				</Card>
+				<div className="flex w-[calc(100vw-3rem)] max-w-[624px] cursor-grabbing items-center gap-2 rounded-xl bg-violet-50 p-3 shadow-xl ring-2 ring-violet-500">
+					<Icon className="h-5 w-5 shrink-0 text-violet-500" />
+					<span className="font-medium text-neutral-900 text-sm">
+						{questionTypeLabels[activeDragItem.questionType] ||
+							activeDragItem.questionType}
+					</span>
+				</div>
 			);
 		}
 
@@ -340,14 +339,14 @@ export function SurveyBuilder({
 		if (activeQuestion) {
 			const Icon = questionTypeIcons[activeQuestion.type] || ClipboardList;
 			return (
-				<Card className="border-2 border-violet-300 bg-white/95 shadow-xl backdrop-blur-sm">
-					<CardContent className="flex items-center gap-3 p-4">
-						<div className="rounded bg-violet-100 p-1.5">
-							<Icon className="h-4 w-4 text-violet-600" />
-						</div>
-						<span className="font-medium">{activeQuestion.title}</span>
-					</CardContent>
-				</Card>
+				<div className="flex w-[calc(100vw-3rem)] max-w-[624px] cursor-grabbing items-center gap-2 rounded-xl bg-white p-3 shadow-xl ring-2 ring-violet-500">
+					<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-violet-100">
+						<Icon className="h-4 w-4 text-violet-600" />
+					</div>
+					<span className="font-medium text-neutral-900 text-sm">
+						{activeQuestion.title}
+					</span>
+				</div>
 			);
 		}
 
@@ -418,7 +417,6 @@ export function SurveyBuilder({
 							onQuestionsChange={setQuestions}
 							activeDragItem={activeDragItem}
 							overId={overId}
-							onDropIndexChange={setDropIndex}
 						/>
 
 						{/* Right Properties Panel - Responsive */}
