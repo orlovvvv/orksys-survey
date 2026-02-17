@@ -1,0 +1,604 @@
+Implement the following plan:
+
+# Landing Page Implementation Plan
+
+## Context
+
+The user wants to recreate a polished SaaS landing page for "Handshake" (a survey platform) based on a design file at `design/landing.html`. The current web app uses shadcn/ui with "base-lyra" style and neutral theme. The user wants to:
+
+1. Initialize a fresh shadcn setup with "nova" style, zinc base color, violet accent, and inter font
+2. Extract and apply this theme to the main web app
+3. Reinstall/adjust all shadcn components
+4. Recreate the landing page from the design file
+5. **Replace all amber/orange colors with violet** (user explicitly requested violet instead of the design's coral/orange)
+
+## Design Summary (from `design/landing.html`)
+
+### Page Sections
+1. **Navigation** - Fixed dark pill navbar with logo, nav links, and CTA button
+2. **Hero** - Mesh gradient background, headline, email capture form, large survey builder mockup
+3. **Social Proof** - "Trusted by" with placeholder logos
+4. **Bento Feature Grid** - 4 cards (Security, Visual, Completion Rate, AI Analysis)
+5. **Core Features** - 4 feature cards in bento layout (Logic, Analytics, Audience, Templates)
+6. **Testimonials** - 3 testimonial cards with highlighted middle card
+7. **Pricing** - 3 tiers (Personal $0, Growth $29, Business $99)
+8. **CTA** - Large rounded container with dual CTAs and trust badges
+9. **Footer** - Dark card with newsletter, links, social
+
+### Color Replacements
+| Original | Replacement |
+|----------|-------------|
+| `#FF7F50` (coral) | `violet-500` / CSS variable |
+| `#FF6347` (tomato) | `violet-600` / CSS variable |
+| `orange-*` classes | `violet-*` classes |
+
+### Key Design Elements
+- Large border radii: `rounded-[40px]`, `rounded-[32px]`
+- Gradients: `from-violet-500 to-violet-600`
+- Shadows with color: `shadow-violet-500/30`
+- Mesh gradient background (radial gradients)
+- Lucide icons (replacing Solar/Iconify)
+- Inter font (already using Inter Variable)
+
+---
+
+## Implementation Steps
+
+### Phase 1: Initialize shadcn with Violet Theme
+
+**Files to modify:**
+- `apps/web/components.json`
+- `apps/web/src/index.css`
+
+**Steps:**
+1. Create `/tmp/shadcn-theme` directory
+2. Run: `pnpm dlx shadcn@latest create` with nova/violet preset
+3. Extract `components.json` and CSS variables from tmp project
+4. Update `apps/web/components.json` with nova style settings
+5. Update `apps/web/src/index.css` with violet theme CSS variables
+6. Add mesh gradient CSS utility for hero background
+
+### Phase 2: Reinstall shadcn Components
+
+**Required components:**
+- `button`, `card`, `input`, `label` (existing - refresh)
+- `badge`, `switch`, `avatar`, `separator` (new - install)
+
+**Steps:**
+1. Run `pnpm dlx shadcn@latest add button card input label badge switch avatar separator --overwrite`
+2. Verify components use the new violet theme
+3. Run `pnpm check` to format/lint
+
+### Phase 3: Set Up Route Structure
+
+**Architecture decision:** Use route groups to separate landing from authenticated pages.
+
+```
+apps/web/src/app/
+├── layout.tsx              # Root layout (providers, fonts, theme)
+├── page.tsx                # Landing page (compose sections)
+├── (app)/
+│   ├── layout.tsx          # App layout with Header
+│   ├── dashboard/page.tsx
+│   └── todos/page.tsx
+├── login/page.tsx          # Auth pages (no app header)
+└── success/page.tsx
+```
+
+**Files to modify:**
+- `apps/web/src/app/layout.tsx` - Remove Header from root
+- Create `apps/web/src/app/(app)/layout.tsx` - Add Header here
+- Move dashboard/todos into (app) group
+
+### Phase 4: Create Landing Page Components
+
+**Directory structure:**
+```
+apps/web/src/components/landing/
+├── index.ts               # Barrel exports
+├── navigation.tsx         # Fixed navbar (dark, pill-shaped)
+├── hero-section.tsx       # Hero with email capture + mockup
+├── survey-mockup.tsx      # Survey builder mockup (compound)
+├── social-proof.tsx       # Trusted by logos
+├── bento-features.tsx     # 4-card bento grid
+├── core-features.tsx      # 4 feature cards with mockups
+├── testimonials.tsx       # 3 testimonial cards
+├── pricing.tsx            # 3 pricing tiers
+├── cta-section.tsx        # Final CTA
+└── footer.tsx             # Footer with newsletter
+```
+
+**Composition patterns to apply:**
+- **Explicit variants** instead of boolean props (e.g., `FeaturedTestimonialCard` vs `TestimonialCard`)
+- **Compound components** for complex sections (SurveyMockup)
+- **Children over render props** for BentoGrid
+
+### Phase 5: Build Landing Page
+
+**Files to modify:**
+- `apps/web/src/app/page.tsx` - Replace ASCII art with full landing page
+
+**Implementation:**
+1. Import all landing section components
+2. Compose the full landing page with all sections
+3. Replace all amber/orange colors with violet equivalents
+4. Ensure responsive design (mobile-first)
+5. Use Next.js Image for Unsplash images
+6. Consider dynamic imports for below-fold sections
+
+### Phase 6: Verify Dashboard Pages
+
+**Files to review:**
+- `apps/web/src/app/(app)/dashboard/page.tsx`
+- `apps/web/src/app/(app)/todos/page.tsx`
+- `apps/web/src/app/login/page.tsx`
+
+**Changes:**
+1. Ensure they work with new violet theme
+2. Update any hardcoded neutral colors to use theme variables
+3. Verify components still function correctly
+
+---
+
+## Color Mapping Reference
+
+### Hardcoded Color Replacements
+```css
+/* Orange → Violet */
+#FF7F50 → hsl(var(--primary)) or violet-500 (#8B5CF6)
+#FF6347 → hsl(var(--primary)) or violet-600 (#7C3AED)
+#ff6a33 → hsl(var(--primary)) or violet-600 (#7C3AED)
+
+/* Tailwind class replacements */
+orange-50  → violet-50
+orange-100 → violet-100
+orange-500 → violet-500
+orange-600 → violet-600
+```
+
+### Mesh Gradient (Hero Background)
+```css
+.mesh-gradient {
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(at 0% 0%, hsla(270,100%,95%,1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(280,100%,95%,1) 0, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(260,100%,92%,1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(275,100%,96%,1) 0, transparent 50%);
+}
+```
+*Note: Original used orange/pink tones; updated to violet tones.*
+
+---
+
+## Icon Mapping (Solar → Lucide)
+
+| Solar Icon | Lucide Equivalent |
+|------------|-------------------|
+| `solar:hand-shake-linear` | `Handshake` or custom SVG |
+| `solar:arrow-right-linear` | `ArrowRight` |
+| `solar:star-bold` | `Star` (filled) |
+| `solar:letter-linear` | `Mail` |
+| `solar:shield-check-linear` | `ShieldCheck` |
+| `solar:magic-stick-3-linear` | `Wand2` or `Sparkles` |
+| `solar:plain-linear` | `Send` |
+| `solar:settings-linear` | `Settings` |
+| `solar:quote-up-linear` | `Quote` |
+| `solar:calendar-linear` | `Calendar` |
+| `solar:card-linear` | `CreditCard` |
+| `solar:user-plus-linear` | `UserPlus` |
+| `solar:stars-minimalistic-linear` | `Sparkles` |
+| `solar:check-circle-bold` | `CheckCircle2` |
+| `solar:menu-dots-linear` | `MoreHorizontal` |
+| `solar:branching-paths-up-linear` | `GitBranch` |
+
+---
+
+## Verification
+
+1. **Visual check:**
+   - Run `pnpm dev:web`
+   - Verify landing page at `http://localhost:3001`
+   - Check all sections render correctly
+   - Verify violet color scheme throughout
+   - Test dark mode toggle
+
+2. **Type check:**
+   - Run `pnpm check-types`
+   - Ensure no TypeScript errors
+
+3. **Lint check:**
+   - Run `pnpm check`
+   - Fix any linting issues
+
+4. **Responsive test:**
+   - Test on mobile, tablet, desktop viewports
+   - Verify navigation collapses appropriately
+   - Check bento grids stack correctly on mobile
+
+---
+
+## Files Summary
+
+### Files to Create
+- `apps/web/src/components/landing/index.ts`
+- `apps/web/src/components/landing/navigation.tsx`
+- `apps/web/src/components/landing/hero-section.tsx`
+- `apps/web/src/components/landing/survey-mockup.tsx`
+- `apps/web/src/components/landing/social-proof.tsx`
+- `apps/web/src/components/landing/bento-features.tsx`
+- `apps/web/src/components/landing/core-features.tsx`
+- `apps/web/src/components/landing/testimonials.tsx`
+- `apps/web/src/components/landing/pricing.tsx`
+- `apps/web/src/components/landing/cta-section.tsx`
+- `apps/web/src/components/landing/footer.tsx`
+- `apps/web/src/app/(app)/layout.tsx` - App layout with Header
+
+### Files to Modify
+- `apps/web/components.json` - Update to nova style
+- `apps/web/src/index.css` - Update with violet theme, add mesh gradient
+- `apps/web/src/app/layout.tsx` - Remove Header, keep providers
+- `apps/web/src/app/page.tsx` - Replace with landing page
+
+### Files to Move (into route group)
+- `apps/web/src/app/dashboard/page.tsx` → `apps/web/src/app/(app)/dashboard/page.tsx`
+- `apps/web/src/app/todos/page.tsx` → `apps/web/src/app/(app)/todos/page.tsx`
+
+### Files to Update (via shadcn CLI)
+- `apps/web/src/components/ui/button.tsx`
+- `apps/web/src/components/ui/card.tsx`
+- `apps/web/src/components/ui/input.tsx`
+- `apps/web/src/components/ui/label.tsx`
+- `apps/web/src/components/ui/badge.tsx` (new)
+- `apps/web/src/components/ui/switch.tsx` (new)
+- `apps/web/src/components/ui/avatar.tsx` (new)
+- `apps/web/src/components/ui/separator.tsx` (new)
+
+---
+
+## Notes
+
+- The design uses Solar icons from Iconify; these will be mapped to Lucide equivalents (see mapping table)
+- The survey builder mockup in the hero will be built as a static UI mockup with compound component structure
+- All gradients should use violet tones instead of orange/coral
+- Route groups separate landing (public) from authenticated (app) pages
+
+---
+
+## Team Orchestration
+
+This implementation will use a team of agents working in parallel:
+
+### Agent Assignments
+
+1. **Theme Agent** - Phase 1 & 2
+   - Create tmp project with shadcn nova/violet preset
+   - Extract theme configuration
+   - Install/refresh shadcn components
+
+2. **Landing Components Agent** - Phase 4
+   - Create navigation, hero, survey-mockup, social-proof components
+   - Create bento-features, core-features components
+   - Apply composition patterns
+
+3. **Conversion Components Agent** - Phase 4
+   - Create testimonials, pricing components
+   - Create cta-section, footer components
+   - Wire up all landing components
+
+4. **Integration Agent** - Phase 3, 5, 6
+   - Set up route groups structure
+   - Update root layout
+   - Compose landing page in page.tsx
+   - Verify dashboard pages work
+
+### Parallelization Strategy
+- Theme Agent and route structure setup can run in parallel
+- Landing Components and Conversion Components agents can work in parallel
+- Integration Agent runs after components are ready
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+small fix is required
+## Error Type
+Runtime Error
+
+## Error Message
+Invalid src prop (https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800) on `next/image`, hostname "images.unsplash.com" is not configured under images in your `next.config.js`
+See more info: https://nextjs.org/docs/messages/next-image-unconfigured-host
+
+
+    at BentoFeatures (src/components/landing/bento-features.tsx:58:8)
+    at Home (src/app/page.tsx:23:4)
+
+## Code Frame
+  56 |                     <div className="group relative h-[520px] overflow-hidden rounded-[40px] bg-neutral-900">
+  57 |                         <div className="absolute inset-0">
+> 58 |                             <Image
+     |                             ^
+  59 |                                 src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800"
+  60 |                                 alt="Data visualization"
+  61 |                                 fill
+
+Next.js version: 16.1.6 (Turbopack)
+
+add domain to next config
+
+---
+
+cool create feature branch and push to it with all the changes
+
+---
+
+yes include the remaining changes
+
+---
+
+ls
+
+---
+
+[Request interrupted by user]
+
+---
+
+There is too much padding at the bottom and the floating footer area could be wider and use space better
+
+---
+
+[Request interrupted by user]
+
+---
+
+nevermind keep footer.tsx intact (revert last change), the removal of the div helped
+
+---
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. **Initial Request**: User provided a detailed implementation plan for a landing page for "Handshake" survey platform. The plan had 6 phases:
+   - Phase 1 & 2: Initialize shadcn with violet theme (nova style, zinc base, violet accent)
+   - Phase 3: Set up route groups to separate landing from authenticated pages
+   - Phase 4: Create landing page components
+   - Phase 5 & 6: Build and integrate landing page
+
+2. **Team Approach**: I created a team with multiple agents working in parallel:
+   - theme-agent: Handle shadcn violet theme setup
+   - routes-agent: Set up route groups structure
+   - hero-components-agent: Create navigation, hero, survey mockup, social proof
+   - feature-components-agent: Create bento features, core features
+   - conversion-components-agent: Create testimonials, pricing, CTA, footer
+
+3. **Theme Setup**: theme-agent updated:
+   - `apps/web/components.json` - changed to new-york style, zinc base color
+   - `apps/web/src/index.css` - added violet theme CSS variables (oklch format), mesh-gradient utility
+   - Installed shadcn components: button, card, input, label, badge, switch, avatar, separator
+
+4. **Route Groups Setup**: routes-agent created:
+   - `apps/web/src/app/(app)/layout.tsx` with Header
+   - Moved dashboard and todos into (app) route group
+   - Root layout no longer has Header (for landing page)
+
+5. **Component Creation**: Three agents created 11 components in `apps/web/src/components/landing/`:
+   - navigation.tsx
+   - hero-section.tsx
+   - survey-mockup.tsx
+   - social-proof.tsx
+   - bento-features.tsx
+   - core-features.tsx
+   - testimonials.tsx
+   - pricing.tsx
+   - cta-section.tsx
+   - footer.tsx
+   - index.ts (barrel exports)
+
+6. **Integration**: Updated `apps/web/src/app/page.tsx` to compose all landing sections
+
+7. **Error Fix**: User reported Next.js Image error for Unsplash domain. I added the domain to `apps/web/next.config.ts`:
+   ```typescript
+   images: {
+     remotePatterns: [
+       {
+         protocol: "https",
+         hostname: "images.unsplash.com",
+       },
+     ],
+   },
+   ```
+
+8. **Git Operations**: User requested creating feature branch and pushing:
+   - Created `feature/landing-page` branch
+   - Committed landing page changes
+   - Committed remaining formatting changes
+   - No remote configured, so couldn't push
+
+9. **Footer Fix**: User said "too much padding at the bottom and the floating footer area could be wider":
+   - Removed wrapper div with `pb-12` from page.tsx
+   - Started modifying footer.tsx but user said "nevermind keep footer.tsx intact"
+   - Reverted footer.tsx changes
+
+Key user messages:
+- Initial plan implementation request
+- Error about Next.js Image unconfigured host
+- "cool create feature branch and push to it with all the changes"
+- "yes include the remaining changes"
+- "There is too much padding at the bottom and the floating footer area could be wider and use space better"
+- "nevermind keep footer.tsx intact (revert last change), the removal of the div helped"
+
+Summary:
+1. Primary Request and Intent:
+   The user requested implementation of a detailed landing page plan for "Handshake" survey platform based on a design file at `design/landing.html`. Key requirements:
+   - Initialize shadcn with nova style, zinc base, violet accent (replacing amber/orange colors)
+   - Set up route groups to separate public landing from authenticated app pages
+   - Create all landing page components (navigation, hero, features, testimonials, pricing, CTA, footer)
+   - Integrate components into the main page
+   - All coral/orange colors (#FF7F50, #FF6347) should be replaced with violet
+
+2. Key Technical Concepts:
+   - shadcn/ui component library with violet theme (oklch color format)
+   - Next.js 16.1.6 with Turbopack
+   - Route groups `(app)` for separating authenticated pages
+   - Turborepo monorepo structure
+   - Lucide icons (replacing Solar/Iconify from design)
+   - Mesh gradient backgrounds
+   - Team-based parallel agent orchestration
+
+3. Files and Code Sections:
+
+   - `apps/web/components.json` - Updated shadcn configuration
+     - Changed style to "new-york", baseColor to "zinc"
+   
+   - `apps/web/src/index.css` - Theme CSS variables
+     - Added violet theme using oklch format
+     - Added mesh-gradient utility class:
+     ```css
+     .mesh-gradient {
+       background-color: #ffffff;
+       background-image:
+         radial-gradient(at 0% 0%, hsla(270,100%,95%,1) 0, transparent 50%),
+         radial-gradient(at 100% 0%, hsla(280,100%,95%,1) 0, transparent 50%),
+         radial-gradient(at 100% 100%, hsla(260,100%,92%,1) 0, transparent 50%),
+         radial-gradient(at 0% 100%, hsla(275,100%,96%,1) 0, transparent 50%);
+     }
+     ```
+
+   - `apps/web/next.config.ts` - Added Unsplash image domain
+     ```typescript
+     const nextConfig: NextConfig = {
+       typedRoutes: true,
+       reactCompiler: true,
+       images: {
+         remotePatterns: [
+           {
+             protocol: "https",
+             hostname: "images.unsplash.com",
+           },
+         ],
+       },
+     };
+     ```
+
+   - `apps/web/src/app/(app)/layout.tsx` - App layout with Header
+     ```typescript
+     import Header from "@/components/header";
+     
+     export default function AppLayout({
+       children,
+     }: Readonly<{
+       children: React.ReactNode;
+     }>) {
+       return (
+         <div className="grid h-svh grid-rows-[auto_1fr]">
+           <Header />
+           {children}
+         </div>
+       );
+     }
+     ```
+
+   - `apps/web/src/app/page.tsx` - Landing page composition (final version)
+     ```typescript
+     import {
+       BentoFeatures,
+       CoreFeatures,
+       CTASection,
+       Footer,
+       HeroSection,
+       Navigation,
+       Pricing,
+       SocialProof,
+       SurveyMockup,
+       Testimonials,
+     } from "@/components/landing";
+     
+     export default function Home() {
+       return (
+         <main className="overflow-x-hidden antialiased">
+           <Navigation />
+           <HeroSection />
+           <div className="mx-auto max-w-7xl px-6">
+             <SurveyMockup />
+             <SocialProof />
+           </div>
+           <BentoFeatures />
+           <CoreFeatures />
+           <Testimonials />
+           <Pricing />
+           <CTASection />
+           <Footer />
+         </main>
+       );
+     }
+     ```
+
+   - `apps/web/src/components/landing/` - 11 component files created by agents:
+     - navigation.tsx, hero-section.tsx, survey-mockup.tsx, social-proof.tsx
+     - bento-features.tsx, core-features.tsx
+     - testimonials.tsx, pricing.tsx, cta-section.tsx, footer.tsx
+     - index.ts (barrel exports)
+
+4. Errors and fixes:
+   - **Next.js Image Error**: "hostname 'images.unsplash.com' is not configured under images"
+     - Fixed by adding `remotePatterns` to next.config.ts
+   - **Git push failed**: No remote repository configured
+     - Informed user they need to add remote manually
+   - **Footer padding issue**: User said "too much padding at the bottom"
+     - Initially started modifying footer.tsx
+     - User said "nevermind keep footer.tsx intact (revert last change), the removal of the div helped"
+     - Reverted footer.tsx changes, kept only page.tsx wrapper div removal
+
+5. Problem Solving:
+   - Used team orchestration with parallel agents for efficient implementation
+   - Successfully implemented all 6 phases of the plan
+   - Build passes successfully
+   - Route groups properly separate landing from authenticated pages
+   - Footer spacing fixed by removing wrapper div instead of modifying footer component
+
+6. All user messages:
+   - [Detailed implementation plan for landing page]
+   - "small fix is required [Next.js Image error for Unsplash domain] add domain to next config"
+   - "cool create feature branch and push to it with all the changes"
+   - "yes include the remaining changes"
+   - "There is too much padding at the bottom and the floating footer area could be wider and use space better"
+   - "nevermind keep footer.tsx intact (revert last change), the removal of the div helped"
+
+7. Pending Tasks:
+   - None explicitly requested. User may want to add git remote and push when ready.
+
+8. Current Work:
+   The most recent work was fixing the footer spacing issue. User reported "too much padding at the bottom and the floating footer area could be wider and use space better." I:
+   1. Removed the wrapper div with `pb-12` padding from page.tsx
+   2. Started modifying footer.tsx to reduce padding
+   3. User interrupted: "nevermind keep footer.tsx intact (revert last change), the removal of the div helped"
+   4. Reverted footer.tsx changes
+
+   Final page.tsx structure (wrapper div removed):
+   ```typescript
+   <CTASection />
+   <Footer />
+   ```
+
+9. Optional Next Step:
+   No pending tasks. The landing page implementation is complete. The feature branch `feature/landing-page` has two commits ready. User needs to add a git remote to push:
+   ```bash
+   git remote add origin <your-repo-url>
+   git push -u origin feature/landing-page
+   ```
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.claude/projects/-Users-orksys-Projects-orksys-survey/7a035927-edac-4c5a-b777-e474104059d3.jsonl
+
+---
+
+I would like to plan landing page theme and color overhaul for all of the elemnts on page to properly use shadcn theming system alone without deviating into hardcoded colors.
+
+---
+
+[Request interrupted by user for tool use]

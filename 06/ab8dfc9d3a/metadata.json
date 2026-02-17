@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "06ab8dfc9d3a",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "apps/web/next.config.ts",
+    "apps/web/src/app/page.tsx",
+    "apps/web/src/components/landing/footer.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/06/ab8dfc9d3a/0/metadata.json",
+      "transcript": "/06/ab8dfc9d3a/0/full.jsonl",
+      "context": "/06/ab8dfc9d3a/0/context.md",
+      "content_hash": "/06/ab8dfc9d3a/0/content_hash.txt",
+      "prompt": "/06/ab8dfc9d3a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 349783,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 8205376,
+    "output_tokens": 21083,
+    "api_call_count": 114
+  }
+}
