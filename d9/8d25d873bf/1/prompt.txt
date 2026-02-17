@@ -1,0 +1,158 @@
+Implement the following plan:
+
+# Fix Drop Indicator: Position-Aware Placement
+
+## Context
+The previous implementation attempted to show a drop indicator between question cards, but it doesn't work because:
+1. Question cards use `useSortable` (for reordering) but are NOT registered as droppable targets
+2. The collision detection only returns "canvas" as the `over.id` - never individual question IDs
+3. Therefore `overId` is always "canvas" and `dropIndex` always equals `questions.length`
+4. The indicator never shows between cards, and insertion always happens at the end
+
+## Root Cause Analysis
+```
+Palette Item → Drag → Collision Detection → over.id = "canvas" (only)
+                                    ↓
+                          overId = "canvas"
+                                    ↓
+                          dropIndex = questions.length (never a specific index)
+                                    ↓
+                          Indicator only shows at end
+```
+
+The issue is that `useSortable` registers items for sorting within a `SortableContext`, but it doesn't make them droppable targets for cross-container drops from the palette.
+
+## Solution Options
+
+### Option A: Add useDroppable to Question Cards (Chosen)
+Make each question card a droppable target in addition to being sortable. This allows collision detection to return the specific question ID when hovering over it.
+
+### Option B: Use Pointer Coordinates
+Track the pointer Y position and calculate which question we're over based on bounding rects. More complex but doesn't require modifying question cards.
+
+---
+
+## Implementation (Option A)
+
+### 1. Add Droppable to Question Cards
+**File: `question-card.tsx`**
+
+Add `useDroppable` alongside the existing `useSortable`:
+
+```tsx
+import { useDroppable } from "@dnd-kit/core";
+
+export function QuestionCard({ question, ... }) {
+  // Existing sortable setup
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id });
+
+  // NEW: Also make this a droppable target for palette items
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: question.id,
+  });
+
+  // Combine refs
+  const setNodeRef = (node: HTMLElement | null) => {
+    setSortableRef(node);
+    setDroppableRef(node);
+  };
+
+  // ... rest of component
+}
+```
+
+### 2. Update Collision Detection
+**File: `index.tsx`**
+
+The current `pointerWithin` should work once question cards are droppables. But we may need to handle the case where pointer is over a question vs the canvas area.
+
+```tsx
+const collisionDetection: CollisionDetection = (args) => {
+  if (args.active.data.current?.questionType) {
+    // For palette items, use pointerWithin to detect specific question cards
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      // Return the first collision (the question we're over)
+      return pointerCollisions;
+    }
+  }
+  return closestCenter(args);
+};
+```
+
+### 3. Fix handleDragEnd to Use Correct Order
+**File: `index.tsx`**
+
+The current logic has an issue: when we insert at `targetIndex`, the backend might not shift existing items. Need to verify the backend handles this, or adjust the order after insertion.
+
+Current problematic code:
+```tsx
+// This creates at order: targetIndex, but doesn't shift existing items
+createMutation.mutate({
+  order: targetIndex,
+});
+```
+
+Should be:
+```tsx
+// Insert at position - backend should handle shifting
+// OR we need to reorder all items after insertion
+```
+
+### 4. Update Indicator Logic in Canvas
+**File: `builder-canvas.tsx`**
+
+The current logic is correct IF `overId` contains actual question IDs:
+
+```tsx
+const dropIndex = overId
+  ? safeQuestions.findIndex((q) => q.id === overId)
+  : safeQuestions.length;
+```
+
+This will now work correctly when `overId` is a question ID instead of "canvas".
+
+---
+
+## Critical Files
+- `apps/web/src/components/survey-builder/question-card.tsx` - Add useDroppable
+- `apps/web/src/components/survey-builder/index.tsx` - Verify collision detection
+
+---
+
+## Implementation Order
+1. Add `useDroppable` to QuestionCard alongside `useSortable`
+2. Combine refs so both hooks work on the same element
+3. Test that `overId` now contains actual question IDs
+4. Verify indicator appears at correct position
+5. Verify insertion happens at correct position
+
+---
+
+## Verification
+- [ ] Drag from palette over question 1 → overId = question1.id
+- [ ] Drag from palette over question 2 → overId = question2.id
+- [ ] Drop indicator appears BEFORE the hovered question
+- [ ] Drop on question 2 → new question becomes position 2
+- [ ] Drop indicator at bottom when not over any question
+- [ ] Existing reordering still works
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+why does it still add the item at the end of the array?
+
+---
+
+[Request interrupted by user for tool use]

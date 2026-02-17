@@ -1,9 +1,11 @@
 {
   "cli_version": "0.4.4",
   "checkpoint_id": "d98d25d873bf",
+  "session_id": "2358948d-c563-4c0f-bc06-6322f0a1b59e",
   "strategy": "manual-commit",
+  "created_at": "2026-02-17T21:02:30.906876Z",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 1,
   "files_touched": [
     "PLAN.md",
     "apps/web/src/app/(app)/surveys/[surveyId]/page.tsx",
@@ -35,27 +37,22 @@
     "apps/web/src/hooks/use-media-query.ts",
     "apps/web/src/middleware.ts"
   ],
-  "sessions": [
-    {
-      "metadata": "/d9/8d25d873bf/0/metadata.json",
-      "transcript": "/d9/8d25d873bf/0/full.jsonl",
-      "context": "/d9/8d25d873bf/0/context.md",
-      "content_hash": "/d9/8d25d873bf/0/content_hash.txt",
-      "prompt": "/d9/8d25d873bf/0/prompt.txt"
-    },
-    {
-      "metadata": "/d9/8d25d873bf/1/metadata.json",
-      "transcript": "/d9/8d25d873bf/1/full.jsonl",
-      "context": "/d9/8d25d873bf/1/context.md",
-      "content_hash": "/d9/8d25d873bf/1/content_hash.txt",
-      "prompt": "/d9/8d25d873bf/1/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
   "token_usage": {
-    "input_tokens": 178235,
+    "input_tokens": 59940,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 1749952,
-    "output_tokens": 14485,
-    "api_call_count": 46
-  }
+    "cache_read_tokens": 632128,
+    "output_tokens": 4618,
+    "api_call_count": 16
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-17T21:02:30.804647Z",
+    "agent_lines": 2866,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 1984,
+    "total_committed": 2866,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/2358948d-c563-4c0f-bc06-6322f0a1b59e.jsonl"
 }
