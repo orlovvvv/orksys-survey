@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "f4292a35e863",
+  "strategy": "manual-commit",
+  "branch": "feature/landing-page",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".claude/settings.json",
+    ".env.example",
+    "CLAUDE.md",
+    "apps/web/next.config.ts",
+    "apps/web/src/app/(app)/dashboard/dashboard.tsx",
+    "apps/web/src/app/(app)/dashboard/page.tsx",
+    "apps/web/src/app/(app)/layout.tsx",
+    "apps/web/src/app/(app)/todos/page.tsx",
+    "apps/web/src/app/dashboard/dashboard.tsx",
+    "apps/web/src/app/dashboard/page.tsx",
+    "apps/web/src/app/page.tsx",
+    "apps/web/src/app/todos/page.tsx",
+    "apps/web/src/components/landing/bento-features.tsx",
+    "apps/web/src/components/landing/core-features.tsx",
+    "apps/web/src/components/landing/cta-section.tsx",
+    "apps/web/src/components/landing/footer.tsx",
+    "apps/web/src/components/landing/hero-section.tsx",
+    "apps/web/src/components/landing/index.ts",
+    "apps/web/src/components/landing/navigation.tsx",
+    "apps/web/src/components/landing/pricing.tsx",
+    "apps/web/src/components/landing/social-proof.tsx",
+    "apps/web/src/components/landing/survey-mockup.tsx",
+    "apps/web/src/components/landing/testimonials.tsx",
+    "apps/web/src/components/ui/avatar.tsx",
+    "apps/web/src/components/ui/badge.tsx",
+    "apps/web/src/components/ui/separator.tsx",
+    "apps/web/src/components/ui/switch.tsx",
+    "design/landing.html",
+    "pnpm-lock.yaml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f4/292a35e863/0/metadata.json",
+      "transcript": "/f4/292a35e863/0/full.jsonl",
+      "context": "/f4/292a35e863/0/context.md",
+      "content_hash": "/f4/292a35e863/0/content_hash.txt",
+      "prompt": "/f4/292a35e863/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 304878,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6943808,
+    "output_tokens": 14244,
+    "api_call_count": 98
+  }
+}
