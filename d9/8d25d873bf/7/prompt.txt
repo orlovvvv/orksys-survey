@@ -1,0 +1,167 @@
+Implement the following plan:
+
+# Survey Builder: Enhanced Animations and Visible Delete Button
+
+## Context
+The user wants to improve the survey builder UX with:
+1. Better drop area visualization showing where items will be placed
+2. Animated movement of existing items when hovering over drop positions
+3. Visible delete button directly on canvas items (not hidden in a menu)
+
+## Current Implementation
+- Uses `@dnd-kit` for drag-and-drop and `framer-motion` for animations
+- Drop indicator is a simple dashed border box
+- Delete button is hidden in a DropdownMenu (requires two clicks)
+
+---
+
+## Implementation Plan
+
+### Task 1: Visible Delete Button on Question Cards
+
+**File:** `apps/web/src/components/survey-builder/question-card.tsx`
+
+1. Remove `DropdownMenu` wrapper around delete action
+2. Add visible delete `Button` that appears on card hover
+3. Add confirmation state (click once to reveal confirm, click again to delete)
+
+```tsx
+// Add state
+const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+// Add 'group' class to Card for hover states
+<Card className={cn("cursor-pointer transition-all group", ...)}>
+
+// Replace DropdownMenu with direct delete button
+{showDeleteConfirm ? (
+  <div className="flex items-center gap-1">
+    <Button variant="ghost" size="icon" onClick={() => setShowDeleteConfirm(false)}>
+      <X className="h-4 w-4" />
+    </Button>
+    <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteMutation.mutate({ id: question.id })}>
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  </div>
+) : (
+  <Button
+    variant="ghost"
+    size="icon"
+    className="opacity-0 group-hover:opacity-100 data-[selected=true]:opacity-100"
+    onClick={() => setShowDeleteConfirm(true)}
+  >
+    <Trash2 className="h-4 w-4" />
+  </Button>
+)}
+```
+
+---
+
+### Task 2: Enhanced Drop Indicator
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+1. Enhance `DropIndicator` with animated glow effect
+2. Show the question type being dragged
+3. Add height animation for smooth insertion
+
+```tsx
+interface DropIndicatorProps {
+  questionType?: Question["type"];
+}
+
+function DropIndicator({ questionType }: DropIndicatorProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      className="overflow-hidden"
+    >
+      <div className="relative flex items-center gap-3 rounded-xl border-2 border-violet-500 bg-violet-50 p-4">
+        {/* Animated glow */}
+        <motion.div
+          className="absolute inset-0 rounded-xl border-2 border-violet-400"
+          animate={{ opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+        <Plus className="h-5 w-5 text-violet-600" />
+        <span className="font-medium text-violet-700">
+          Drop to add {questionTypeLabels[questionType]}
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+```
+
+---
+
+### Task 3: Animated Item Displacement
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+1. Wrap questions in `LayoutGroup` for coordinated animations
+2. Add `layout` prop to question card motion.div wrappers
+3. Animate existing items to shift when hovering over drop position
+
+```tsx
+import { LayoutGroup } from "framer-motion";
+
+// In render, wrap SortableContext with LayoutGroup
+<LayoutGroup>
+  <SortableContext items={safeQuestions.map(q => q.id)} strategy={verticalListSortingStrategy}>
+    {safeQuestions.map((question, index) => {
+      // Calculate if this item should shift down
+      const shouldShift = isOver && activeDragItem?.type === "palette" && index >= dropIndex;
+
+      return (
+        <motion.div
+          key={question.id}
+          layout
+          animate={{ y: shouldShift ? 80 : 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        >
+          <QuestionCard ... />
+        </motion.div>
+      );
+    })}
+  </SortableContext>
+</LayoutGroup>
+```
+
+---
+
+## Critical Files
+- `apps/web/src/components/survey-builder/question-card.tsx` - Delete button visibility
+- `apps/web/src/components/survey-builder/builder-canvas.tsx` - Drop indicator and layout animations
+
+---
+
+## Verification
+- [ ] Delete button visible on card hover and when selected
+- [ ] Delete requires two clicks (confirm state prevents accidents)
+- [ ] Drop indicator shows animated glow and question type
+- [ ] Existing questions smoothly shift when dragging over drop position
+- [ ] Animations are smooth with 10+ questions
+- [ ] Mobile/touch interactions still work
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+Lookup some solid drag and drop solutions on web and github repos using mcps available, current solution pushes all items down when dragging item on cavas but still adds it at the end of items array. UX bad, pls fi
+
+---
+
+[Request interrupted by user]
+
+---
+
+use the mcps not websearch
+
+---
+
+[Request interrupted by user for tool use]
