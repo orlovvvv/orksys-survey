@@ -1,0 +1,10 @@
+export { BentoFeatures } from "./bento-features";
+export { CoreFeatures } from "./core-features";
+export { CTASection } from "./cta-section";
+export { Footer } from "./footer";
+export { HeroSection } from "./hero-section";
+export { Navigation } from "./navigation";
+export { Pricing } from "./pricing";
+export { SocialProof } from "./social-proof";
+export { SurveyMockup } from "./survey-mockup";
+export { Testimonials } from "./testimonials";
