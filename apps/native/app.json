@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "orksys-survey",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "orksys-survey",
+    "slug": "orksys-survey",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
