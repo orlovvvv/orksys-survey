@@ -1,0 +1,129 @@
+Implement the following plan:
+
+# Fix Drag-and-Drop from Palette to Canvas
+
+## Context
+The previous implementation added drag-and-drop from the question palette to the canvas, but it doesn't work. Clicking to add questions works fine, but dragging from the sidebar doesn't trigger question creation.
+
+**Root causes identified:**
+1. **Duplicate draggable IDs** - Both `QuestionTypeButton` and `QuestionTypeIconButton` use `palette-${config.type}`, creating duplicate IDs
+2. **Wrong collision detection** - `closestCenter` doesn't work for cross-container dragging
+3. **Creation timing** - Creating on `handleDragOver` instead of `handleDragEnd`
+
+## Critical Files
+- `apps/web/src/components/survey-builder/index.tsx` - DndContext configuration
+- `apps/web/src/components/survey-builder/question-palette.tsx` - Draggable source
+
+---
+
+## Implementation
+
+### 1. Fix Duplicate Draggable IDs
+**File: `question-palette.tsx`**
+
+Change `QuestionTypeIconButton` to use unique IDs:
+```tsx
+// Line 268-269: Change from:
+id: `palette-${config.type}`,
+// To:
+id: `palette-icon-${config.type}`,
+```
+
+### 2. Fix Collision Detection Strategy
+**File: `index.tsx`**
+
+Change from `closestCenter` to `pointerWithin` for better cross-container detection:
+```tsx
+// Line 5: Add import
+import { pointerWithin, closestCenter } from "@dnd-kit/core";
+
+// Line 311-312: Change collision detection
+<DndContext
+  sensors={sensors}
+  collisionDetection={pointerWithin}  // Changed from closestCenter
+  onDragStart={handleDragStart}
+  onDragOver={handleDragOver}
+  onDragEnd={handleDragEnd}
+>
+```
+
+**Alternative:** Use `collisionDetection` with a custom array that tries `pointerWithin` first, then falls back to `closestCenter`:
+```tsx
+import { pointerWithin, closestCenter, CollisionDetection } from "@dnd-kit/core";
+
+// Custom collision detection that prefers pointerWithin for palette items
+const collisionDetection: CollisionDetection = (args) => {
+  // First try pointerWithin for cross-container dragging
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions;
+  }
+  // Fall back to closestCenter for reordering
+  return closestCenter(args);
+};
+```
+
+### 3. Move Creation Logic to handleDragEnd
+**File: `index.tsx`**
+
+Move the question creation from `handleDragOver` to `handleDragEnd` for better UX:
+
+```tsx
+const handleDragEnd = (event: DragEndEvent) => {
+  const { active, over } = event;
+  setActiveDragItem(null);
+
+  if (!over) return;
+
+  // Handle palette drop on canvas (create new question)
+  if (active.data.current?.questionType && over.id === "canvas") {
+    const questionType = active.data.current.questionType as Question["type"];
+    createMutation.mutate({
+      surveyId: survey.id,
+      type: questionType,
+      title: `New ${questionTypeLabels[questionType] || questionType}`,
+      order: questions.length,
+    });
+    return;
+  }
+
+  // Handle reordering existing questions
+  if (active.id !== over.id && over.id !== "canvas") {
+    // ... existing reorder logic
+  }
+};
+```
+
+Remove the creation logic from `handleDragOver`:
+```tsx
+const handleDragOver = (event: DragOverEvent) => {
+  // Just update visual state if needed, don't create questions
+};
+```
+
+---
+
+## Implementation Order
+1. Fix duplicate IDs in question-palette.tsx
+2. Change collision detection to pointerWithin (or custom)
+3. Move creation logic from handleDragOver to handleDragEnd
+
+## Verification
+- [ ] Drag "Short Text" from Question Types - should show drag overlay
+- [ ] Drop on canvas (empty or with questions) - should create new question
+- [ ] Drag "Rating" from More Types - should also work
+- [ ] Reorder existing questions - should still work
+- [ ] Drop outside canvas - should cancel without creating
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+It adds a new item but it looks like the item is not dropped INTO the canvas but is bulled back into its place and out of nowhere new item appears, also there seems to be a lack of consistency between drag and drop within canvas itself, perform further detailed plans regarding UX stability, effects, behaviour nad rendering.
+
+---
+
+[Request interrupted by user for tool use]
