@@ -1,0 +1,159 @@
+Implement the following plan:
+
+# Onboarding & Organization Flow Implementation Plan
+
+## Context
+
+New users encounter a "No active organization selected" error (403) when accessing survey features because:
+1. After signup, users have no organization membership
+2. The `session.activeOrganizationId` is null
+3. All survey API procedures require an active organization via `organizationProcedure`
+
+The solution implements an onboarding flow that ensures every user has an active organization before accessing protected features.
+
+---
+
+## Implementation Steps
+
+### 1. Add Organization Plugin to Auth Client
+
+**File:** `apps/web/src/lib/auth-client.ts`
+
+Add `organizationClient` plugin to enable client-side org methods:
+
+```typescript
+import { organizationClient } from "better-auth/client/plugins";
+
+export const authClient = createAuthClient({
+	plugins: [polarClient(), organizationClient()],
+});
+```
+
+This enables: `authClient.organization.create()`, `authClient.organization.setActive()`, `authClient.organization.list()`
+
+---
+
+### 2. Create Next.js Middleware for Onboarding Protection
+
+**New File:** `apps/web/src/middleware.ts`
+
+Centralized auth + onboarding check before pages load:
+- Check if user is authenticated -> redirect to `/login` if not
+- Check if user has `activeOrganizationId` -> redirect to `/onboarding` if not
+- Exempt routes: `/`, `/login`, `/onboarding`, `/api`, `/success`
+
+---
+
+### 3. Create Onboarding Page
+
+**New Files:**
+- `apps/web/src/app/onboarding/page.tsx` - Server component with logic:
+  1. Check auth - redirect to `/login` if not authenticated
+  2. Check `activeOrganizationId` - redirect to `/dashboard` if set
+  3. Check if user has any org memberships
+     - No orgs -> show create form
+     - Has orgs -> show selection UI
+
+- `apps/web/src/components/onboarding/create-organization-form.tsx`
+  - Follow pattern from `apps/web/src/components/sign-up-form.tsx`
+  - Use `@tanstack/react-form` + `zod`
+  - Call `authClient.organization.create({ name, slug })`
+  - Then `authClient.organization.setActive({ organizationId })`
+  - Redirect to `/dashboard`
+
+- `apps/web/src/components/onboarding/select-organization.tsx`
+  - Use `authClient.organization.list()` to fetch user's orgs
+  - Display as selectable list
+  - On select, call `authClient.organization.setActive()`
+  - Redirect to `/dashboard`
+
+---
+
+### 4. Update Auth Flow Redirects
+
+**Files to modify:**
+
+- `apps/web/src/components/sign-up-form.tsx` (line ~36)
+  - Change redirect from `/dashboard` to `/onboarding`
+
+- `apps/web/src/components/sign-in-form.tsx` (line ~34)
+  - Keep `/dashboard` redirect (middleware handles onboarding check)
+
+---
+
+### 5. Add Organization Switcher to Header
+
+**New File:** `apps/web/src/components/organization-switcher.tsx`
+
+- Follow pattern from `apps/web/src/components/user-menu.tsx`
+- Use `authClient.organization.list()` and `authClient.useSession()`
+- Dropdown with org list, current org highlighted
+- On switch: call `authClient.organization.setActive()`, then `router.refresh()`
+
+**Modify:** `apps/web/src/components/header.tsx`
+- Add `<OrganizationSwitcher />` component
+
+---
+
+### 6. Remove Redundant Auth Checks
+
+After middleware is in place, remove per-page auth checks:
+- `apps/web/src/app/(app)/dashboard/page.tsx` - remove manual session check + redirect
+
+---
+
+## Critical Files
+
+| File | Change |
+|------|--------|
+| `apps/web/src/lib/auth-client.ts` | Add organizationClient plugin |
+| `apps/web/src/middleware.ts` | Create - auth + onboarding protection |
+| `apps/web/src/app/onboarding/page.tsx` | Create - onboarding logic |
+| `apps/web/src/components/onboarding/create-organization-form.tsx` | Create - org creation form |
+| `apps/web/src/components/onboarding/select-organization.tsx` | Create - org selection UI |
+| `apps/web/src/components/organization-switcher.tsx` | Create - header switcher |
+| `apps/web/src/components/header.tsx` | Add OrganizationSwitcher |
+| `apps/web/src/components/sign-up-form.tsx` | Change redirect to /onboarding |
+
+---
+
+## Existing Patterns to Follow
+
+- **Form pattern:** `apps/web/src/components/sign-up-form.tsx` - use @tanstack/react-form + zod
+- **Dropdown pattern:** `apps/web/src/components/user-menu.tsx` - for org switcher
+- **API context:** `packages/api/src/context.ts` - understand how activeOrganization is resolved
+
+---
+
+## Database/Auth Config
+
+**No changes needed.** Existing setup is correct:
+- `packages/auth/src/index.ts` - organization plugin configured with roles
+- `packages/db/src/schema/organization.ts` - org, member, invitation tables
+- `packages/db/src/schema/auth.ts` - session has activeOrganizationId
+
+---
+
+## Verification
+
+1. **New user flow:**
+   - Sign up -> redirected to `/onboarding`
+   - Create organization -> redirected to `/dashboard`
+   - Access surveys without 403 error
+
+2. **Returning user with org:**
+   - Sign in -> goes directly to `/dashboard`
+   - Organization switcher shows current org
+
+3. **User with orgs but no active:**
+   - Sign in -> redirected to `/onboarding`
+   - See org selection, pick one -> redirected to `/dashboard`
+
+4. **Middleware protection:**
+   - Unauthenticated access to `/dashboard` -> redirected to `/login`
+   - Authenticated without org -> redirected to `/onboarding`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
