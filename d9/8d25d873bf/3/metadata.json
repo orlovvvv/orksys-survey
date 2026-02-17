@@ -1,22 +1,20 @@
 {
   "cli_version": "0.4.4",
   "checkpoint_id": "d98d25d873bf",
+  "session_id": "52f053c0-9623-4eb3-a40a-e4b17797715b",
   "strategy": "manual-commit",
+  "created_at": "2026-02-17T21:02:31.40857Z",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 1,
   "files_touched": [
     "PLAN.md",
-    "apps/web/src/app/(app)/dashboard/dashboard.tsx",
-    "apps/web/src/app/(app)/dashboard/page.tsx",
     "apps/web/src/app/(app)/surveys/[surveyId]/page.tsx",
     "apps/web/src/app/(app)/surveys/new/page.tsx",
     "apps/web/src/app/(app)/surveys/page.tsx",
     "apps/web/src/app/onboarding/page.tsx",
-    "apps/web/src/components/header.tsx",
     "apps/web/src/components/onboarding/create-organization-form.tsx",
     "apps/web/src/components/onboarding/select-organization.tsx",
     "apps/web/src/components/organization-switcher.tsx",
-    "apps/web/src/components/sign-up-form.tsx",
     "apps/web/src/components/survey-builder/builder-canvas.tsx",
     "apps/web/src/components/survey-builder/builder-header.tsx",
     "apps/web/src/components/survey-builder/index.tsx",
@@ -37,45 +35,24 @@
     "apps/web/src/components/ui/textarea.tsx",
     "apps/web/src/components/ui/tooltip.tsx",
     "apps/web/src/hooks/use-media-query.ts",
-    "apps/web/src/lib/auth-client.ts",
-    "apps/web/src/middleware.ts",
-    "packages/db/src/index.ts"
+    "apps/web/src/middleware.ts"
   ],
-  "sessions": [
-    {
-      "metadata": "/d9/8d25d873bf/0/metadata.json",
-      "transcript": "/d9/8d25d873bf/0/full.jsonl",
-      "context": "/d9/8d25d873bf/0/context.md",
-      "content_hash": "/d9/8d25d873bf/0/content_hash.txt",
-      "prompt": "/d9/8d25d873bf/0/prompt.txt"
-    },
-    {
-      "metadata": "/d9/8d25d873bf/1/metadata.json",
-      "transcript": "/d9/8d25d873bf/1/full.jsonl",
-      "context": "/d9/8d25d873bf/1/context.md",
-      "content_hash": "/d9/8d25d873bf/1/content_hash.txt",
-      "prompt": "/d9/8d25d873bf/1/prompt.txt"
-    },
-    {
-      "metadata": "/d9/8d25d873bf/2/metadata.json",
-      "transcript": "/d9/8d25d873bf/2/full.jsonl",
-      "context": "/d9/8d25d873bf/2/context.md",
-      "content_hash": "/d9/8d25d873bf/2/content_hash.txt",
-      "prompt": "/d9/8d25d873bf/2/prompt.txt"
-    },
-    {
-      "metadata": "/d9/8d25d873bf/3/metadata.json",
-      "transcript": "/d9/8d25d873bf/3/full.jsonl",
-      "context": "/d9/8d25d873bf/3/context.md",
-      "content_hash": "/d9/8d25d873bf/3/content_hash.txt",
-      "prompt": "/d9/8d25d873bf/3/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
   "token_usage": {
-    "input_tokens": 321660,
+    "input_tokens": 41723,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 3445696,
-    "output_tokens": 31892,
-    "api_call_count": 89
-  }
+    "cache_read_tokens": 767680,
+    "output_tokens": 7424,
+    "api_call_count": 19
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-17T21:02:31.248833Z",
+    "agent_lines": 2866,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 1984,
+    "total_committed": 2866,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/52f053c0-9623-4eb3-a40a-e4b17797715b.jsonl"
 }

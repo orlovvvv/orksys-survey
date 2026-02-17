@@ -1,0 +1,211 @@
+Implement the following plan:
+
+# Refine Drop Indicator: Position-Aware Placement
+
+## Context
+The previous implementation added a drop indicator, but it always appears at the bottom of the list. Users need the indicator to appear **between** question cards at the position where the new question will be inserted. This provides:
+- Predictable insertion position (drop at slot 2 = becomes 2nd question)
+- Visual consistency between drop indicator and question card heights
+- Intuitive drag-and-drop feedback
+
+## Current State
+- Drop indicator only shows at the bottom of the question list
+- No position awareness - can't insert between existing questions
+- Heights may not match between indicator and question cards
+
+---
+
+## Critical Files
+- `apps/web/src/components/survey-builder/index.tsx` - Track drag position, pass `overId` to canvas
+- `apps/web/src/components/survey-builder/builder-canvas.tsx` - Render indicator at correct position
+- `apps/web/src/components/survey-builder/question-card.tsx` - Ensure compact consistent height
+
+---
+
+## Implementation
+
+### 1. Track Hover Position in Parent
+**File: `index.tsx`**
+
+Add state to track which item we're hovering over:
+
+```tsx
+const [overId, setOverId] = useState<string | null>(null);
+
+const handleDragOver = (event: DragOverEvent) => {
+  const { over } = event;
+  setOverId(over?.id as string | null);
+};
+
+const handleDragEnd = (event: DragEndEvent) => {
+  setOverId(null);
+  // ... existing logic
+};
+```
+
+Pass `overId` to BuilderCanvas:
+```tsx
+<BuilderCanvas
+  questions={questions}
+  onQuestionsChange={setQuestions}
+  activeDragItem={activeDragItem}
+  overId={overId}
+/>
+```
+
+### 2. Render Drop Indicator Between Cards
+**File: `builder-canvas.tsx`**
+
+Create a reusable drop indicator component with matching height:
+
+```tsx
+// Drop indicator with same height as question card
+function DropIndicator() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+    >
+      <div className="rounded-lg border-2 border-violet-400 border-dashed bg-violet-50 flex items-center gap-3 p-4 min-h-[60px]">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-violet-100">
+          <Plus className="h-4 w-4 text-violet-600" />
+        </div>
+        <span className="font-medium text-sm text-violet-600">
+          Drop to add question here
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+```
+
+Modify the questions list to intersperse drop indicators:
+
+```tsx
+// Calculate drop position based on overId
+const dropIndex = overId
+  ? safeQuestions.findIndex((q) => q.id === overId)
+  : safeQuestions.length;
+
+// Render questions with drop indicator at correct position
+const items = [];
+safeQuestions.forEach((question, index) => {
+  // Add drop indicator before this question if dragging over it
+  if (isOver && activeDragItem?.type === "palette" && index === dropIndex) {
+    items.push(
+      <AnimatePresence key="drop-indicator">
+        <DropIndicator />
+      </AnimatePresence>
+    );
+  }
+  // Add the question card
+  items.push(
+    <motion.div key={question.id} ...>
+      <QuestionCard ... />
+    </motion.div>
+  );
+});
+
+// Add indicator at end if hovering over "canvas" or last position
+if (isOver && activeDragItem?.type === "palette" && dropIndex >= safeQuestions.length) {
+  items.push(
+    <AnimatePresence key="drop-indicator-end">
+      <DropIndicator />
+    </AnimatePresence>
+  );
+}
+```
+
+### 3. Update Canvas Props Interface
+**File: `builder-canvas.tsx`**
+
+```tsx
+interface BuilderCanvasProps {
+  questions: Question[];
+  onQuestionsChange: (questions: Question[]) => void;
+  activeDragItem: DragItem | null;
+  overId: string | null;  // Add this
+}
+```
+
+### 4. Ensure Consistent Compact Heights
+**File: `question-card.tsx`**
+
+The current CardContent has `p-4` padding. Ensure drop indicator matches:
+- Icon container: `h-8 w-8` (32px)
+- Padding: `p-4` (16px all sides)
+- Minimum height: ~60px total
+
+Keep question card compact by not adding extra spacing.
+
+### 5. Update handleDragEnd for Position-Aware Insertion
+**File: `index.tsx`**
+
+When dropping on canvas, calculate the correct order based on drop position:
+
+```tsx
+if (active.data.current?.questionType && over.id === "canvas") {
+  const questionType = active.data.current.questionType as Question["type"];
+  // Insert at end when dropping on canvas directly
+  createMutation.mutate({
+    surveyId: survey.id,
+    type: questionType,
+    title: `New ${questionTypeLabels[questionType] || questionType}`,
+    order: questions.length,
+  });
+  return;
+}
+
+// NEW: Handle dropping on a specific question (insert before it)
+if (active.data.current?.questionType && over.id !== "canvas") {
+  const questionType = active.data.current.questionType as Question["type"];
+  const targetIndex = questions.findIndex((q) => q.id === over.id);
+
+  if (targetIndex !== -1) {
+    // Insert at target position, shifting others down
+    createMutation.mutate({
+      surveyId: survey.id,
+      type: questionType,
+      title: `New ${questionTypeLabels[questionType] || questionType}`,
+      order: targetIndex, // Insert at this position
+    });
+  }
+  return;
+}
+```
+
+---
+
+## Implementation Order
+1. Add `overId` state and `handleDragOver` in index.tsx
+2. Pass `overId` prop to BuilderCanvas
+3. Create `DropIndicator` component with matching height
+4. Update questions list to render indicator at correct position
+5. Update `handleDragEnd` to insert at correct position
+6. Verify consistent heights between indicator and cards
+
+---
+
+## Verification
+- [ ] Drag from palette → indicator appears at top when cursor is over first question
+- [ ] Drag over second question → indicator moves between 1st and 2nd
+- [ ] Drop at position 2 → new question becomes 2nd item
+- [ ] Drop indicator height matches question card height
+- [ ] Drop at bottom (after last question) → indicator appears after all questions
+- [ ] Question cards remain compact
+- [ ] Smooth animations as indicator moves between positions
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+it definetly does not work as I intended, the drop area never appears, and adding item by dragging still always adds the item as the last so UX remains to be improved
+
+---
+
+[Request interrupted by user for tool use]
