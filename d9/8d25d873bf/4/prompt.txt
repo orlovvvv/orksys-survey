@@ -1,0 +1,175 @@
+Implement the following plan:
+
+# Fix Drop Indicator: Position-Aware Placement (Part 2)
+
+## Context
+The `useDroppable` was added to `QuestionCard`, but items are still being added at the end. Investigation revealed TWO issues:
+
+1. **Backend doesn't shift existing questions** - The `create` procedure just inserts with the provided `order` value without shifting existing questions.
+2. **Frontend appends to end** - The `onSuccess` callback does `[...prev, newQuestion]` which always appends.
+
+## Root Cause
+
+### Backend (question.ts:107-130)
+```tsx
+create: adminProcedure
+    .input(questionCreateSchema)
+    .handler(async ({ input, context }) => {
+        // Just inserts with input.order - NO shifting of existing questions!
+        await db.insert(question).values({
+            order: input.order,  // <-- Just uses this value as-is
+        });
+    }),
+```
+
+### Frontend (index.tsx:147-159)
+```tsx
+const createMutation = useMutation({
+    onSuccess: (newQuestion) => {
+        setQuestions((prev) => [...prev, newQuestion]);  // <-- APPENDS to end!
+    },
+});
+```
+
+## Solution
+
+### Option A: Update Frontend to Handle Insertion (Recommended)
+
+Keep backend simple. Frontend will:
+1. When dropping at position X, shift all questions at positions >= X up by 1
+2. Create the new question at position X
+3. Update local state with correct ordering
+
+### Option B: Update Backend to Auto-Shift
+
+Make backend handle the shift automatically when creating a question at a specific order. More complex but cleaner API.
+
+---
+
+## Implementation (Option A)
+
+### File: `apps/web/src/components/survey-builder/index.tsx`
+
+Update the palette drop handler in `handleDragEnd`:
+
+```tsx
+// Handle palette drop on a specific question (insert before it)
+if (active.data.current?.questionType && over.id !== "canvas") {
+    const questionType = active.data.current.questionType as Question["type"];
+    const targetIndex = questions.findIndex((q) => q.id === over.id);
+
+    if (targetIndex !== -1) {
+        // 1. Shift existing questions at positions >= targetIndex up by 1
+        const shiftedQuestions = questions.map((q, index) => ({
+            ...q,
+            order: index >= targetIndex ? index + 1 : index,
+        }));
+
+        // 2. Create the new question at targetIndex
+        const newQuestion = {
+            surveyId: survey.id,
+            type: questionType,
+            title: `New ${questionTypeLabels[questionType] || questionType}`,
+            order: targetIndex,
+        };
+
+        // 3. Update local state immediately (optimistic)
+        const optimisticNewQuestion = {
+            id: `temp_${Date.now()}`,
+            ...newQuestion,
+        };
+        const newQuestions = [
+            ...shiftedQuestions.slice(0, targetIndex),
+            optimisticNewQuestion,
+            ...shiftedQuestions.slice(targetIndex),
+        ];
+        setQuestions(newQuestions);
+
+        // 4. Create on backend
+        createMutation.mutate(newQuestion, {
+            onSuccess: (created) => {
+                // Replace temp with real question
+                setQuestions(prev => prev.map(q =>
+                    q.id === optimisticNewQuestion.id ? created : q
+                ));
+                // Also update all shifted questions on backend
+                reorderMutation.mutate({
+                    questions: shiftedQuestions.map(q => ({ id: q.id, order: q.order })),
+                });
+            },
+        });
+    }
+    return;
+}
+```
+
+### Simplified Implementation
+
+Actually, a simpler approach: after creating the question, call reorder with the complete new order:
+
+```tsx
+// Handle palette drop on a specific question (insert before it)
+if (active.data.current?.questionType && over.id !== "canvas") {
+    const questionType = active.data.current.questionType as Question["type"];
+    const targetIndex = questions.findIndex((q) => q.id === over.id);
+
+    if (targetIndex !== -1) {
+        createMutation.mutate(
+            {
+                surveyId: survey.id,
+                type: questionType,
+                title: `New ${questionTypeLabels[questionType] || questionType}`,
+                order: targetIndex,
+            },
+            {
+                onSuccess: (newQuestion) => {
+                    // Build the new array with correct order
+                    const reorderedQuestions = [
+                        ...questions.slice(0, targetIndex).map((q, i) => ({ ...q, order: i })),
+                        { ...newQuestion, order: targetIndex },
+                        ...questions.slice(targetIndex).map((q, i) => ({ ...q, order: targetIndex + 1 + i })),
+                    ];
+
+                    setQuestions(reorderedQuestions);
+                    setSelectedQuestionId(newQuestion.id);
+                    queryClient.invalidateQueries({ queryKey: ["question"] });
+
+                    // Reorder all questions on backend
+                    reorderMutation.mutate({
+                        questions: reorderedQuestions.map(q => ({ id: q.id, order: q.order })),
+                    });
+
+                    toast.success("Question added");
+                },
+            },
+        );
+    }
+    return;
+}
+```
+
+---
+
+## Critical Files
+- `apps/web/src/components/survey-builder/index.tsx` - Fix `handleDragEnd` and `onSuccess` callback
+
+---
+
+## Verification
+- [ ] Drag from palette to question 2 (index 1) → new question appears at position 1
+- [ ] Existing questions after position 1 are shifted down
+- [ ] Drop indicator shows at correct position while dragging
+- [ ] Backend reflects correct order after drop
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+I would like to introduce extra animations and drop area that will show the place where drop will place the item itself and the other items to have animated move down or up. Also make deleting items not hidden in a menu and let user click the icon button directly on the canvas item entry
+
+---
+
+[Request interrupted by user for tool use]
