@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "d98d25d873bf",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "PLAN.md",
+    "apps/web/src/app/(app)/surveys/[surveyId]/page.tsx",
+    "apps/web/src/app/(app)/surveys/new/page.tsx",
+    "apps/web/src/app/(app)/surveys/page.tsx",
+    "apps/web/src/app/onboarding/page.tsx",
+    "apps/web/src/components/onboarding/create-organization-form.tsx",
+    "apps/web/src/components/onboarding/select-organization.tsx",
+    "apps/web/src/components/organization-switcher.tsx",
+    "apps/web/src/components/survey-builder/builder-canvas.tsx",
+    "apps/web/src/components/survey-builder/builder-header.tsx",
+    "apps/web/src/components/survey-builder/index.tsx",
+    "apps/web/src/components/survey-builder/logic-builder/index.tsx",
+    "apps/web/src/components/survey-builder/logic-builder/logic-rule-form.tsx",
+    "apps/web/src/components/survey-builder/properties-panel.tsx",
+    "apps/web/src/components/survey-builder/question-card.tsx",
+    "apps/web/src/components/survey-builder/question-editors/choice-editor.tsx",
+    "apps/web/src/components/survey-builder/question-editors/rating-editor.tsx",
+    "apps/web/src/components/survey-builder/question-palette.tsx",
+    "apps/web/src/components/ui/dialog.tsx",
+    "apps/web/src/components/ui/popover.tsx",
+    "apps/web/src/components/ui/radio-group.tsx",
+    "apps/web/src/components/ui/select.tsx",
+    "apps/web/src/components/ui/sheet.tsx",
+    "apps/web/src/components/ui/slider.tsx",
+    "apps/web/src/components/ui/tabs.tsx",
+    "apps/web/src/components/ui/textarea.tsx",
+    "apps/web/src/components/ui/tooltip.tsx",
+    "apps/web/src/hooks/use-media-query.ts",
+    "apps/web/src/middleware.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d9/8d25d873bf/0/metadata.json",
+      "transcript": "/d9/8d25d873bf/0/full.jsonl",
+      "context": "/d9/8d25d873bf/0/context.md",
+      "content_hash": "/d9/8d25d873bf/0/content_hash.txt",
+      "prompt": "/d9/8d25d873bf/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 118295,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1117824,
+    "output_tokens": 9867,
+    "api_call_count": 30
+  }
+}

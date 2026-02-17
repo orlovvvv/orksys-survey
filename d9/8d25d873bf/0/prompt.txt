@@ -1,0 +1,202 @@
+Implement the following plan:
+
+# Improve Drag-and-Drop UX: Animations, Feedback & Consistency
+
+## Context
+The basic drag-and-drop functionality works (palette → canvas creates questions), but the UX is jarring:
+1. **Visual disconnect**: Dropping from palette shows the item "pull back" to original position, then a new item appears suddenly
+2. **No drop animation**: DragOverlay disappears instantly without transitioning to the drop location
+3. **Inconsistent reordering**: `pointerWithin` collision detection doesn't work well for sortable items within canvas (needs `closestCenter`)
+4. **Missing feedback**: No visual indication during drag-over about where the item will be placed
+
+## Root Causes
+1. **Single collision detection strategy**: Using `pointerWithin` for everything breaks sortable reordering which needs `closestCenter`
+2. **No drop animation**: DragOverlay unmounts immediately without animating to final position
+3. **No intermediate state**: No visual preview showing where the new question will appear
+4. **Framer Motion layout conflict**: Layout animations can conflict with dnd-kit transforms
+
+---
+
+## Critical Files
+- `apps/web/src/components/survey-builder/index.tsx` - DndContext, collision detection, DragOverlay
+- `apps/web/src/components/survey-builder/builder-canvas.tsx` - Drop zone, visual feedback
+- `apps/web/src/components/survey-builder/question-card.tsx` - Sortable item styling
+
+---
+
+## Implementation
+
+### 1. Hybrid Collision Detection
+**File: `index.tsx`**
+
+Create a custom collision detection that uses different strategies based on drag source:
+
+```tsx
+import { pointerWithin, closestCenter, rectIntersection, CollisionDetection } from "@dnd-kit/core";
+
+// Custom collision detection: pointerWithin for palette, closestCenter for canvas reordering
+const collisionDetection: CollisionDetection = (args) => {
+  // If dragging from palette (has questionType), use pointerWithin for cross-container
+  if (args.active.data.current?.questionType) {
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
+    }
+  }
+  // For canvas reordering, use closestCenter for better sortable behavior
+  return closestCenter(args);
+};
+```
+
+Use in DndContext:
+```tsx
+<DndContext
+  sensors={sensors}
+  collisionDetection={collisionDetection}
+  onDragStart={handleDragStart}
+  onDragEnd={handleDragEnd}
+>
+```
+
+### 2. Add Drop Animation with `dropAnimation`
+**File: `index.tsx`**
+
+Configure DragOverlay with proper drop animation:
+
+```tsx
+import { defaultDropAnimation, DragOverlay } from "@dnd-kit/core";
+
+// Custom drop animation that fades out smoothly
+const dropAnimation: typeof defaultDropAnimation = {
+  ...defaultDropAnimation,
+  duration: 200,
+  keyframes: ({ transform }) => [
+    { opacity: 1, transform: CSS.Transform.toString(transform.initial) },
+    { opacity: 0, transform: CSS.Transform.toString({ ...transform.final, scale: 0.9 }) },
+  ],
+};
+
+// In render:
+<DragOverlay dropAnimation={dropAnimation}>
+  {renderDragOverlay()}
+</DragOverlay>
+```
+
+### 3. Add Visual Drop Zone Indicator
+**File: `builder-canvas.tsx`**
+
+When dragging a palette item over canvas, show a preview of where the new question will appear:
+
+```tsx
+// Add state for tracking drag-over
+const { setNodeRef, isOver } = useDroppable({
+  id: "canvas",
+});
+
+// In the questions list (not empty state), add a drop indicator:
+{safeQuestions.length > 0 && isOver && activeDragItem?.type === "palette" && (
+  <motion.div
+    initial={{ opacity: 0, height: 0 }}
+    animate={{ opacity: 1, height: "auto" }}
+    exit={{ opacity: 0, height: 0 }}
+    className="rounded-lg border-2 border-dashed border-violet-400 bg-violet-50 p-4 text-center"
+  >
+    <span className="text-violet-600 text-sm">Drop to add question here</span>
+  </motion.div>
+)}
+```
+
+**Required:** Pass `activeDragItem` from parent to BuilderCanvas via props or context.
+
+### 4. Smooth Question Appearance Animation
+**File: `builder-canvas.tsx`**
+
+Enhance the new question appearance with spring animation:
+
+```tsx
+// In the questions.map():
+<motion.div
+  key={question.id}
+  layout
+  layoutId={`question-${question.id}`}
+  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+  transition={{
+    type: "spring",
+    stiffness: 300,
+    damping: 25,
+    mass: 0.8
+  }}
+>
+```
+
+### 5. Fix Sortable Transform Conflict
+**File: `question-card.tsx`**
+
+Ensure the sortable transform doesn't conflict with Framer Motion:
+
+```tsx
+// Use CSS.Translate instead of CSS.Transform for smoother sorting
+import { CSS } from "@dnd-kit/utilities";
+
+const style = {
+  transform: CSS.Translate.toString(transform), // Use Translate, not Transform
+  transition,
+  zIndex: isDragging ? 50 : undefined,
+};
+
+// Add layoutId for smooth layout animations
+<motion.div layout layoutId={`card-${question.id}`}>
+```
+
+### 6. Enhanced Drag Overlay Styling
+**File: `index.tsx`**
+
+Make the drag overlay more visually distinct:
+
+```tsx
+// In renderDragOverlay for palette items:
+<Card className="shadow-xl border-violet-300 border-2 bg-white/95 backdrop-blur-sm">
+  <CardContent className="flex items-center gap-3 p-4">
+    <div className="rounded bg-violet-100 p-1.5">
+      <Icon className="h-4 w-4 text-violet-600" />
+    </div>
+    <span className="font-medium">{label}</span>
+  </CardContent>
+</Card>
+```
+
+---
+
+## Implementation Order
+1. Hybrid collision detection (fixes reordering)
+2. Drop animation configuration (smooth fade-out)
+3. Pass activeDragItem to BuilderCanvas (enables drop indicator)
+4. Drop zone indicator (visual feedback during drag-over)
+5. Enhanced question appearance animation
+6. Fix sortable transform (smoother reordering)
+7. Enhanced drag overlay styling
+
+---
+
+## Verification
+- [ ] Drag "Short Text" from palette → canvas shows drop indicator
+- [ ] Drop on canvas → DragOverlay fades out smoothly, new question animates in
+- [ ] Drag to reorder questions → smooth sorting animation, no jitter
+- [ ] Drop outside canvas → DragOverlay returns to origin smoothly
+- [ ] Both empty canvas and populated canvas work correctly
+- [ ] Mobile/tablet (with Sheet) still works
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+almost there but when we drag and the area to drop to add question here it should "follow" the intended drop area, and the drop area itself should have the same height as the question area that is added, that would allow for user to have a predictable outcome as the question could be placed (for example) as second from top and first when dragging a drop area would appear then if let go the drag operation would endup adding aquestion AS the second one. This further refines the experience, also ensure the entries of the canvas (question cards) are as compact as the drop area.
+
+---
+
+[Request interrupted by user for tool use]
