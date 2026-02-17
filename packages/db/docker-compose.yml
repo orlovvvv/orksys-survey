@@ -2,7 +2,7 @@ name: orksys-survey
 
 services:
   postgres:
-    image: postgres
+    image: postgres:17-alpine
     container_name: orksys-survey-postgres
     environment:
       POSTGRES_DB: orksys-survey

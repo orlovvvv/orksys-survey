@@ -1,0 +1,919 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handshake | Smart Surveys &amp; Feedback</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Bricolage+Grotesque:wght@400;500;600&amp;display=swap" rel="stylesheet">
+    
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mesh-gradient {
+            background-color: #ffffff;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(25,100%,93%,1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(334,100%,95%,1) 0, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(188,100%,92%,1) 0, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(253,100%,96%,1) 0, transparent 50%);
+        }
+        /* Custom scrollbar for mockups */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="overflow-x-hidden antialiased text-neutral-900 bg-[#ffffff]">
+
+    <!-- Navigation -->
+    <nav class="fixed -translate-x-1/2 w-full max-w-4xl z-50 pr-4 pl-4 top-6 left-1/2">
+        <div class="flex bg-[#0a0a0a] border-white/10 border rounded-full pt-2 pr-3 pb-2 pl-4 shadow-xl backdrop-blur-md items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 text-white font-display font-semibold tracking-tight">
+                    <iconify-icon icon="solar:hand-shake-linear" width="22" class="text-[#FF7F50]"></iconify-icon>
+                    Handshake
+                </div>
+            </div>
+            <div class="hidden md:flex items-center gap-6">
+                <a href="#" class="hover:text-white transition-colors text-sm text-neutral-400 font-sans">Product</a>
+                <a href="#" class="hover:text-white transition-colors text-sm text-neutral-400 font-sans">Templates</a>
+                <a href="#" class="hover:text-white transition-colors text-sm text-neutral-400 font-sans">Enterprise</a>
+                <a href="#" class="hover:text-white transition-colors text-sm text-neutral-400 font-sans">Resources</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="#" class="hover:text-white transition-colors text-sm font-semibold text-neutral-400 font-sans hidden sm:block">Login</a>
+                <button class="group shadow-[#FF7F50]/30 hover:shadow-[#FF7F50]/50 transition-all duration-300 overflow-hidden cursor-pointer text-xs font-semibold text-white bg-gradient-to-r from-[#FF7F50] to-[#FF6347] rounded-full pt-2.5 pr-6 pb-2.5 pl-6 relative shadow-lg" style="box-shadow: 0 10px 25px -10px rgba(255,127,80,0.5), inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.1); border-radius: 9999px;">
+                    <div class="group-hover:translate-y-0 transition-transform duration-300 bg-white/10 absolute top-0 right-0 bottom-0 left-0 translate-y-full"></div>
+                    <span class="relative font-sans">Create Survey</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="mesh-gradient overflow-hidden pt-36 pb-20 relative">
+        <div class="text-center max-w-7xl mr-auto ml-auto pr-6 pl-6">
+            <div class="inline-flex items-center gap-2 bg-white/50 backdrop-blur border border-neutral-200 px-3 py-1 rounded-full mb-8">
+                <span class="text-[10px] font-semibold tracking-widest uppercase text-neutral-500 font-sans">By ORK Systems</span>
+            </div>
+            <h1 class="text-5xl md:text-7xl tracking-tight text-neutral-900 mb-6 max-w-4xl mx-auto leading-[1.1] font-display font-normal">
+                Beautiful surveys. <br>Actionable <span class="text-[#FF7F50] font-display font-normal">insights.</span>
+            </h1>
+            <p class="text-lg md:text-xl text-neutral-600 mb-10 max-w-2xl mx-auto leading-relaxed font-sans">
+                The modern platform to capture feedback, measure sentiment, and make data-driven decisions with effortless survey experiences.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 mb-20 items-center justify-center w-full max-w-2xl mx-auto">
+                <div class="relative w-full sm:w-80 group">
+                    <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+                        <iconify-icon icon="solar:letter-linear" class="text-neutral-400 group-focus-within:text-orange-500/60 transition-colors" width="18"></iconify-icon>
+                    </div>
+                    <input type="email" placeholder="work@company.com" class="w-full bg-white/80 backdrop-blur-sm border border-neutral-200 rounded-full pl-12 pr-6 py-4 text-base font-medium text-neutral-900 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500/40 transition-all placeholder:text-neutral-400 shadow-sm hover:border-neutral-300">
+                </div>
+                <button class="group shadow-[#FF7F50]/30 hover:shadow-[#FF7F50]/50 transition-all duration-300 overflow-hidden cursor-pointer font-medium text-white bg-gradient-to-r from-[#FF7F50] to-[#FF6347] rounded-full pt-4 pr-8 pb-4 pl-8 relative shadow-lg" style="box-shadow:0 15px 33px -12px rgba(255,127,80,0.6), inset 0 4px 6.3px rgba(255,255,255,0.3), inset 0 -5px 6.3px rgba(0,0,0,0.1); border-radius:9999px">
+                    <div class="group-hover:translate-y-0 transition-transform duration-300 bg-white/10 absolute top-0 right-0 bottom-0 left-0 translate-y-full"></div>
+                    <span class="relative flex items-center gap-2 font-sans">
+                        Start for free
+                        <iconify-icon icon="solar:arrow-right-linear" width="20"></iconify-icon>
+                    </span>
+                </button>
+            </div>
+
+            <!-- Mockup: Survey Builder Dashboard -->
+            <div class="overflow-hidden flex flex-col bg-white h-[750px] max-w-6xl border-neutral-200/60 border rounded-2xl mr-auto ml-auto relative shadow-2xl">
+                <!-- App Header -->
+                <header class="flex z-20 shrink-0 bg-white border-neutral-100 border-b px-6 py-3 items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2 text-sm font-semibold text-neutral-900 font-sans">
+                            <span class="text-neutral-400">My Workspace /</span>
+                            <span>Product Feedback Q1</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex bg-neutral-100 rounded-lg p-1 gap-1">
+                        <button class="px-4 py-1.5 bg-white shadow-sm rounded-md text-xs font-semibold text-neutral-900 font-sans">Build</button>
+                        <button class="px-4 py-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 font-sans">Design</button>
+                        <button class="px-4 py-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 font-sans">Share</button>
+                        <button class="px-4 py-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 font-sans">Results</button>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="flex -space-x-2">
+                            <div class="w-7 h-7 rounded-full bg-pink-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-pink-600">JD</div>
+                            <div class="w-7 h-7 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-600">AS</div>
+                        </div>
+                        <button class="inline-flex hover:bg-[#ff6a33] shadow-orange-500/20 transition-all text-xs font-semibold text-white bg-[#FF7F50] rounded-lg py-2 px-4 shadow-sm items-center gap-2 font-sans">
+                            Publish
+                            <iconify-icon icon="solar:plain-linear"></iconify-icon>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="flex flex-1 overflow-hidden">
+                    <!-- Left Sidebar: Question Types -->
+                    <div class="w-64 bg-white border-r border-neutral-100 flex flex-col h-full overflow-y-auto">
+                        <div class="p-4">
+                            <h3 class="text-xs font-bold text-neutral-900 uppercase tracking-widest font-sans mb-4">Question Types</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 border border-neutral-100 cursor-move hover:border-[#FF7F50]/50 transition-colors group">
+                                    <iconify-icon icon="solar:star-linear" class="text-neutral-400 group-hover:text-[#FF7F50]"></iconify-icon>
+                                    <span class="text-sm font-medium text-neutral-700">Rating Scale</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 rounded-xl bg-white border border-transparent hover:bg-neutral-50 hover:border-neutral-200 cursor-move transition-colors">
+                                    <iconify-icon icon="solar:text-field-linear" class="text-neutral-400"></iconify-icon>
+                                    <span class="text-sm font-medium text-neutral-700">Short Text</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 rounded-xl bg-white border border-transparent hover:bg-neutral-50 hover:border-neutral-200 cursor-move transition-colors">
+                                    <iconify-icon icon="solar:list-check-linear" class="text-neutral-400"></iconify-icon>
+                                    <span class="text-sm font-medium text-neutral-700">Multiple Choice</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 rounded-xl bg-white border border-transparent hover:bg-neutral-50 hover:border-neutral-200 cursor-move transition-colors">
+                                    <iconify-icon icon="solar:smile-circle-linear" class="text-neutral-400"></iconify-icon>
+                                    <span class="text-sm font-medium text-neutral-700">NPS</span>
+                                </div>
+                            </div>
+
+                            <h3 class="text-xs font-bold text-neutral-900 uppercase tracking-widest font-sans mt-8 mb-4">Structure</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 text-sm font-medium text-neutral-600">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-5 h-5 rounded bg-green-100 text-green-600 flex items-center justify-center text-[10px]">1</div>
+                                        <span>Welcome Screen</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-lg bg-[#FF7F50]/10 border border-[#FF7F50]/20 text-sm font-medium text-neutral-900">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-5 h-5 rounded bg-[#FF7F50] text-white flex items-center justify-center text-[10px]">2</div>
+                                        <span>Product Rating</span>
+                                    </div>
+                                    <iconify-icon icon="solar:menu-dots-linear" class="text-neutral-400"></iconify-icon>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 text-sm font-medium text-neutral-600">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-5 h-5 rounded bg-neutral-200 text-neutral-600 flex items-center justify-center text-[10px]">3</div>
+                                        <span>Feature Request</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 text-sm font-medium text-neutral-600">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-5 h-5 rounded bg-neutral-200 text-neutral-600 flex items-center justify-center text-[10px]">4</div>
+                                        <span>Thank You</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center Canvas -->
+                    <div class="flex-1 bg-neutral-50/50 flex flex-col relative overflow-y-auto items-center py-10 px-8">
+                        
+                        <!-- Survey Card -->
+                        <div class="w-full max-w-[600px] bg-white rounded-2xl shadow-xl shadow-neutral-200/50 border border-neutral-200 overflow-hidden relative">
+                             <!-- Progress Bar -->
+                            <div class="h-1.5 w-full bg-neutral-100">
+                                <div class="h-full w-[40%] bg-[#FF7F50] rounded-r-full"></div>
+                            </div>
+
+                            <div class="p-10">
+                                <div class="mb-8">
+                                    <span class="text-xs font-bold text-[#FF7F50] uppercase tracking-widest mb-2 block">Question 2 of 4</span>
+                                    <h2 class="text-2xl font-display font-semibold text-neutral-900 leading-tight">How likely are you to recommend Handshake to a colleague or friend?</h2>
+                                    <p class="text-sm text-neutral-500 mt-2">Your feedback helps us improve the platform.</p>
+                                </div>
+
+                                <!-- Interactive NPS Scale Mockup -->
+                                <div class="flex justify-between gap-1 mb-4">
+                                    <!-- Render 0-10 Buttons -->
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">0</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">1</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">2</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">3</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">4</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">5</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">6</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">7</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">8</button>
+                                    <button class="w-10 h-10 rounded-lg border-[#FF7F50] bg-[#FF7F50] text-white text-sm font-semibold shadow-lg shadow-orange-500/30 transition-all transform scale-105">9</button>
+                                    <button class="w-10 h-10 rounded-lg border border-neutral-200 hover:border-[#FF7F50] hover:bg-[#FF7F50]/5 hover:text-[#FF7F50] text-sm font-semibold text-neutral-600 transition-all">10</button>
+                                </div>
+                                <div class="flex justify-between text-xs text-neutral-400 font-medium uppercase tracking-wide">
+                                    <span>Not likely</span>
+                                    <span>Extremely likely</span>
+                                </div>
+
+                                <div class="mt-8 pt-8 border-t border-neutral-100 flex justify-between items-center">
+                                    <span class="text-xs text-neutral-400">Powered by <strong>Handshake</strong></span>
+                                    <button class="bg-neutral-900 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-neutral-800 transition-colors">Next Question</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logic Visualization Overlay -->
+                        <div class="absolute right-4 top-20 bg-white p-3 rounded-xl border border-neutral-200 shadow-lg w-48 z-10">
+                            <div class="flex items-center gap-2 mb-2">
+                                <iconify-icon icon="solar:branching-paths-up-linear" class="text-[#FF7F50]"></iconify-icon>
+                                <span class="text-xs font-bold text-neutral-900 uppercase">Logic Flow</span>
+                            </div>
+                            <div class="text-[10px] text-neutral-500 space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                    <span>If score &gt; 8 → "Review"</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                                    <span>If score &lt; 6 → "Support"</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar: Properties -->
+                    <div class="w-72 bg-white border-l border-neutral-100 flex flex-col h-full">
+                        <div class="p-4 border-b border-neutral-100">
+                             <div class="flex items-center justify-between">
+                                <h3 class="text-xs font-bold text-neutral-900 uppercase tracking-widest font-sans">Settings</h3>
+                                <iconify-icon icon="solar:settings-linear" class="text-neutral-400"></iconify-icon>
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-6 overflow-y-auto">
+                            <!-- Toggle -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-semibold text-neutral-900">Required</span>
+                                    <span class="text-xs text-neutral-400">Respondents must answer</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" value="" class="sr-only peer" checked="">
+                                    <div class="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF7F50]"></div>
+                                </label>
+                            </div>
+
+                            <!-- Input -->
+                            <div class="space-y-2">
+                                <label class="text-xs font-semibold text-neutral-700 uppercase tracking-wide">Variable Name</label>
+                                <div class="relative">
+                                    <input type="text" value="nps_score_q1" class="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm text-neutral-900 focus:border-[#FF7F50] focus:ring-1 focus:ring-[#FF7F50] outline-none font-mono">
+                                    <iconify-icon icon="solar:code-linear" class="absolute right-3 top-2.5 text-neutral-400" width="14"></iconify-icon>
+                                </div>
+                            </div>
+
+                            <!-- Logic -->
+                            <div class="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <iconify-icon icon="solar:bolt-linear" class="text-[#FF7F50]"></iconify-icon>
+                                    <span class="text-sm font-semibold text-neutral-900">Skip Logic</span>
+                                </div>
+                                <p class="text-xs text-neutral-600 mb-3 leading-relaxed">Customize user paths based on responses.</p>
+                                <button class="w-full bg-white border border-orange-200 text-[#FF7F50] text-xs font-semibold py-2 rounded-lg hover:bg-orange-50 transition-colors">Add Rule</button>
+                            </div>
+                            
+                            <!-- Design -->
+                            <div class="space-y-3 pt-4 border-t border-neutral-100">
+                                <label class="text-xs font-semibold text-neutral-700 uppercase tracking-wide">Appearance</label>
+                                <div class="flex gap-2">
+                                    <button class="w-8 h-8 rounded-full bg-[#FF7F50] ring-2 ring-offset-2 ring-neutral-200"></button>
+                                    <button class="w-8 h-8 rounded-full bg-blue-500"></button>
+                                    <button class="w-8 h-8 rounded-full bg-neutral-900"></button>
+                                    <button class="w-8 h-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center">
+                                        <iconify-icon icon="solar:add-linear" class="text-neutral-400"></iconify-icon>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Social Proof -->
+            <div class="mt-16 pt-6 px-6 w-full">
+                <div class="text-center">
+                    <p class="uppercase text-xs font-semibold text-neutral-400 tracking-widest font-sans">Trusted by product teams at</p>
+                </div>
+                <div class="flex flex-wrap justify-center gap-8 md:gap-12 mt-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                   <!-- Replaced with generic tech-style SVGs for visual consistency -->
+                   <div class="h-8 w-24 bg-neutral-800 mask-image" style="-webkit-mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxwYXRoIGQ9Ik0xMCwxNWw1LC01bDUsNW0tMTAsNWw1LC01bDUsNSIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+PHRleHQgeD0iMzAiIHk9IjIwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkFDTUU8L3RleHQ+PC9zdmc+'); mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxwYXRoIGQ9Ik0xMCwxNWw1LC01bDUsNW0tMTAsNWw1LC01bDUsNSIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+PHRleHQgeD0iMzAiIHk9IjIwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkFDTUU8L3RleHQ+PC9zdmc+'); background-color: black;"></div>
+                   <div class="h-8 w-24 bg-neutral-800" style="-webkit-mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxjaXJjbGUgY3g9IjE1IiBjeT0iMTUiIHI9IjUiIGZpbGw9ImJsYWNrIi8+PHRleHQgeD0iMzAiIHk9IjIwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPlZvcnRleDwvdGV4dD48L3N2Zz4='); mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxjaXJjbGUgY3g9IjE1IiBjeT0iMTUiIHI9IjUiIGZpbGw9ImJsYWNrIi8+PHRleHQgeD0iMzAiIHk9IjIwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPlZvcnRleDwvdGV4dD48L3N2Zz4='); background-color: black;"></div>
+                   <div class="h-8 w-24 bg-neutral-800" style="-webkit-mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSJibGFjayIvPjx0ZXh0IHg9IjMwIiB5PSIyMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5RdWFudHVtPC90ZXh0Pjwvc3ZnPg=='); mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSJibGFjayIvPjx0ZXh0IHg9IjMwIiB5PSIyMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5RdWFudHVtPC90ZXh0Pjwvc3ZnPg=='); background-color: black;"></div>
+                   <div class="h-8 w-24 bg-neutral-800" style="-webkit-mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxwb2x5Z29uIHBvaW50cz0iMTUsNSAyMCwyNSAxMCwyNSIgZmlsbD0iYmxhY2siLz48dGV4dCB4PSIzMCIgeT0iMjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkFwZXg8L3RleHQ+PC9zdmc+'); mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMzAiPjxwb2x5Z29uIHBvaW50cz0iMTUsNSAyMCwyNSAxMCwyNSIgZmlsbD0iYmxhY2siLz48dGV4dCB4PSIzMCIgeT0iMjAiIGZvbnQtZmFtaWx5PSJzYW5zLXNZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkFwZXg8L3RleHQ+PC9zdmc+'); background-color: black;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bento Feature Grid Section -->
+    <section class="overflow-hidden border-y bg-[#ffffff] border-neutral-200 pt-24 pb-24 relative">
+        <div class="z-10 max-w-7xl mr-auto ml-auto pr-6 pl-6 relative">
+            <div class="flex flex-col w-full mb-12">
+                <div class="flex items-end justify-between w-full pb-5">
+                    <div class="flex gap-x-2 gap-y-2 items-center">
+                        <span class="w-8 h-px bg-[#FF7F50]"></span>
+                        <span class="uppercase text-xs font-bold text-[#FF7F50] tracking-[0.2em] font-sans">Why Handshake?</span>
+                    </div>
+                </div>
+                
+                <div class="w-full h-px bg-neutral-200 mb-8"></div>
+                
+                <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-8 lg:gap-16">
+                    <h2 class="md:text-4xl lg:text-5xl leading-[1.05] text-3xl text-neutral-900 tracking-tight max-w-3xl font-display font-normal">
+                        Turn scattered feedback into a competitive engine.
+                    </h2>
+                    <div class="lg:max-w-sm flex-shrink-0 lg:pt-2">
+                        <p class="leading-relaxed text-base text-neutral-600 font-sans">Guesswork is the enemy of growth. Handshake unifies your customer voice into a single, unbreakable source of truth.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Security Card -->
+                <div class="group flex flex-col hover:shadow-xl hover:shadow-[#FF7F50]/5 transition-all duration-500 bg-neutral-50 h-[520px] border-neutral-200/60 border rounded-[40px] px-10 py-10 justify-between">
+                    <div>
+                        <div class="w-12 h-12 bg-[#FF7F50]/10 rounded-2xl flex items-center justify-center text-[#FF7F50] mb-8">
+                           <iconify-icon icon="solar:shield-check-linear" width="24" stroke-width="1.5"></iconify-icon>
+                        </div>
+                        <h3 class="text-2xl text-neutral-900 mb-6 tracking-tight leading-tight font-display font-normal">Anonymous &amp; Secure by default.</h3>
+                        <p class="text-neutral-500 leading-relaxed font-sans">Your respondent data is protected by multi-layer encryption and GDPR compliance, ensuring trust in every interaction.</p>
+                    </div>
+                    <div class="pt-6 border-t border-neutral-100">
+                        <span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-sans">Enterprise Ready</span>
+                    </div>
+                </div>
+
+                <!-- Visual Card -->
+                <div class="relative rounded-[40px] overflow-hidden h-[520px] bg-neutral-900 group">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&amp;fit=crop&amp;q=80&amp;w=800" class="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-1000" alt="Data visualization">
+                    <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-10 left-10 text-white pr-10">
+                        <span class="inline-block px-3 py-1 bg-[#FF7F50] rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 font-sans">Live Analytics</span>
+                        <p class="text-2xl leading-tight font-display font-normal">Visualize sentiment trends as they happen, not weeks later.</p>
+                    </div>
+                </div>
+
+                <!-- Reliability/Completion Rate Card -->
+                <div class="flex flex-col overflow-hidden group bg-neutral-50 h-[520px] border-neutral-200 border rounded-[40px] px-10 py-10 relative shadow-sm items-center justify-between">
+                    <div class="text-center">
+                        <span class="text-xs text-[#FF7F50] font-bold block mb-2 uppercase tracking-[0.2em] font-sans">Optimization</span>
+                        <span class="text-xl font-medium text-neutral-900 font-sans">Completion Rate</span>
+                    </div>
+                    <div class="flex w-56 h-56 relative items-center justify-center">
+                        <div class="absolute inset-0 bg-[#FF7F50]/5 rounded-full animate-pulse"></div>
+                        <div class="absolute inset-0 border-[14px] border-neutral-100 rounded-full"></div>
+                        <svg class="absolute inset-0 w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                             <circle cx="50" cy="50" r="43" fill="none" stroke="#FF7F50" stroke-width="7" stroke-dasharray="270 360" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="text-5xl tracking-tighter text-neutral-900 font-display font-normal">94%</div>
+                    </div>
+                    <button class="w-full bg-neutral-900 text-white py-4 rounded-[20px] text-sm font-semibold hover:bg-[#FF7F50] transition-colors duration-300 shadow-lg shadow-neutral-200 font-sans">See Case Studies</button>
+                </div>
+
+                <!-- AI Analysis Card -->
+                <div class="bg-neutral-950 p-10 rounded-[40px] flex flex-col justify-between h-[520px] text-white relative hover:shadow-2xl hover:shadow-[#FF7F50]/20 transition-all duration-500">
+                    <div class="flex justify-between items-start">
+                        <span class="text-lg font-medium tracking-tight text-[#FF7F50] font-sans">AI Analysis</span>
+                        <div class="p-2 bg-white/10 rounded-full">
+                            <iconify-icon icon="solar:magic-stick-3-linear" class="text-white" width="20"></iconify-icon>
+                        </div>
+                    </div>
+                    <p class="text-3xl leading-[1.2] font-display font-normal">Let AI summarize thousands of text responses instantly.</p>
+                    <div class="space-y-6">
+                        <div class="group/link cursor-pointer">
+                            <p class="text-xs text-neutral-500 uppercase tracking-widest mb-1 font-sans">Processing Time</p>
+                            <p class="text-lg font-medium border-b border-white/10 pb-2 group-hover/link:text-[#FF7F50] transition-colors font-sans">
+                                Seconds, not days</p>
+                        </div>
+                        <div class="group/link cursor-pointer">
+                            <p class="text-xs text-neutral-500 uppercase tracking-widest mb-1 font-sans">Capabilities</p>
+                            <p class="text-lg font-medium group-hover/link:text-[#FF7F50] transition-colors font-sans">Sentiment &amp; Keywords</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features Section -->
+    <section class="max-w-7xl z-10 mr-auto ml-auto pt-24 pr-6 pb-24 pl-6 relative">
+        <div class="overflow-hidden bg-white ring-neutral-200 ring-1 rounded-[32px] pt-8 pr-8 pb-8 pl-8 relative">
+            
+            <div class="flex flex-col w-full pb-12">
+                <div class="flex items-end justify-between w-full pb-5">
+                    <div class="flex gap-2 gap-x-2 gap-y-2 items-center">
+                        <span class="w-8 h-px bg-[#FF7F50]"></span>
+                        <span class="uppercase text-xs font-bold text-[#FF7F50] tracking-[0.2em] font-sans">Platform</span>
+                    </div>
+                    <a href="#" class="group flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors font-sans">
+                        View integration list
+                        <iconify-icon icon="solar:arrow-right-linear" width="16" class="transition-transform group-hover:translate-x-1"></iconify-icon>
+                    </a>
+                </div>
+
+                <div class="w-full h-px bg-neutral-200 mb-8"></div>
+
+                <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-8 lg:gap-16">
+                    <h2 class="md:text-4xl lg:text-5xl leading-[1.05] text-3xl text-neutral-900 tracking-tight max-w-3xl font-display font-normal">
+                        Everything you need to understand your audience</h2>
+                    <div class="lg:max-w-sm flex-shrink-0 lg:pt-2">
+                        <p class="leading-relaxed text-base text-neutral-600 font-sans">Handshake provides a streamlined interface for building complex surveys, managing audiences, and extracting value from feedback.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bento Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 gap-x-6 gap-y-6">
+                <!-- Card 1: Smart Logic (Vertical) -->
+                <article class="lg:col-span-1 group relative flex flex-col justify-between overflow-hidden bg-white border border-neutral-200 rounded-[32px] p-8 hover:shadow-lg transition-all duration-300">
+                    <div class="relative z-10">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold tracking-medium mb-6 font-sans">
+                            Logic &amp; Branching
+                        </div>
+                        <h3 class="text-neutral-900 text-2xl tracking-tight mb-3 font-display font-normal">Personalized paths.</h3>
+                        <p class="text-neutral-500 text-sm leading-relaxed mb-8 font-sans">
+                            Create dynamic experiences that adapt based on previous answers, increasing completion rates.
+                        </p>
+                    </div>
+
+                    <!-- UI Mockup: Logic Flow -->
+                    <div class="relative w-full h-[240px] bg-neutral-50 border border-neutral-100 rounded-2xl p-4 overflow-hidden select-none flex flex-col items-center justify-center">
+                         <div class="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
+                         
+                         <!-- Node 1 -->
+                         <div class="bg-white border border-neutral-200 shadow-sm rounded-lg px-3 py-2 text-[10px] font-semibold text-neutral-700 w-32 text-center relative z-10">
+                             Q1: Satisfaction?
+                         </div>
+                         
+                         <!-- Lines -->
+                         <div class="h-8 w-px bg-neutral-300 my-1 relative">
+                             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 w-16 h-px bg-neutral-300"></div>
+                         </div>
+                         
+                         <div class="flex gap-4 w-full justify-center">
+                             <div class="flex flex-col items-center">
+                                 <div class="h-4 w-px bg-neutral-300 mb-1"></div>
+                                 <div class="bg-green-50 border border-green-100 shadow-sm rounded-lg px-3 py-2 text-[10px] font-semibold text-green-700 w-24 text-center z-10">
+                                     Ask for Review
+                                 </div>
+                             </div>
+                             <div class="flex flex-col items-center">
+                                 <div class="h-4 w-px bg-neutral-300 mb-1"></div>
+                                 <div class="bg-red-50 border border-red-100 shadow-sm rounded-lg px-3 py-2 text-[10px] font-semibold text-red-700 w-24 text-center z-10">
+                                     Contact Support
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                </article>
+
+                <!-- Card 2: Analytics (Horizontal) -->
+                <article class="lg:col-span-2 group relative flex flex-col justify-between overflow-hidden bg-white border border-neutral-200 rounded-[32px] p-8 hover:shadow-lg transition-all duration-300">
+                    <div class="relative z-10 max-w-lg">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold tracking-medium mb-6 font-sans">
+                            Data Visualization
+                        </div>
+                        <h3 class="text-neutral-900 text-2xl tracking-tight mb-3 font-display font-normal">Dashboards that enlighten.</h3>
+                        <p class="text-neutral-500 text-sm leading-relaxed mb-8 font-sans">
+                            Instant aggregation of responses into clean, exportable charts. Track NPS, CSAT, and CES over time effortlessly.
+                        </p>
+                    </div>
+
+                    <!-- UI Mockup: Charts -->
+                    <div class="relative w-full h-[240px] bg-neutral-50 border border-neutral-100 rounded-2xl p-6 overflow-hidden flex gap-6 select-none">
+                        <!-- Chart 1: NPS -->
+                        <div class="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 p-4 flex flex-col justify-between">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-[10px] uppercase text-neutral-400 font-bold font-sans">Net Promoter Score</p>
+                                    <p class="text-3xl font-display font-bold text-neutral-900 mt-1">62</p>
+                                </div>
+                                <span class="bg-green-100 text-green-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full">+4.2%</span>
+                            </div>
+                            <div class="flex items-end gap-1 h-20 mt-2">
+                                <div class="w-1/6 bg-neutral-100 rounded-t h-[30%]"></div>
+                                <div class="w-1/6 bg-neutral-100 rounded-t h-[40%]"></div>
+                                <div class="w-1/6 bg-neutral-100 rounded-t h-[20%]"></div>
+                                <div class="w-1/6 bg-[#FF7F50]/60 rounded-t h-[60%]"></div>
+                                <div class="w-1/6 bg-[#FF7F50]/80 rounded-t h-[80%]"></div>
+                                <div class="w-1/6 bg-[#FF7F50] rounded-t h-[90%]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Donut -->
+                        <div class="w-48 bg-white rounded-xl shadow-sm border border-neutral-100 p-4 flex flex-col items-center justify-center">
+                            <p class="text-[10px] uppercase text-neutral-400 font-bold font-sans mb-3 self-start">Sentiment</p>
+                            <div class="relative w-24 h-24">
+                                <svg viewBox="0 0 36 36" class="w-full h-full">
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="4"></path>
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831" fill="none" stroke="#FF7F50" stroke-width="4" stroke-dasharray="75, 100"></path>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span class="text-lg font-bold text-neutral-900">75%</span>
+                                    <span class="text-[8px] text-neutral-400">Positive</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Card 3: Audience (Horizontal) -->
+                <article class="lg:col-span-2 group relative flex flex-col justify-between overflow-hidden bg-white border border-neutral-200 rounded-[32px] p-8 hover:shadow-lg transition-all duration-300">
+                    <div class="relative z-10 max-w-lg">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-semibold tracking-medium mb-6 font-sans">
+                            Audience Management
+                        </div>
+                        <h3 class="text-neutral-900 text-2xl tracking-tight mb-3 font-display font-normal">Target the right users.</h3>
+                        <p class="text-neutral-500 text-sm leading-relaxed mb-8 font-sans">
+                            Segment your users based on attributes and behavior. Send surveys via email, link, or in-app embed.
+                        </p>
+                    </div>
+
+                    <!-- UI Mockup: User List -->
+                    <div class="relative w-full h-[240px] bg-neutral-50 border border-neutral-100 rounded-2xl p-4 overflow-hidden select-none">
+                        <div class="bg-white w-full h-full rounded-xl shadow-sm border border-neutral-200 flex flex-col">
+                            <div class="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-neutral-900 font-sans">Active Segment: Power Users</span>
+                                <div class="flex -space-x-1">
+                                    <div class="w-5 h-5 rounded-full bg-neutral-200 border border-white"></div>
+                                    <div class="w-5 h-5 rounded-full bg-neutral-300 border border-white"></div>
+                                    <div class="w-5 h-5 rounded-full bg-neutral-400 border border-white"></div>
+                                </div>
+                            </div>
+                            <div class="p-2 space-y-2">
+                                <div class="flex items-center gap-3 p-2 hover:bg-neutral-50 rounded-lg">
+                                    <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-[10px] font-bold">AL</div>
+                                    <div class="flex-1">
+                                        <div class="text-[10px] font-bold text-neutral-900">Ada Lovelace</div>
+                                        <div class="text-[9px] text-neutral-400">ada@example.com</div>
+                                    </div>
+                                    <div class="px-2 py-0.5 bg-green-50 text-green-600 text-[8px] rounded border border-green-100">Responded</div>
+                                </div>
+                                <div class="flex items-center gap-3 p-2 hover:bg-neutral-50 rounded-lg">
+                                    <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[10px] font-bold">GT</div>
+                                    <div class="flex-1">
+                                        <div class="text-[10px] font-bold text-neutral-900">Grace Turing</div>
+                                        <div class="text-[9px] text-neutral-400">grace@example.com</div>
+                                    </div>
+                                    <div class="px-2 py-0.5 bg-neutral-100 text-neutral-500 text-[8px] rounded border border-neutral-200">Pending</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Card 4: Templates (Vertical) -->
+                <article class="lg:col-span-1 group relative flex flex-col justify-between overflow-hidden bg-white border border-neutral-200 rounded-[32px] p-8 hover:shadow-lg transition-all duration-300">
+                    <div class="relative z-10">
+                        <div class="inline-flex items-center px-3 py-1 rounded-full bg-pink-50 text-pink-600 text-xs font-semibold tracking-medium mb-6 font-sans">
+                            Templates
+                        </div>
+                        <h3 class="text-neutral-900 text-2xl tracking-tight mb-3 font-display font-normal">Start in seconds.</h3>
+                        <p class="text-neutral-500 text-sm leading-relaxed mb-8 font-sans">
+                            Browse 50+ expert-verified templates for Product Market Fit, CSAT, Onboarding, and more.
+                        </p>
+                    </div>
+
+                    <!-- UI Mockup: Template Grid -->
+                    <div class="relative w-full h-[240px] bg-neutral-50 border border-neutral-100 rounded-2xl p-4 overflow-hidden select-none">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-white p-3 rounded-lg shadow-sm border border-neutral-100 flex flex-col gap-2">
+                                <div class="w-6 h-6 bg-pink-100 rounded text-pink-500 flex items-center justify-center">
+                                    <iconify-icon icon="solar:heart-linear" width="14"></iconify-icon>
+                                </div>
+                                <div class="h-1.5 w-16 bg-neutral-200 rounded-full"></div>
+                                <div class="h-1 w-10 bg-neutral-100 rounded-full"></div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg shadow-sm border border-neutral-100 flex flex-col gap-2">
+                                <div class="w-6 h-6 bg-blue-100 rounded text-blue-500 flex items-center justify-center">
+                                    <iconify-icon icon="solar:cart-large-linear" width="14"></iconify-icon>
+                                </div>
+                                <div class="h-1.5 w-14 bg-neutral-200 rounded-full"></div>
+                                <div class="h-1 w-8 bg-neutral-100 rounded-full"></div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg shadow-sm border border-neutral-100 flex flex-col gap-2">
+                                <div class="w-6 h-6 bg-orange-100 rounded text-orange-500 flex items-center justify-center">
+                                    <iconify-icon icon="solar:users-group-rounded-linear" width="14"></iconify-icon>
+                                </div>
+                                <div class="h-1.5 w-12 bg-neutral-200 rounded-full"></div>
+                                <div class="h-1 w-8 bg-neutral-100 rounded-full"></div>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg shadow-sm border border-neutral-100 flex flex-col gap-2">
+                                <div class="w-6 h-6 bg-purple-100 rounded text-purple-500 flex items-center justify-center">
+                                    <iconify-icon icon="solar:rocket-linear" width="14"></iconify-icon>
+                                </div>
+                                <div class="h-1.5 w-16 bg-neutral-200 rounded-full"></div>
+                                <div class="h-1 w-10 bg-neutral-100 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section class="overflow-hidden border-y bg-[#ffffff] border-neutral-200 pt-24 pb-24 relative">
+        <div class="z-10 max-w-7xl mr-auto ml-auto pt-16 pr-6 pb-16 pl-6 relative">
+            <div class="flex flex-col w-full mb-16">
+                <div class="flex items-end justify-between w-full pb-5">
+                    <div class="flex gap-2 gap-x-2 gap-y-2 items-center">
+                        <span class="w-8 h-px bg-[#FF7F50]"></span>
+                        <span class="uppercase text-xs font-bold text-[#FF7F50] tracking-[0.2em] font-sans">TESTIMONIALS</span>
+                    </div>
+                </div>
+
+                <div class="w-full h-px bg-neutral-200 mb-8"></div>
+
+                <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-8 lg:gap-16">
+                    <h2 class="md:text-4xl lg:text-5xl leading-[1.05] text-3xl text-neutral-900 tracking-tight max-w-3xl font-display font-normal">Feedback that drives real product outcomes</h2>
+                    <div class="lg:max-w-sm flex-shrink-0 lg:pt-2">
+                        <p class="leading-relaxed text-base text-neutral-600 font-sans">Handshake is trusted by Product Managers, HR teams, and Founders who rely on accurate sentiment data.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <div class="group flex flex-col hover:bg-white hover:shadow-xl hover:shadow-[#FF7F50]/10 transition-all duration-500 bg-neutral-50 border-neutral-200/60 border rounded-[40px] px-8 py-8 justify-between">
+                    <div>
+                        <div class="flex gap-1 mb-6 text-[#FF7F50]">
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                        </div>
+                        <blockquote class="text-xl text-neutral-800 leading-snug font-medium tracking-tight font-sans">
+                            "Handshake helped us pinpoint exactly why users were churning. The logic branching lets us ask deep questions without annoying users."
+                        </blockquote>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 mt-12 pt-6 border-t border-neutral-200/50">
+                        <div class="w-12 h-12 bg-neutral-300 rounded-full overflow-hidden">
+                             <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&amp;fit=crop&amp;q=80&amp;w=150" class="object-cover w-full h-full grayscale group-hover:grayscale-0 transition-all" alt="User">
+                        </div>
+                        <div>
+                            <div class="font-bold text-neutral-900 text-base font-sans">Sarah Jenkins</div>
+                            <div class="text-neutral-500 text-xs font-medium uppercase tracking-wider font-sans">PM at TechFlow</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group bg-gradient-to-br from-[#FF7F50] to-[#FF6347] p-8 rounded-[40px] flex flex-col justify-between shadow-2xl shadow-[#FF7F50]/20 transition-all duration-500 hover:-translate-y-2">
+                    <div>
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-white/20 rounded-2xl mb-8 backdrop-blur-sm">
+                            <iconify-icon icon="solar:quote-up-linear" class="text-white" width="24"></iconify-icon>
+                        </div>
+                        <blockquote class="text-xl text-white leading-snug font-medium tracking-tight font-sans">
+                            "The template library saved us weeks of work. We launched our NPS campaign in minutes and the response rate doubled."
+                        </blockquote>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 mt-12 pt-6 border-t border-white/10">
+                        <div class="w-12 h-12 bg-white/20 rounded-full overflow-hidden border-2 border-white/20">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&amp;fit=crop&amp;q=80&amp;w=150" class="object-cover w-full h-full" alt="User">
+                        </div>
+                        <div>
+                            <div class="font-bold text-white text-base font-sans">David Chang</div>
+                            <div class="text-orange-100 text-xs font-medium uppercase tracking-wider font-sans">Founder at Base</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group flex flex-col hover:bg-white hover:shadow-xl hover:shadow-[#FF7F50]/10 transition-all duration-500 bg-neutral-50 border-neutral-200/60 border rounded-[40px] px-8 py-8 justify-between">
+                    <div>
+                        <div class="flex gap-1 mb-6 text-[#FF7F50]">
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                            <iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+                        </div>
+                        <blockquote class="text-xl text-neutral-800 leading-snug font-medium tracking-tight font-sans">
+                            "The analytics dashboard is a game changer. I can present findings to the board directly without needing to export to Excel."
+                        </blockquote>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 mt-12 pt-6 border-t border-neutral-200/50">
+                        <div class="w-12 h-12 bg-neutral-300 rounded-full overflow-hidden">
+                             <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&amp;fit=crop&amp;q=80&amp;w=150" class="object-cover w-full h-full grayscale group-hover:grayscale-0 transition-all" alt="User">
+                        </div>
+                        <div>
+                            <div class="font-bold text-neutral-900 text-base font-sans">Elena Rodriguez</div>
+                            <div class="text-neutral-500 text-xs font-medium uppercase tracking-wider font-sans">Head of CX</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="max-w-7xl mr-auto ml-auto pt-24 pr-6 pb-24 pl-6">
+        <div class="flex flex-col w-full mb-12">
+            <div class="flex items-end justify-between w-full pb-5">
+                <div class="flex gap-2 gap-x-2 gap-y-2 items-center">
+                    <span class="w-8 h-px bg-[#FF7F50]"></span>
+                    <span class="uppercase text-xs font-semibold text-[#FF7F50] tracking-[0.2em] font-sans">PRICING</span>
+                </div>
+            </div>
+
+            <div class="w-full h-px bg-neutral-200 mb-8"></div>
+
+            <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-8 lg:gap-16">
+                <h2 class="md:text-4xl lg:text-5xl leading-[1.05] text-3xl text-neutral-900 tracking-tight max-w-3xl font-display font-normal">
+                    Simple pricing for every stage of growth</h2>
+                <div class="lg:max-w-sm flex-shrink-0 lg:pt-2">
+                    <p class="leading-relaxed text-base text-neutral-600 font-sans">Start with our generous free tier. Upgrade when you need advanced logic and team collaboration features.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Free -->
+            <div class="lg:col-span-1">
+                <div class="hover:shadow-md transition-shadow bg-white h-full border-neutral-200 border rounded-[32px] px-8 py-10 shadow-sm flex flex-col">
+                    <h3 class="text-3xl tracking-tight mb-2 font-display font-normal">Personal</h3>
+                    <p class="text-neutral-500 mb-8 text-sm font-sans">For individuals and small side projects.</p>
+                    <div class="flex items-baseline gap-1 mb-8">
+                        <span class="text-5xl font-display font-normal">$0</span>
+                        <span class="text-neutral-400 text-sm font-sans">/mo</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 flex-grow">
+                        <li class="flex items-center gap-3 text-sm text-neutral-600 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-neutral-950"></iconify-icon> 100 Responses / mo
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-neutral-600 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-neutral-950"></iconify-icon> Unlimited Questions
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-neutral-600 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-neutral-950"></iconify-icon> Basic Templates
+                        </li>
+                    </ul>
+                    <button class="hover:bg-neutral-50 transition-colors font-medium text-neutral-950 font-sans w-full border-neutral-200 border rounded-full pt-4 pb-4">Get Started</button>
+                </div>
+            </div>
+
+            <!-- Starter -->
+            <div class="lg:col-span-1">
+                <div class="hover:shadow-md transition-shadow bg-neutral-50 h-full border-neutral-200 border rounded-[32px] px-8 py-10 shadow-sm flex flex-col">
+                    <h3 class="text-3xl tracking-tight mb-2 font-display font-normal">Growth</h3>
+                    <p class="text-neutral-500 mb-8 text-sm font-sans">For startups and growing teams.</p>
+                    <div class="flex items-baseline gap-1 mb-8">
+                        <span class="text-5xl font-display font-normal">$29</span>
+                        <span class="text-neutral-400 text-sm font-sans">/mo</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 flex-grow">
+                        <li class="flex items-center gap-3 text-sm text-neutral-600 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-neutral-950"></iconify-icon> 5,000 Responses / mo
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-neutral-600 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-neutral-950"></iconify-icon> Logic Jump &amp; Branching
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-neutral-600 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-neutral-950"></iconify-icon> Remove Branding
+                        </li>
+                    </ul>
+                    <button class="hover:bg-neutral-800 transition-colors font-medium text-white font-sans bg-neutral-950 w-full rounded-full pt-4 pb-4">Start Free Trial</button>
+                </div>
+            </div>
+
+            <!-- Pro -->
+            <div class="lg:col-span-1">
+                <div class="bg-neutral-950 border border-white/10 rounded-[32px] px-8 py-10 h-full text-white relative shadow-2xl overflow-hidden flex flex-col">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 blur-3xl"></div>
+                    <h3 class="text-3xl tracking-tight mb-2 font-display font-normal">Business</h3>
+                    <p class="text-neutral-400 mb-8 text-sm font-sans">For data-driven organizations.</p>
+                    <div class="flex items-baseline gap-1 mb-8">
+                        <span class="text-5xl font-display font-normal">$99</span>
+                        <span class="text-neutral-500 text-sm font-sans">/mo</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 flex-grow">
+                        <li class="flex items-center gap-3 text-sm text-neutral-300 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-[#FF7F50]"></iconify-icon> Unlimited Responses
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-neutral-300 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-[#FF7F50]"></iconify-icon> Advanced Analytics &amp; Export
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-neutral-300 font-sans">
+                            <iconify-icon icon="solar:check-circle-bold" class="text-[#FF7F50]"></iconify-icon> SSO &amp; Custom Domains
+                        </li>
+                    </ul>
+                    <button class="hover:opacity-90 transition-opacity font-medium text-white font-sans bg-[#FF7F50] w-full rounded-full pt-4 pb-4">Contact Sales</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="overflow-hidden bg-[#ffffff] border-neutral-200 pt-24 pb-24 relative">
+        <div class="max-w-7xl z-10 mr-auto ml-auto pt-0 pr-6 pb-0 pl-6 relative">
+            <div class="overflow-hidden lg:p-24 text-center bg-neutral-50 border-neutral-200/60 border rounded-[40px] px-12 py-12 relative shadow-sm">
+                <!-- Subtle Background Glow -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(255,127,80,0.07),transparent_50%)] pointer-events-none"></div>
+
+                <div class="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF7F50]/10 border border-[#FF7F50]/20 mb-10">
+                        <span class="text-[10px] font-semibold text-[#FF7F50] uppercase tracking-widest font-sans">Start Listening</span>
+                    </div>
+
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl text-neutral-900 tracking-tight leading-[1.1] mb-8 font-display font-normal">
+                        Ready to capture <span class="text-[#FF7F50] font-display font-normal">better insights?</span>
+                    </h2>
+
+                    <p class="text-lg text-neutral-600 mb-12 leading-relaxed max-w-2xl font-sans">
+                        Join 10,000+ companies using Handshake to improve customer satisfaction and employee engagement.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto items-center justify-center">
+                        <button class="w-full sm:w-auto bg-neutral-900 text-white px-10 py-4 rounded-full text-sm font-medium hover:bg-neutral-800 transition-all shadow-xl shadow-neutral-200/50 flex items-center justify-center gap-2 font-sans">
+                            Create Free Survey
+                            <iconify-icon icon="solar:stars-minimalistic-linear" width="18"></iconify-icon>
+                        </button>
+                        <button class="w-full sm:w-auto bg-white border border-neutral-200 text-neutral-900 px-10 py-4 rounded-full text-sm font-medium hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 font-sans">
+                            Book a Demo
+                            <iconify-icon icon="solar:calendar-linear" width="18"></iconify-icon>
+                        </button>
+                    </div>
+
+                    <div class="mt-16 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-neutral-400">
+                        <div class="flex items-center gap-2">
+                            <iconify-icon icon="solar:shield-check-linear" class="text-[#FF7F50]" width="18"></iconify-icon>
+                            <span class="text-xs font-medium uppercase tracking-wider font-sans">GDPR Compliant</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <iconify-icon icon="solar:card-linear" class="text-[#FF7F50]" width="18"></iconify-icon>
+                            <span class="text-xs font-medium uppercase tracking-wider font-sans">No card required</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <iconify-icon icon="solar:user-plus-linear" class="text-[#FF7F50]" width="18"></iconify-icon>
+                            <span class="text-xs font-medium uppercase tracking-wider font-sans">Unlimited seats</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="max-w-7xl mr-auto mb-12 ml-auto pr-6 pl-6">
+        <div class="bg-neutral-950 rounded-[40px] p-12 relative overflow-hidden text-white">
+            <div class="bg-[#000000] w-full h-full absolute top-0 left-0"></div>
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-20">
+                <div>
+                    <div class="flex items-center gap-2 text-white font-display font-semibold tracking-tight text-xl mb-6">
+                        <iconify-icon icon="solar:hand-shake-linear" width="28" class="text-[#FF7F50]"></iconify-icon>
+                        Handshake
+                    </div>
+                    <p class="text-neutral-400 max-w-sm mb-10 leading-relaxed font-sans text-sm">
+                        The all-in-one survey platform by ORK Systems. Helping businesses understand their customers, one question at a time.
+                    </p>
+                    <form class="flex gap-2 max-w-md">
+                        <input type="email" placeholder="Enter your email" class="flex-1 bg-white/5 border border-white/10 rounded-full px-6 py-3 text-sm outline-none focus:ring-2 focus:ring-white/20 transition-all placeholder:text-neutral-600">
+                        <button class="bg-white text-neutral-950 px-6 py-3 rounded-full text-sm font-medium hover:bg-neutral-200 transition-colors font-sans">Subscribe</button>
+                    </form>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-10">
+                    <div>
+                        <h4 class="text-sm font-medium mb-6 font-sans">Product</h4>
+                        <ul class="space-y-4 text-sm text-neutral-500">
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Survey Builder</a></li>
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Analytics</a></li>
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Integrations</a></li>
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Enterprise</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium mb-6 font-sans">Resources</h4>
+                        <ul class="space-y-4 text-sm text-neutral-500">
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Templates</a></li>
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Blog</a></li>
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Case Studies</a></li>
+                            <li><a href="#" class="hover:text-white transition-colors font-sans">Help Center</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium mb-6 font-sans">Social</h4>
+                        <div class="flex gap-4">
+                            <a href="#" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                                <iconify-icon icon="solar:map-point-linear" width="16"></iconify-icon>
+                            </a>
+                            <a href="#" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+                                <iconify-icon icon="solar:global-linear" width="16"></iconify-icon>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="relative z-10 mt-20 pt-8 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/5">
+                <p class="text-xs text-neutral-600 font-sans">© 2025 ORK Systems. All rights reserved.</p>
+                <div class="flex gap-8 text-xs text-neutral-600">
+                    <a href="#" class="hover:text-white transition-colors font-sans">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition-colors font-sans">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+</body></html>

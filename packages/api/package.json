@@ -1,31 +1,31 @@
 {
-  "name": "@orksys-survey/api",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
-    }
-  },
-  "scripts": {},
-  "dependencies": {
-    "@orksys-survey/auth": "workspace:*",
-    "@orksys-survey/db": "workspace:*",
-    "@orksys-survey/env": "workspace:*",
-    "@orpc/client": "catalog:",
-    "@orpc/openapi": "catalog:",
-    "@orpc/server": "catalog:",
-    "@orpc/zod": "catalog:",
-    "@types/pg": "catalog:",
-    "dotenv": "catalog:",
-    "drizzle-orm": "catalog:",
-    "next": "catalog:",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@orksys-survey/config": "workspace:*",
-    "typescript": "catalog:"
-  }
+	"name": "@orksys-survey/api",
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		},
+		"./*": {
+			"default": "./src/*.ts"
+		}
+	},
+	"scripts": {},
+	"dependencies": {
+		"@orksys-survey/auth": "workspace:*",
+		"@orksys-survey/db": "workspace:*",
+		"@orksys-survey/env": "workspace:*",
+		"@orpc/client": "catalog:",
+		"@orpc/openapi": "catalog:",
+		"@orpc/server": "catalog:",
+		"@orpc/zod": "catalog:",
+		"@types/pg": "catalog:",
+		"dotenv": "catalog:",
+		"drizzle-orm": "catalog:",
+		"next": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@orksys-survey/config": "workspace:*",
+		"typescript": "catalog:"
+	}
 }

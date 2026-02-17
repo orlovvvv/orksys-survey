@@ -1,38 +1,38 @@
 {
-  "name": "orksys-survey",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "type": "module",
-  "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "check-types": "turbo check-types",
-    "dev:native": "turbo -F native dev",
-    "dev:web": "turbo -F web dev",
-    "db:push": "turbo -F @orksys-survey/db db:push",
-    "db:studio": "turbo -F @orksys-survey/db db:studio",
-    "db:generate": "turbo -F @orksys-survey/db db:generate",
-    "db:migrate": "turbo -F @orksys-survey/db db:migrate",
-    "db:start": "turbo -F @orksys-survey/db db:start",
-    "db:watch": "turbo -F @orksys-survey/db db:watch",
-    "db:stop": "turbo -F @orksys-survey/db db:stop",
-    "db:down": "turbo -F @orksys-survey/db db:down",
-    "check": "biome check --write ."
-  },
-  "dependencies": {
-    "@orksys-survey/env": "workspace:*",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.2.0",
-    "@orksys-survey/config": "workspace:*",
-    "@types/node": "^22.13.14",
-    "turbo": "^2.6.3",
-    "typescript": "catalog:"
-  },
-  "packageManager": "pnpm@10.29.3"
+	"name": "orksys-survey",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"type": "module",
+	"scripts": {
+		"dev": "turbo dev",
+		"build": "turbo build",
+		"check-types": "turbo check-types",
+		"dev:native": "turbo -F native dev",
+		"dev:web": "turbo -F web dev",
+		"db:push": "turbo -F @orksys-survey/db db:push",
+		"db:studio": "turbo -F @orksys-survey/db db:studio",
+		"db:generate": "turbo -F @orksys-survey/db db:generate",
+		"db:migrate": "turbo -F @orksys-survey/db db:migrate",
+		"db:start": "turbo -F @orksys-survey/db db:start",
+		"db:watch": "turbo -F @orksys-survey/db db:watch",
+		"db:stop": "turbo -F @orksys-survey/db db:stop",
+		"db:down": "turbo -F @orksys-survey/db db:down",
+		"check": "biome check --write ."
+	},
+	"dependencies": {
+		"@orksys-survey/env": "workspace:*",
+		"dotenv": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.0",
+		"@orksys-survey/config": "workspace:*",
+		"@types/node": "catalog:",
+		"turbo": "^2.6.3",
+		"typescript": "catalog:"
+	},
+	"packageManager": "pnpm@10.29.3"
 }

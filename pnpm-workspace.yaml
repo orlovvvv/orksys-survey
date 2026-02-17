@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+strictPeerDependencies: false
 catalog:
   dotenv: ^17.2.2
   zod: ^4.1.13
@@ -18,3 +19,9 @@ catalog:
   "@better-auth/expo": ^1.4.18
   drizzle-orm: ^0.45.1
   "@types/pg": ^8.16.0
+  "@types/node": ^22.13.14
+  tailwindcss: ^4
+  "@tailwindcss/postcss": ^4
+  pg: ^8.17.1
+  drizzle-kit: ^0.31.8
+  "@polar-sh/sdk": ^0.42.2
