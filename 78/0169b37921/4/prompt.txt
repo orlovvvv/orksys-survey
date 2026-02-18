@@ -1,0 +1,719 @@
+Implement the following plan:
+
+# Comprehensive React Component Refactoring Plan
+
+## Context
+
+This plan addresses the systematic refactoring of React components over 120 lines across the orksys-survey monorepo. The goal is to apply composition patterns, extract custom hooks, and create reusable building blocks following Vercel's React best practices and composition patterns.
+
+**Current State:**
+- 31 components identified over 120 lines
+- Significant refactoring already completed (survey-builder, survey-runner)
+- Good patterns in place: contexts, hooks, primitives, compound components
+- Legacy files exist alongside new refactored directories
+
+**Target State:**
+- All components under 120 lines (ideally under 80)
+- Logic extracted into custom hooks or context
+- UI separated into presentational components
+- Shared primitives for cross-cutting concerns
+
+---
+
+## Phase 1: Cleanup Legacy Files
+
+Delete backup and legacy files that have been superseded:
+
+```bash
+rm apps/web/src/components/survey-builder/builder-canvas.tsx.bak
+rm apps/web/src/components/survey-builder/question-card.tsx.bak
+rm apps/web/src/components/survey-builder/question-palette.tsx  # replaced by question-palette/
+```
+
+---
+
+## Phase 2: High Priority - Landing Page Components
+
+### 2.1 `landing/survey-mockup.tsx` (374 → ~80 lines)
+
+**Current:** Compound component with inline sub-components
+
+**Target Structure:**
+```
+landing/survey-mockup/
+├── index.tsx (~80 lines) - Main orchestrator
+├── header.tsx (~50 lines)
+├── left-sidebar.tsx (~80 lines)
+├── center-canvas.tsx (~100 lines)
+├── right-sidebar.tsx (~100 lines)
+└── primitives/
+    ├── question-type-item.tsx (~30 lines)
+    └── structure-item.tsx (~30 lines)
+```
+
+**Extractions:**
+- Move `SurveyMockup.Header` → `header.tsx`
+- Move `SurveyMockup.LeftSidebar` → `left-sidebar.tsx`
+- Move `SurveyMockup.CenterCanvas` → `center-canvas.tsx`
+- Move `SurveyMockup.RightSidebar` → `right-sidebar.tsx`
+- Extract `QuestionTypeItem`, `StructureItem` → `primitives/`
+
+---
+
+### 2.2 `landing/core-features.tsx` (275 → ~60 lines)
+
+**Current:** Large feature cards with inline SVG mockups
+
+**Target Structure:**
+```
+landing/core-features/
+├── index.tsx (~60 lines) - Feature grid orchestrator
+├── feature-card.tsx (~40 lines) - Reusable card wrapper
+├── mockups/
+│   ├── logic-flow-mockup.tsx (~80 lines)
+│   ├── analytics-mockup.tsx (~90 lines)
+│   ├── audience-mockup.tsx (~70 lines)
+│   └── templates-mockup.tsx (~60 lines)
+└── config.ts (~20 lines) - Feature data
+```
+
+**Pattern:** Data-driven UI with config file for feature metadata
+
+---
+
+### 2.3 `landing/footer.tsx` (191 → ~70 lines)
+
+**Current:** Static marketing content with repeated link groups
+
+**Target Structure:**
+```
+landing/footer/
+├── index.tsx (~70 lines)
+├── newsletter-section.tsx (~50 lines)
+├── link-group.tsx (~40 lines)
+└── config.ts (~30 lines) - Link data structure
+```
+
+**Pattern:** Data-driven rendering with link config object
+
+---
+
+## Phase 3: Medium Priority - Survey Builder Components
+
+### 3.1 `survey-builder/question-palette/index.tsx` (109 lines) ✅ COMPLETE
+
+Already refactored! Has:
+- `constants.ts` - questionTypes config
+- `question-type-button.tsx` - draggable buttons
+- `structure-item.tsx` - question list items
+- `cancel-drop-zone.tsx` - drop zone for cancel
+
+**Remaining Work:** Extract mutation logic to custom hook:
+```typescript
+// question-palette/use-question-creation.ts
+export function useQuestionCreation({ survey, questions, onQuestionsChange, setSelectedQuestionId }) {
+  // Mutation logic extracted here
+}
+```
+
+---
+
+### 3.2 `survey-builder/logic-builder/logic-rule-form.tsx` (248 → ~100 lines)
+
+**Current:** Form with inline mutations and validation
+
+**Target Structure:**
+```
+logic-builder/
+├── logic-rule-form.tsx (~100 lines) - Form UI only
+├── use-logic-rule-form.ts (~80 lines) - Form state + mutations
+├── logic-rule-schema.ts (~30 lines) - Zod schema
+└── form-fields.tsx (already exists - 146 lines)
+```
+
+**Extract to `use-logic-rule-form.ts`:**
+```typescript
+export function useLogicRuleForm({ surveyId, sourceQuestionId, existingRule, onSuccess }) {
+  const createMutation = useMutation(...);
+  const updateMutation = useMutation(...);
+  const validateMutation = useQuery(...);
+
+  const form = useForm({
+    defaultValues: getDefaultValues(existingRule),
+    onSubmit: async ({ value }) => { /* submit logic */ },
+    validators: { onSubmit: logicRuleSchema },
+  });
+
+  return { form, isSubmitting, validation };
+}
+```
+
+---
+
+### 3.3 `survey-builder/builder-header.tsx` (158 → ~80 lines)
+
+**Current:** Header with tabs and responsive sheet toggles
+
+**Target Structure:**
+```
+survey-builder/builder-header/
+├── index.tsx (~80 lines)
+├── builder-tabs.tsx (~40 lines)
+└── mobile-toggle-button.tsx (~30 lines)
+```
+
+---
+
+### 3.4 `survey-builder/survey-settings-form.tsx` (163 → ~80 lines)
+
+**Current:** Repetitive form groups
+
+**Target Structure:**
+```
+survey-builder/survey-settings-form/
+├── index.tsx (~80 lines)
+├── form-section.tsx (~30 lines)
+└── toggle-field.tsx (~30 lines)
+```
+
+**Pattern:** Compound component for form sections:
+```typescript
+<SettingsForm.Section title="Display">
+  <SettingsForm.Toggle id="progressBar" label="Show progress bar" />
+  <SettingsForm.Toggle id="questionNumbers" label="Show question numbers" />
+</SettingsForm.Section>
+```
+
+---
+
+## Phase 4: Analytics Components
+
+### 4.1 `analytics/demographics-panel.tsx` (195 → ~60 lines)
+
+**Target Structure:**
+```
+analytics/demographics/
+├── index.tsx (~60 lines)
+├── demographic-card.tsx (~70 lines)
+├── device-list.tsx (~50 lines)
+└── empty-state.tsx (~40 lines)
+```
+
+---
+
+### 4.2 Extract Analytics Hooks (Optional Improvement)
+
+Create custom hooks for data fetching:
+```typescript
+// analytics/hooks/use-demographics.ts
+export function useDemographics(surveyId: string) {
+  const browsers = useQuery(orpc.analytics.getBrowsers.queryOptions({ input: { surveyId } }));
+  const devices = useQuery(orpc.analytics.getDevices.queryOptions({ input: { surveyId } }));
+  const os = useQuery(orpc.analytics.getOS.queryOptions({ input: { surveyId } }));
+  const countries = useQuery(orpc.analytics.getCountries.queryOptions({ input: { surveyId } }));
+  return { browsers, devices, os, countries };
+}
+```
+
+---
+
+## Phase 5: Cross-Cutting Shared Primitives
+
+### 5.1 Form Primitives (`components/forms/`)
+
+**Leverage existing shadcn/ui components:** `Skeleton`, `Label`, `Switch`, `Input`
+
+Already exists with `form-field.tsx`. Extend with:
+```
+forms/
+├── form-field.tsx (exists - uses Label + Input)
+├── form-section.tsx (NEW - section wrapper with title)
+├── toggle-field.tsx (NEW - uses Label + Switch from shadcn)
+└── index.ts
+```
+
+**ToggleField using shadcn Switch:**
+```typescript
+// forms/toggle-field.tsx
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+
+export function ToggleField({ id, label, checked, onChange, description }) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="space-y-0.5">
+        <Label htmlFor={id}>{label}</Label>
+        {description && <p className="text-muted-foreground text-xs">{description}</p>}
+      </div>
+      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+```
+
+---
+
+### 5.2 Shared Question Types Config
+
+**Location:** `packages/db/src/question-types.ts`
+
+Create shared config to eliminate duplication:
+```typescript
+// packages/db/src/question-types.ts
+import { Calendar, CheckSquare, ChevronsUpDown, ClipboardList, FileText, Hash, ListChecks, Mail, Phone, Star, Text, TrendingUp } from "lucide-react";
+import type { Question } from "./schema";
+
+export interface QuestionTypeConfig {
+  type: Question["type"];
+  label: string;
+  icon: React.ElementType;
+  description: string;
+}
+
+export const QUESTION_TYPE_CONFIG: Record<Question["type"], QuestionTypeConfig> = {
+  text: { type: "text", label: "Short Text", icon: Text, description: "Single line text input" },
+  textarea: { type: "textarea", label: "Long Text", icon: FileText, description: "Multi-line text area" },
+  multiple_choice: { type: "multiple_choice", label: "Multiple Choice", icon: CheckSquare, description: "Single selection from options" },
+  checkbox: { type: "checkbox", label: "Checkboxes", icon: ListChecks, description: "Multiple selections allowed" },
+  dropdown: { type: "dropdown", label: "Dropdown", icon: ChevronsUpDown, description: "Dropdown selection list" },
+  rating: { type: "rating", label: "Rating", icon: Star, description: "Star or number rating" },
+  nps: { type: "nps", label: "NPS", icon: TrendingUp, description: "Net Promoter Score 0-10" },
+  linear_scale: { type: "linear_scale", label: "Linear Scale", icon: Hash, description: "Custom range scale" },
+  date: { type: "date", label: "Date", icon: Calendar, description: "Date picker" },
+  email: { type: "email", label: "Email", icon: Mail, description: "Email address input" },
+  phone: { type: "phone", label: "Phone", icon: Phone, description: "Phone number input" },
+  file_upload: { type: "file_upload", label: "File Upload", icon: ClipboardList, description: "File upload field" },
+};
+
+export const questionTypes = Object.values(QUESTION_TYPE_CONFIG);
+
+export function getQuestionLabel(type: Question["type"]) {
+  return QUESTION_TYPE_CONFIG[type]?.label ?? type;
+}
+
+export function getQuestionIcon(type: Question["type"]) {
+  return QUESTION_TYPE_CONFIG[type]?.icon;
+}
+```
+
+**Update Consumers:**
+- `survey-builder/question-palette/constants.ts` → import from `@orksys-survey/db`
+- `landing/survey-mockup/` → import from `@orksys-survey/db`
+
+---
+
+### 5.3 Loading States (using shadcn Skeleton)
+
+**Leverage existing:** `components/ui/skeleton.tsx`
+
+Create wrapper components for common loading patterns:
+```
+loading/
+├── index.ts
+├── loading-card.tsx (uses Skeleton for card placeholders)
+├── loading-list.tsx (uses Skeleton for list items)
+└── loading-form.tsx (uses Skeleton for form fields)
+```
+
+**Example using Skeleton:**
+```typescript
+// loading/loading-card.tsx
+import { Skeleton } from "@/components/ui/skeleton";
+
+export function LoadingCard() {
+  return (
+    <div className="rounded-lg border p-4 space-y-3">
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+    </div>
+  );
+}
+```
+
+---
+
+### 5.4 Empty States
+
+Create simple empty state component (no shadcn empty component exists):
+```
+empty-state/
+├── index.ts
+└── empty-state.tsx
+```
+
+**Pattern:**
+```typescript
+// empty-state/empty-state.tsx
+import { cn } from "@/lib/utils";
+
+interface EmptyStateProps {
+  icon?: React.ElementType;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  className?: string;
+}
+
+export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
+  return (
+    <div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
+      {Icon && <Icon className="h-12 w-12 text-muted-foreground/50 mb-4" />}
+      <h3 className="font-medium text-lg">{title}</h3>
+      {description && <p className="text-muted-foreground text-sm mt-1">{description}</p>}
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}
+```
+
+---
+
+## Phase 6: Native App Components (DEFERRED)
+
+> **Note:** Native app refactoring is deferred based on user preference. Focus on web app components first.
+
+### 6.1 `native/components/sign-up.tsx` (181 lines) & `sign-in.tsx` (153 lines)
+
+**Target Structure (when implemented):**
+```
+native/components/auth/
+├── sign-up.tsx (~100 lines)
+├── sign-in.tsx (~80 lines)
+├── auth-field.tsx (~40 lines)
+├── use-auth-form.ts (~60 lines)
+└── auth-schema.ts (~30 lines)
+```
+
+**Pattern:** Extract `AuthField` component for TextField + Label combo
+
+---
+
+## Key Patterns to Apply
+
+### 1. Context + Custom Hook Pattern
+```typescript
+// context.tsx
+const MyContext = createContext<ContextValue | null>(null);
+
+export function MyProvider({ children, ...props }) {
+  const state = useMyState(props);
+  return <MyContext value={state}>{children}</MyContext>;
+}
+
+export function useMyContext() {
+  const context = use(MyContext);
+  if (!context) throw new Error('useMyContext must be used within MyProvider');
+  return context;
+}
+```
+
+### 2. Compound Component Pattern
+```typescript
+// index.tsx
+export function Card({ children, className }) {
+  return <div className={className}>{children}</div>;
+}
+Card.Header = CardHeader;
+Card.Body = CardBody;
+Card.Footer = CardFooter;
+```
+
+### 3. Hook Extraction Pattern
+```typescript
+// Component extracts business logic to hook
+function MyForm(props) {
+  const { form, isSubmitting, onSubmit } = useMyForm(props);
+  return <form onSubmit={onSubmit}>...</form>;
+}
+
+// Hook contains all state management
+function useMyForm({ onSuccess }) {
+  const mutation = useMutation(...);
+  const form = useForm(...);
+  return { form, isSubmitting: mutation.isPending, onSubmit: form.handleSubmit };
+}
+```
+
+### 4. Data-Driven UI Pattern
+```typescript
+// config.ts
+export const items = [
+  { id: 'a', label: 'Item A', icon: IconA },
+  { id: 'b', label: 'Item B', icon: IconB },
+];
+
+// component.tsx
+export function ItemList() {
+  return items.map(item => <Item key={item.id} {...item} />);
+}
+```
+
+---
+
+## Files to Modify
+
+### High Priority
+1. `apps/web/src/components/landing/survey-mockup.tsx` → Extract to subdirectory
+2. `apps/web/src/components/landing/core-features.tsx` → Extract to subdirectory
+3. `apps/web/src/components/landing/footer.tsx` → Extract to subdirectory
+4. `apps/web/src/components/survey-builder/logic-builder/logic-rule-form.tsx` → Extract hook
+
+### Medium Priority
+5. `apps/web/src/components/survey-builder/builder-header.tsx` → Extract to subdirectory
+6. `apps/web/src/components/survey-builder/survey-settings-form.tsx` → Extract components
+7. `apps/web/src/components/analytics/demographics-panel.tsx` → Extract to subdirectory
+
+### Low Priority (Native)
+8. `apps/native/components/sign-up.tsx` → Extract shared components
+9. `apps/native/components/sign-in.tsx` → Extract shared components
+
+---
+
+## Verification Plan
+
+### After Each Refactor:
+1. **Run type check:** `pnpm check-types`
+2. **Run linter:** `pnpm check`
+3. **Manual test:** Verify UI renders correctly
+4. **E2E test (if applicable):** Run Playwright tests
+
+### Final Verification:
+1. All components under 120 lines
+2. No TypeScript errors
+3. No lint warnings
+4. All E2E tests pass
+5. Visual regression check for landing page
+
+---
+
+## Estimated Scope
+
+| Phase | Components | Priority |
+|-------|------------|----------|
+| 1. Cleanup | 3 files | Immediate |
+| 2. Landing | 3 components | High |
+| 3. Builder | 4 components | High |
+| 4. Analytics | 2 components | Medium |
+| 5. Primitives | 3 new directories | Medium |
+| 6. Native | 2 components | Deferred |
+
+**Active Phases:** 1-5 (~16 refactoring tasks)
+**Deferred:** Phase 6 (Native)
+
+---
+
+## Success Metrics
+
+**Before:**
+- 31 components over 120 lines
+- Largest: 374 lines
+- Mixed concerns in some components
+
+**After:**
+- Target: <10 components over 120 lines
+- Largest: <150 lines
+- Clear separation of concerns
+- 20+ reusable primitives
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+<teammate-message teammate_id="cleanup-agent" color="blue">
+{"type":"idle_notification","from":"cleanup-agent","timestamp":"2026-02-18T17:18:31.089Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="empty-state-agent" color="yellow">
+{"type":"idle_notification","from":"empty-state-agent","timestamp":"2026-02-18T17:19:09.936Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="question-types-agent" color="green">
+{"type":"idle_notification","from":"question-types-agent","timestamp":"2026-02-18T17:20:03.277Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="footer-agent" color="cyan">
+{"type":"idle_notification","from":"footer-agent","timestamp":"2026-02-18T17:21:07.006Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-header-agent" color="blue">
+{"type":"idle_notification","from":"builder-header-agent","timestamp":"2026-02-18T17:21:12.679Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-header-agent" color="blue">
+{"type":"idle_notification","from":"builder-header-agent","timestamp":"2026-02-18T17:21:25.922Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="settings-form-agent" color="pink">
+{"type":"idle_notification","from":"settings-form-agent","timestamp":"2026-02-18T17:21:30.546Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="survey-mockup-agent" color="green">
+{"type":"idle_notification","from":"survey-mockup-agent","timestamp":"2026-02-18T17:21:44.417Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="core-features-agent" color="red" summary="Core features refactoring completed">
+Successfully refactored landing/core-features.tsx into a modular, data-driven structure:
+
+**Created files:**
+- `apps/web/src/components/landing/core-features/index.tsx` (~60 lines) - Feature grid orchestrator
+- `apps/web/src/components/landing/core-features/feature-card.tsx` (~40 lines) - Reusable card wrapper
+- `apps/web/src/components/landing/core-features/config.ts` (~20 lines) - Feature metadata
+
+**Created mockups/ directory with:**
+- `logic-flow-mockup.tsx` (~50 lines)
+- `analytics-mockup.tsx` (~70 lines)
+- `audience-mockup.tsx` (~50 lines)
+- `templates-mockup.tsx` (~40 lines)
+- `index.ts` - Barrel export
+
+The refactoring maintains all functionality while improving maintainability. The grid layout is now driven by configuration data, making it easy to add, remove, or modify features. Type checking passes with no errors in core-features.
+</teammate-message>
+
+<teammate-message teammate_id="core-features-agent" color="red">
+{"type":"idle_notification","from":"core-features-agent","timestamp":"2026-02-18T17:22:27.800Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="demographics-agent" color="orange">
+{"type":"idle_notification","from":"demographics-agent","timestamp":"2026-02-18T17:23:12.943Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-rule-form-agent" color="purple">
+{"type":"idle_notification","from":"logic-rule-form-agent","timestamp":"2026-02-18T17:24:36.637Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"builder-header-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"footer-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"survey-mockup-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="demographics-agent" color="orange">
+{"type":"idle_notification","from":"demographics-agent","timestamp":"2026-02-18T17:27:59.476Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="cleanup-agent" color="blue">
+{"type":"idle_notification","from":"cleanup-agent","timestamp":"2026-02-18T17:27:59.820Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-header-agent" color="blue">
+{"type":"shutdown_approved","requestId":"builder-header-agent","from":"builder-header-agent","timestamp":"2026-02-18T17:27:57.315Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="footer-agent" color="cyan">
+{"type":"shutdown_approved","requestId":"shutdown","from":"footer-agent","timestamp":"2026-02-18T17:27:57.482Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="survey-mockup-agent" color="green">
+{"type":"shutdown_approved","requestId":"shutdown_request","from":"survey-mockup-agent","timestamp":"2026-02-18T17:27:58.438Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="question-types-agent" color="green">
+{"type":"idle_notification","from":"question-types-agent","timestamp":"2026-02-18T17:28:01.667Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"question-types-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"empty-state-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="empty-state-agent" color="yellow">
+{"type":"idle_notification","from":"empty-state-agent","timestamp":"2026-02-18T17:28:19.569Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="core-features-agent" color="red">
+{"type":"idle_notification","from":"core-features-agent","timestamp":"2026-02-18T17:28:19.921Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-rule-form-agent" color="purple">
+{"type":"idle_notification","from":"logic-rule-form-agent","timestamp":"2026-02-18T17:28:19.935Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="demographics-agent" color="orange">
+{"type":"idle_notification","from":"demographics-agent","timestamp":"2026-02-18T17:28:21.019Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="settings-form-agent" color="pink">
+{"type":"idle_notification","from":"settings-form-agent","timestamp":"2026-02-18T17:28:22.097Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="cleanup-agent" color="blue">
+{"type":"idle_notification","from":"cleanup-agent","timestamp":"2026-02-18T17:28:22.415Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="question-types-agent" color="green">
+{"type":"shutdown_approved","requestId":"shutdown-1771435690114@question-types-agent","from":"question-types-agent","timestamp":"2026-02-18T17:28:18.557Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="empty-state-agent" color="yellow">
+{"type":"shutdown_approved","requestId":"shutdown-1771435690116@empty-state-agent","from":"empty-state-agent","timestamp":"2026-02-18T17:28:22.103Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"core-features-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"logic-rule-form-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"settings-form-agent has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="core-features-agent" color="red">
+{"type":"shutdown_approved","requestId":"shutdown-1771435690123@core-features-agent","from":"core-features-agent","timestamp":"2026-02-18T17:28:38.292Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-rule-form-agent" color="purple">
+{"type":"shutdown_approved","requestId":"shutdown-1771435690117@logic-rule-form-agent","from":"logic-rule-form-agent","timestamp":"2026-02-18T17:28:38.703Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="settings-form-agent" color="pink">
+{"type":"shutdown_approved","requestId":"shutdown-1771435690120@settings-form-agent","from":"settings-form-agent","timestamp":"2026-02-18T17:28:38.707Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+---
+
+there is an issue with org switcher,
+## Error Type
+Runtime Error
+
+## Error Message
+Base UI: MenuGroupRootContext is missing. Menu group parts must be used within <Menu.Group>.
+
+
+    at DropdownMenuLabel (src/components/ui/dropdown-menu.tsx:65:3)
+    at OrganizationSwitcher (src/components/organization-switcher.tsx:96:5)
+    at Header (src/components/header.tsx:29:6)
+    at AppLayout (src/app/(app)/layout.tsx:10:4)
+
+## Code Frame
+  63 | }) {
+  64 |     return (
+> 65 |         <MenuPrimitive.GroupLabel
+     |         ^
+  66 |             data-slot="dropdown-menu-label"
+  67 |             data-inset={inset}
+  68 |             className={cn(
+
+Next.js version: 16.1.6 (Turbopack)
+
+apply similar enhancments to it if possible
+
+---
+
+great work, commit and push all changes made
