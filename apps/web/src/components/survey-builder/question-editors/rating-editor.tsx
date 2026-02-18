@@ -62,7 +62,7 @@ function RatingScaleEditor({
 						<Star
 							// biome-ignore lint/suspicious/noArrayIndexKey: Static preview
 							key={i}
-							className="h-5 w-5 text-violet-500 fill-violet-500"
+							className="h-5 w-5 fill-violet-500 text-violet-500"
 							aria-label="Star"
 						/>
 					))}

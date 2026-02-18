@@ -18,7 +18,7 @@ const logicRuleCreateSchema = z.object({
 		"is_empty",
 		"is_not_empty",
 	]),
-	conditionValue: z.any().optional(),
+	conditionValue: z.unknown().optional(),
 	action: z.enum(["jump_to", "skip", "show", "hide", "end_survey"]),
 	targetQuestionId: z.string().optional(),
 });

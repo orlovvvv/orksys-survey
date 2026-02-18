@@ -12,6 +12,31 @@ import { organization } from "better-auth/plugins";
 import { polarClient } from "./lib/payments";
 import { ac, admin, member, owner } from "./permissions";
 
+// Only include Polar plugin if access token is configured and client exists
+const polarPlugin =
+	env.POLAR_ACCESS_TOKEN && polarClient
+		? [
+				polar({
+					client: polarClient,
+					createCustomerOnSignUp: true,
+					enableCustomerPortal: true,
+					use: [
+						checkout({
+							products: [
+								{
+									productId: "your-product-id",
+									slug: "pro",
+								},
+							],
+							successUrl: env.POLAR_SUCCESS_URL,
+							authenticatedUsersOnly: true,
+						}),
+						portal(),
+					],
+				}),
+			]
+		: [];
+
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "pg",
@@ -47,24 +72,7 @@ export const auth = betterAuth({
 			membershipLimit: 100,
 			invitationExpiresIn: 60 * 60 * 24 * 7, // 7 days
 		}),
-		polar({
-			client: polarClient,
-			createCustomerOnSignUp: true,
-			enableCustomerPortal: true,
-			use: [
-				checkout({
-					products: [
-						{
-							productId: "your-product-id",
-							slug: "pro",
-						},
-					],
-					successUrl: env.POLAR_SUCCESS_URL,
-					authenticatedUsersOnly: true,
-				}),
-				portal(),
-			],
-		}),
+		...polarPlugin,
 		nextCookies(),
 		expo(),
 	],

@@ -201,7 +201,7 @@ export function LogicRuleForm({
 			<form.Field name="operator">
 				{(field) => (
 					<div className="space-y-2">
-						<Label className="text-xs uppercase tracking-wide text-neutral-500">
+						<Label className="text-neutral-500 text-xs uppercase tracking-wide">
 							Condition
 						</Label>
 						<Select
@@ -230,7 +230,7 @@ export function LogicRuleForm({
 						<form.Field name="conditionValue">
 							{(field) => (
 								<div className="space-y-2">
-									<Label className="text-xs uppercase tracking-wide text-neutral-500">
+									<Label className="text-neutral-500 text-xs uppercase tracking-wide">
 										Value
 									</Label>
 									{sourceOptions ? (
@@ -267,7 +267,7 @@ export function LogicRuleForm({
 			<form.Field name="action">
 				{(field) => (
 					<div className="space-y-2">
-						<Label className="text-xs uppercase tracking-wide text-neutral-500">
+						<Label className="text-neutral-500 text-xs uppercase tracking-wide">
 							Action
 						</Label>
 						<Select
@@ -296,7 +296,7 @@ export function LogicRuleForm({
 						<form.Field name="targetQuestionId">
 							{(field) => (
 								<div className="space-y-2">
-									<Label className="text-xs uppercase tracking-wide text-neutral-500">
+									<Label className="text-neutral-500 text-xs uppercase tracking-wide">
 										Target Question
 									</Label>
 									<Select

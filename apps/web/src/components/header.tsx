@@ -2,12 +2,14 @@
 import Link from "next/link";
 
 import { ModeToggle } from "./mode-toggle";
+import OrganizationSwitcher from "./organization-switcher";
 import UserMenu from "./user-menu";
 
 export default function Header() {
 	const links = [
 		{ to: "/", label: "Home" },
 		{ to: "/dashboard", label: "Dashboard" },
+		{ to: "/surveys", label: "Surveys" },
 		{ to: "/todos", label: "Todos" },
 	] as const;
 
@@ -24,6 +26,7 @@ export default function Header() {
 					})}
 				</nav>
 				<div className="flex items-center gap-2">
+					<OrganizationSwitcher />
 					<ModeToggle />
 					<UserMenu />
 				</div>

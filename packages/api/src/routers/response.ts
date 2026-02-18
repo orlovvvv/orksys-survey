@@ -34,7 +34,7 @@ const submitResponseSchema = z.object({
 	answers: z.array(
 		z.object({
 			questionId: z.string(),
-			value: z.any(),
+			value: z.unknown(),
 		}),
 	),
 	isComplete: z.boolean().default(false),

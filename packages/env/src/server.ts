@@ -1,21 +1,5 @@
-import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { createEnv } from "@t3-oss/env-core";
-import dotenv from "dotenv";
 import { z } from "zod";
-
-// Try multiple paths to find .env in monorepo root
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const possiblePaths = [
-	resolve(currentDir, "../../../.env"), // From packages/env/src to root
-	resolve(process.cwd(), ".env"), // From current working directory
-];
-
-const envPath = possiblePaths.find((p) => existsSync(p));
-if (envPath) {
-	dotenv.config({ path: envPath });
-}
 
 export const env = createEnv({
 	server: {

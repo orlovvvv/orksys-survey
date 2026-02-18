@@ -22,7 +22,7 @@ export async function createContext(req: NextRequest) {
 		headers: req.headers,
 	});
 
-	if (!session?.user) {
+	if (!session || !session.user) {
 		return {
 			session: null,
 			activeOrganization: null,
@@ -42,7 +42,7 @@ export async function createContext(req: NextRequest) {
 	}
 
 	// Fetch organization and membership in parallel
-	const [org, membershipRecord] = await Promise.all([
+	const [orgResult, membershipResult] = await Promise.all([
 		db
 			.select({
 				id: organization.id,
@@ -52,8 +52,7 @@ export async function createContext(req: NextRequest) {
 			})
 			.from(organization)
 			.where(eq(organization.id, activeOrgId))
-			.limit(1)
-			.then((rows) => rows[0] ?? null),
+			.limit(1),
 		db
 			.select({
 				id: member.id,
@@ -67,14 +66,17 @@ export async function createContext(req: NextRequest) {
 					eq(member.organizationId, activeOrgId),
 				),
 			)
-			.limit(1)
-			.then((rows) => rows[0] ?? null),
+			.limit(1),
 	]);
+
+	const org = (orgResult[0] as ActiveOrganization | undefined) ?? null;
+	const membershipRecord =
+		(membershipResult[0] as Membership | undefined) ?? null;
 
 	return {
 		session,
-		activeOrganization: org as ActiveOrganization | null,
-		membership: membershipRecord as Membership | null,
+		activeOrganization: org,
+		membership: membershipRecord,
 	};
 }
 

@@ -7,14 +7,14 @@ import { orpc } from "@/utils/orpc";
 
 export default function Dashboard({
 	customerState,
-	session,
 }: {
 	customerState: ReturnType<typeof authClient.customer.state>;
 	session: typeof authClient.$Infer.Session;
 }) {
 	const privateData = useQuery(orpc.privateData.queryOptions());
 
-	const hasProSubscription = customerState?.activeSubscriptions?.length! > 0;
+	const hasProSubscription =
+		(customerState?.activeSubscriptions?.length ?? 0) > 0;
 	console.log("Active subscriptions:", customerState?.activeSubscriptions);
 
 	return (

@@ -250,7 +250,7 @@ function QuestionTypeButton({
 			whileHover={{ scale: 1.02 }}
 			whileTap={{ scale: 0.98 }}
 			className={cn(
-				"group flex w-full cursor-grab items-center gap-3 rounded-xl border border-transparent bg-white p-3 text-left transition-all hover:border-neutral-200 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 active:bg-violet-50 active:ring-2 active:ring-violet-500",
+				"group flex w-full cursor-grab items-center gap-3 rounded-xl border border-transparent bg-white p-3 text-left transition-all hover:border-neutral-200 hover:bg-neutral-50 active:scale-95 active:bg-violet-50 active:ring-2 active:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-50",
 				isDragging && "bg-violet-50 ring-2 ring-violet-500",
 			)}
 		>
