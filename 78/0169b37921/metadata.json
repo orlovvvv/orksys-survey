@@ -13,12 +13,18 @@
     "apps/native/components/todos/index.tsx",
     "apps/native/components/todos/todo-item.tsx",
     "apps/native/utils/form-errors.ts",
+    "apps/web/src/app/(app)/surveys/[surveyId]/analytics/page.tsx",
+    "apps/web/src/app/(app)/surveys/page.tsx",
     "apps/web/src/components/analytics/ai-insights.tsx",
     "apps/web/src/components/analytics/ai-insights/index.ts",
     "apps/web/src/components/analytics/ai-insights/index.tsx",
     "apps/web/src/components/analytics/ai-insights/insight-card.tsx",
     "apps/web/src/components/analytics/ai-insights/main.tsx",
     "apps/web/src/components/analytics/ai-insights/sentiment-bars.tsx",
+    "apps/web/src/components/analytics/analytics-overview.tsx",
+    "apps/web/src/components/analytics/analytics-tabs.tsx",
+    "apps/web/src/components/analytics/demographics-panel.tsx",
+    "apps/web/src/components/analytics/index.tsx",
     "apps/web/src/components/analytics/primitives/index.ts",
     "apps/web/src/components/analytics/primitives/insight-card.tsx",
     "apps/web/src/components/analytics/question-charts.tsx",
@@ -34,6 +40,13 @@
     "apps/web/src/components/analytics/response-table/main.tsx",
     "apps/web/src/components/analytics/response-table/table-filters.tsx",
     "apps/web/src/components/analytics/response-table/table-pagination.tsx",
+    "apps/web/src/components/charts/bar-chart.tsx",
+    "apps/web/src/components/charts/chart-provider.tsx",
+    "apps/web/src/components/charts/index.tsx",
+    "apps/web/src/components/charts/line-chart.tsx",
+    "apps/web/src/components/charts/nps-gauge.tsx",
+    "apps/web/src/components/charts/pie-chart.tsx",
+    "apps/web/src/components/charts/word-cloud.tsx",
     "apps/web/src/components/distribution/code-block.tsx",
     "apps/web/src/components/forms/form-field.tsx",
     "apps/web/src/components/forms/index.ts",
@@ -43,6 +56,7 @@
     "apps/web/src/components/survey-builder/builder-canvas/index.tsx",
     "apps/web/src/components/survey-builder/builder-canvas/preview-canvas.tsx",
     "apps/web/src/components/survey-builder/builder-canvas/share-canvas.tsx",
+    "apps/web/src/components/survey-builder/builder-header.tsx",
     "apps/web/src/components/survey-builder/builder-tabs.tsx",
     "apps/web/src/components/survey-builder/context.tsx",
     "apps/web/src/components/survey-builder/drag-overlay-renderer.tsx",
@@ -91,7 +105,16 @@
     "apps/web/src/components/survey-runner/questions/rating-question.tsx",
     "apps/web/src/components/survey-runner/questions/text-question.tsx",
     "apps/web/src/components/survey-runner/questions/textarea-question.tsx",
-    "apps/web/src/components/survey-runner/questions/types.ts"
+    "apps/web/src/components/survey-runner/questions/types.ts",
+    "packages/api/src/routers/analytics.ts",
+    "packages/api/src/routers/index.ts",
+    "packages/api/src/routers/insights.ts",
+    "packages/api/src/services/index.ts",
+    "packages/api/src/services/llm.ts",
+    "packages/db/src/schema/analytics.ts",
+    "packages/db/src/schema/index.ts",
+    "packages/db/src/schema/survey.ts",
+    "packages/env/src/server.ts"
   ],
   "sessions": [
     {
@@ -114,13 +137,20 @@
       "context": "/78/0169b37921/2/context.md",
       "content_hash": "/78/0169b37921/2/content_hash.txt",
       "prompt": "/78/0169b37921/2/prompt.txt"
+    },
+    {
+      "metadata": "/78/0169b37921/3/metadata.json",
+      "transcript": "/78/0169b37921/3/full.jsonl",
+      "context": "/78/0169b37921/3/context.md",
+      "content_hash": "/78/0169b37921/3/content_hash.txt",
+      "prompt": "/78/0169b37921/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 320357,
+    "input_tokens": 397610,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 5424448,
-    "output_tokens": 29832,
-    "api_call_count": 103
+    "cache_read_tokens": 5992448,
+    "output_tokens": 36601,
+    "api_call_count": 111
   }
 }
