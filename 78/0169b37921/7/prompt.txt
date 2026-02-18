@@ -1,0 +1,381 @@
+Implement the following plan:
+
+# Survey Organization-Scoped Refactor Plan
+
+## Context
+
+Currently surveys have both `userId` (creator) and `organizationId` fields. Survey slugs are globally unique. The public survey runner uses `/s/[slug]` pattern. We want to:
+1. Change survey slugs to be unique per organization (allowing "feedback" in both Acme and Corp orgs)
+2. Use org slug in public URLs for branding and differentiation: `/s/[orgSlug]/[surveySlug]`
+3. Keep `userId` as a creator reference
+4. Enhance UI with organization context using shadcn components
+
+## Current State Analysis
+
+**Database Schema** (packages/db/src/schema/survey.ts:61-88):
+- `survey` table has `userId` and `organizationId` fields
+- `slug` has unique index `survey_slug_idx` (globally unique)
+- Relations to `user` (owner) and `organization`
+
+**API Layer** (packages/api/src/routers/survey.ts):
+- Already uses organization-scoped procedures
+- `getBySlug` (line 137-151) is public but needs org context
+- `getSurveyForRunner` in response.ts (line 80-111) needs updating
+
+**Frontend Routes**:
+- Public survey: `/s/[slug]` → needs `/s/[orgSlug]/[surveySlug]`
+- Distribution panel: generates `/s/${slug}` URLs
+
+## Implementation Plan
+
+### Phase 1: Database Schema Changes
+
+**File: packages/db/src/schema/survey.ts**
+
+1. Update unique index on survey table (line 82-87):
+   - Remove: `uniqueIndex("survey_slug_idx").on(table.slug)`
+   - Add: `uniqueIndex("survey_org_slug_idx").on(table.organizationId, table.slug)`
+
+2. Update `surveyRelations` (line 215-227):
+   - Keep existing relations to organization and owner (user)
+
+3. Generate and run migration:
+   ```bash
+   pnpm db:generate
+   pnpm db:migrate
+   ```
+
+### Phase 2: API Layer Updates
+
+**File: packages/api/src/routers/survey.ts**
+
+1. Update `getBySlug` procedure (lines 136-151):
+   - Change input schema to accept `{ orgSlug: string, surveySlug: string }`
+   - Join with organization table to filter by orgSlug
+   - Return error if not found
+
+2. Update slug uniqueness check in `create` (lines 154-186):
+   - Check uniqueness within organization context only
+   - Query: `where(and(eq(survey.slug, input.slug), eq(survey.organizationId, context.activeOrganization.id)))`
+
+3. Update slug uniqueness check in `update` (lines 189-241):
+   - Same pattern - check duplicates within same organization only
+
+**File: packages/api/src/routers/response.ts**
+
+1. Update `getSurveyForRunner` procedure (lines 80-111):
+   - Change input to `{ orgSlug: string, surveySlug: string }`
+   - Join with organization table: `eq(organization.slug, input.orgSlug)`
+   - Update where clause to include org slug filter
+
+### Phase 3: Frontend Route Updates
+
+**New Route: apps/web/src/app/s/[orgSlug]/[surveySlug]/page.tsx**
+
+Create new nested route structure:
+```
+app/s/[orgSlug]/[surveySlug]/
+├── page.tsx          # Survey runner
+├── layout.tsx        # Layout (copy from existing)
+└── complete/
+    └── page.tsx      # Completion page
+```
+
+1. Copy and adapt from existing `/s/[slug]/page.tsx`
+2. Update to extract both `orgSlug` and `surveySlug` from params
+3. Pass both to `getSurveyForRunner` query
+
+**Remove old route: apps/web/src/app/s/[slug]/** (delete directory)
+
+### Phase 4: Distribution Panel Updates
+
+**File: apps/web/src/components/distribution/distribution-panel.tsx**
+
+1. Update props interface:
+   ```typescript
+   interface DistributionPanelProps {
+     orgSlug: string;
+     surveySlug: string;
+     // ...
+   }
+   ```
+
+2. Update URL generation:
+   ```typescript
+   const surveyUrl = `${baseUrl}/s/${orgSlug}/${surveySlug}`;
+   ```
+
+3. Update all consumers of DistributionPanel to pass orgSlug:
+   - Find usages: `apps/web/src/app/(app)/surveys/[surveyId]/page.tsx`
+   - Pass organization slug from survey data
+
+**File: apps/web/src/components/distribution/embed-code-preview.tsx**
+
+Update to accept and use orgSlug for iframe embed URL.
+
+**File: apps/web/src/components/distribution/qr-code-generator.tsx**
+
+Already accepts `url` prop - just need to pass correct URL from parent.
+
+### Phase 5: UI Enhancements with shadcn Components
+
+**Survey List Enhancements** (apps/web/src/app/(app)/surveys/page.tsx):
+
+1. Add organization badge to survey cards using existing Badge component
+2. Add "Created by" avatar using existing Avatar component (shows user who created)
+3. Use Card, CardHeader, CardContent, CardDescription, CardTitle components (already imported)
+
+**New Component: OrganizationInfoCard** (apps/web/src/components/survey-builder/organization-info-card.tsx):
+
+Using shadcn Card, Badge, Avatar components:
+- Display current organization name and slug
+- Show creator info (from survey.userId relation)
+- Use Card, CardHeader, CardTitle, CardContent, Badge, Avatar
+
+**Distribution Panel UI** (apps/web/src/components/distribution/distribution-panel.tsx):
+
+1. Use Tabs component for different sharing methods (Link, QR, Embed)
+2. Use Alert component for "survey not published" warning
+3. Use Separator between sections
+
+**New Component: CopyableUrlField** (apps/web/src/components/distribution/copyable-url-field.tsx):
+
+Using shadcn Input, Button, Tooltip:
+- URL display with copy button
+- Visual feedback on copy
+- Tooltip for "Copy to clipboard"
+
+### Phase 6: Survey Creation Flow
+
+**File: apps/web/src/app/(app)/surveys/new/page.tsx**
+
+1. Check if user has active organization
+2. If not, show organization selection using Select component
+3. Pass organizationId to create mutation (already handled by API context)
+4. Slug input should show preview: `/{orgSlug}/{slug}`
+
+### Phase 7: Update All Query Callers
+
+**Find and update all usages** of survey-related queries:
+
+1. `orpc.survey.getBySlug` → update to pass object with orgSlug
+2. `orpc.response.getSurveyForRunner` → update params
+
+Files to check:
+- apps/web/src/app/s/*/page.tsx (new routes)
+- Any preview/test pages
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| packages/db/src/schema/survey.ts | Update unique index to (organizationId, slug) |
+| packages/api/src/routers/survey.ts | Update getBySlug, create slug check, update slug check |
+| packages/api/src/routers/response.ts | Update getSurveyForRunner to accept orgSlug |
+| apps/web/src/app/s/[orgSlug]/[surveySlug]/page.tsx | New route (create) |
+| apps/web/src/app/s/[orgSlug]/[surveySlug]/layout.tsx | New layout (create) |
+| apps/web/src/app/s/[orgSlug]/[surveySlug]/complete/page.tsx | New completion page (create) |
+| apps/web/src/app/s/[slug]/page.tsx | Delete |
+| apps/web/src/app/s/[slug]/layout.tsx | Delete |
+| apps/web/src/app/s/[slug]/complete/page.tsx | Delete |
+| apps/web/src/components/distribution/distribution-panel.tsx | Add orgSlug prop, update URL |
+| apps/web/src/components/distribution/embed-code-preview.tsx | Add orgSlug prop |
+| apps/web/src/app/(app)/surveys/[surveyId]/page.tsx | Pass orgSlug to DistributionPanel |
+| apps/web/src/app/(app)/surveys/page.tsx | Add org badge, creator avatar |
+| apps/web/src/components/survey-builder/organization-info-card.tsx | Create new component |
+| apps/web/src/components/distribution/copyable-url-field.tsx | Create new component |
+| apps/web/src/app/(app)/surveys/new/page.tsx | Add org selection, slug preview |
+
+## Reusable Components (Existing)
+
+These shadcn components are already available for use:
+
+- `apps/web/src/components/ui/card.tsx` - Card, CardHeader, CardTitle, CardDescription, CardContent
+- `apps/web/src/components/ui/badge.tsx` - Badge
+- `apps/web/src/components/ui/avatar.tsx` - Avatar, AvatarFallback, AvatarImage
+- `apps/web/src/components/ui/button.tsx` - Button
+- `apps/web/src/components/ui/input.tsx` - Input
+- `apps/web/src/components/ui/tooltip.tsx` - Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
+- `apps/web/src/components/ui/tabs.tsx` - Tabs, TabsContent, TabsList, TabsTrigger
+- `apps/web/src/components/ui/alert.tsx` - Alert, AlertDescription, AlertTitle
+- `apps/web/src/components/ui/separator.tsx` - Separator
+- `apps/web/src/components/ui/select.tsx` - Select components
+- `apps/web/src/components/ui/dropdown-menu.tsx` - DropdownMenu components
+
+## Verification Steps
+
+1. **Database Migration**:
+   ```bash
+   pnpm db:generate
+   pnpm db:migrate
+   pnpm db:studio  # Verify schema in UI
+   ```
+
+2. **Type Check**:
+   ```bash
+   pnpm check-types
+   ```
+
+3. **Lint**:
+   ```bash
+   pnpm check
+   ```
+
+4. **Test Survey Flow**:
+   - Create survey with slug "feedback" in Org A
+   - Create survey with same slug "feedback" in Org B (should succeed)
+   - Verify both URLs work: `/s/org-a/feedback` and `/s/org-b/feedback`
+   - Verify distribution panel shows correct URLs
+   - Test QR code and embed code generation
+
+5. **Verify Organization Scoping**:
+   - Try to access survey from different org (should fail/not found)
+   - Verify slug uniqueness only enforced within org
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+<teammate-message teammate_id="db-agent" color="purple" summary="Task #4 complete: org-scoped survey slugs schema updated">
+Task #4 complete: Updated database schema for organization-scoped survey slugs.
+
+**Changes made to `packages/db/src/schema/survey.ts`:**
+- Removed: `uniqueIndex("survey_slug_idx").on(table.slug)`
+- Added: `uniqueIndex("survey_org_slug_idx").on(table.organizationId, table.slug)`
+
+**Migration generated:**
+- File: `packages/db/src/migrations/0000_shocking_bullseye.sql`
+- Line 226: `CREATE UNIQUE INDEX "survey_org_slug_idx" ON "survey" USING btree ("organization_id","slug");`
+
+Since this appears to be the initial migration for the project, the SQL creates the composite unique index directly rather than altering an existing constraint. The schema now enforces that slugs are unique within an organization, allowing different organizations to have surveys with the same slug.
+</teammate-message>
+
+<teammate-message teammate_id="db-agent" color="purple">
+{"type":"idle_notification","from":"db-agent","timestamp":"2026-02-18T22:31:58.602Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="db-agent" color="yellow" summary="Task #4 complete: Schema already has org-scoped slugs">
+**Task #4 Complete: Database schema for organization-scoped survey slugs**
+
+The schema at `packages/db/src/schema/survey.ts` already has the correct unique index:
+
+```typescript
+uniqueIndex("survey_org_slug_idx").on(table.organizationId, table.slug)
+```
+
+The migration file `0000_shocking_bullseye.sql` (line 226) already contains:
+```sql
+CREATE UNIQUE INDEX "survey_org_slug_idx" ON "survey" USING btree ("organization_id","slug");
+```
+
+Running `pnpm db:generate` confirmed: "No schema changes, nothing to migrate" - the schema is already correctly configured.
+
+No changes were needed - the organization-scoped slug constraint is already in place.
+</teammate-message>
+
+<teammate-message teammate_id="db-agent" color="yellow">
+{"type":"idle_notification","from":"db-agent","timestamp":"2026-02-18T22:32:29.728Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="db-agent" color="purple" summary="Task #4 complete, migration generated">
+Task #4 is complete. The migration has been generated successfully.
+
+**Summary:**
+- Modified: `packages/db/src/schema/survey.ts` (line 83)
+  - Removed: `uniqueIndex("survey_slug_idx").on(table.slug)`
+  - Added: `uniqueIndex("survey_org_slug_idx").on(table.organizationId, table.slug)`
+
+- Migration file: `packages/db/src/migrations/0000_shocking_bullseye.sql`
+- The SQL includes: `CREATE UNIQUE INDEX "survey_org_slug_idx" ON "survey" USING btree ("organization_id","slug");`
+
+No blockers - the schema now enforces organization-scoped slug uniqueness.
+</teammate-message>
+
+<teammate-message teammate_id="db-agent" color="purple">
+{"type":"idle_notification","from":"db-agent","timestamp":"2026-02-18T22:33:01.347Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="create-flow-agent" color="blue" summary="Task #9 complete: Survey creation flow updated">
+Task #9 complete: Updated survey creation flow for organization context.
+
+**Summary of changes to `/Users/orksys/Projects/orksys-survey/apps/web/src/app/(app)/surveys/new/page.tsx`:**
+
+1. **Organization Selection:**
+   - Added `useQuery` hook to fetch user's organizations via `authClient.organization.list()`
+   - If user has no active organization (`!session.session.activeOrganizationId`) but has organizations, a Select dropdown appears for them to choose
+   - If user already has an active organization, it shows a read-only info box with the org name
+
+2. **Dynamic Slug Preview:**
+   - Changed from static `/survey/` prefix to dynamic `/{orgSlug}/` preview
+   - The prefix updates based on the selected organization (or active org)
+   - Shows placeholder `/{org}/` if no org selected yet
+
+3. **Organization Context Handling:**
+   - On submit, if user needed to select an org, it first calls `authClient.organization.setActive()` to set the selected org as active
+   - This ensures the API's `adminProcedure` will have the correct `activeOrganization` context
+   - Submit button is disabled until an organization is selected (when required)
+
+4. **Form Validation:**
+   - Added `organizationId` to the Zod schema
+   - Submit button checks `(!needsOrgSelection || selectedOrgId)` to ensure org is selected before allowing submit
+
+The flow now properly handles users who land on the survey creation page without an active organization selected.
+</teammate-message>
+
+<teammate-message teammate_id="create-flow-agent" color="blue">
+{"type":"idle_notification","from":"create-flow-agent","timestamp":"2026-02-18T22:35:06.113Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="create-flow-agent" color="blue">
+{"type":"idle_notification","from":"create-flow-agent","timestamp":"2026-02-18T22:35:11.861Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="ui-agent" color="green" summary="Task #8 complete: Survey list UI enhancements">
+Task #8 Complete: Enhanced survey list UI with organization context
+
+**Summary of changes:**
+
+1. **Modified `apps/web/src/app/(app)/surveys/page.tsx`:**
+   - Added `Avatar`, `AvatarFallback`, `AvatarImage` imports
+   - Added organization badge to survey cards (displays organization name with outline variant)
+   - Added "Created by" avatar showing the user who created the survey
+   - Updated CardContent layout to use flexbox with `justify-between` for proper spacing
+   - Avatar displays user's image if available, otherwise shows initials fallback
+
+2. **Created `apps/web/src/components/survey-builder/organization-info-card.tsx`:**
+   - New reusable component displaying organization info with:
+     - Organization logo (or Building2 icon fallback)
+     - Organization name and slug (as Badge)
+     - Creator info section with avatar, name, and email
+   - Uses Card, CardHeader, CardTitle, CardContent, Badge, Avatar components
+   - Props interface: `OrganizationInfoCardProps` with organization and optional owner
+
+3. **Modified `packages/api/src/routers/survey.ts`:**
+   - Updated the `list` procedure to include organization and owner relations via left joins
+   - Returns flattened data structure with `organization` and `owner` fields for each survey
+
+All changes pass type checking and linting for the modified files.
+</teammate-message>
+
+<teammate-message teammate_id="ui-agent" color="green">
+{"type":"idle_notification","from":"ui-agent","timestamp":"2026-02-18T22:37:33.488Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="ui-agent" color="green">
+{"type":"idle_notification","from":"ui-agent","timestamp":"2026-02-18T22:37:38.773Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="db-agent" color="yellow">
+{"type":"idle_notification","from":"db-agent","timestamp":"2026-02-18T22:38:02.427Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="create-flow-agent" color="blue">
+{"type":"idle_notification","from":"create-flow-agent","timestamp":"2026-02-18T22:38:02.741Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="ui-agent" color="green">
+{"type":"idle_notification","from":"ui-agent","timestamp":"2026-02-18T22:38:03.695Z","idleReason":"available"}
+</teammate-message>
