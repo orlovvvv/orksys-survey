@@ -1,0 +1,493 @@
+what model are you?
+
+---
+
+Lets work on refactoring the surveys being attached to the organization instead of a user, and make sharing the survey also use org slug to differenciate it even further. I would like you to utilize frontend design skill, vercel composition skill and all shadcn components that would fit in.
+
+lets use the doc repos for easy paste copy and adapt workflow (use team to explore repos as needed)
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+<teammate-message teammate_id="db-explorer" color="blue" summary="Complete DB schema for surveys, orgs, users">
+## Database Schema Exploration Complete
+
+### File Paths
+
+**Schema Files:**
+- `/Users/orksys/Projects/orksys-survey/packages/db/src/schema/auth.ts` - User, session, account tables
+- `/Users/orksys/Projects/orksys-survey/packages/db/src/schema/organization.ts` - Organization, member, invitation tables
+- `/Users/orksys/Projects/orksys-survey/packages/db/src/schema/survey.ts` - Survey, question, logicRule, response, answer tables
+- `/Users/orksys/Projects/orksys-survey/packages/db/src/schema/analytics.ts` - Analytics snapshot and AI analysis tables
+- `/Users/orksys/Projects/orksys-survey/packages/db/src/schema/index.ts` - Schema exports
+
+---
+
+### User Table (`auth.ts`)
+
+```typescript
+user: {
+  id: text (PK)
+  name: text (not null)
+  email: text (not null, unique)
+  emailVerified: boolean (default: false)
+  image: text
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+**Related tables:** sessions, accounts (both cascade delete on user deletion)
+
+---
+
+### Organization Tables (`organization.ts`)
+
+**organization table:**
+```typescript
+organization: {
+  id: text (PK)
+  name: text (not null)
+  slug: text (not null, unique index)
+  logo: text
+  metadata: json (OrganizationMetadata)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+**member table (organization membership):**
+```typescript
+member: {
+  id: text (PK)
+  userId: text (FK → user.id, cascade)
+  organizationId: text (FK → organization.id, cascade)
+  role: enum ('owner' | 'admin' | 'member', default: 'member')
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+// Indexes: userId, organizationId, unique(userId, organizationId)
+```
+
+**invitation table:**
+```typescript
+invitation: {
+  id: text (PK)
+  email: text (not null)
+  inviterId: text (FK → user.id, cascade)
+  organizationId: text (FK → organization.id, cascade)
+  role: enum ('owner' | 'admin' | 'member', default: 'member')
+  status: enum ('pending' | 'accepted' | 'rejected' | 'expired', default: 'pending')
+  expiresAt: timestamp
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+// Indexes: email, organizationId, status
+```
+
+---
+
+### Survey Tables (`survey.ts`)
+
+**survey table:**
+```typescript
+survey: {
+  id: text (PK)
+  slug: text (not null, unique index)
+  title: text (not null)
+  description: text
+  status: enum ('draft' | 'published' | 'closed' | 'archived', default: 'draft')
+  settings: json (SurveySettings)
+  userId: text (FK → user.id, cascade)  // OWNER
+  organizationId: text (FK → organization.id, cascade)  // REQUIRED
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+// Indexes: slug (unique), organizationId, userId, status
+```
+
+**Key finding:** Surveys have BOTH `userId` (owner) AND `organizationId` (required). Every survey belongs to an organization.
+
+**question table:**
+```typescript
+question: {
+  id: text (PK)
+  surveyId: text (FK → survey.id, cascade)
+  type: enum (12 question types)
+  title: text (not null)
+  description: text
+  config: json (QuestionConfig)
+  required: boolean (default: false)
+  order: integer (default: 0)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+// Indexes: surveyId, order
+```
+
+**logicRule table:**
+```typescript
+logicRule: {
+  id: text (PK)
+  surveyId: text (FK → survey.id, cascade)
+  sourceQuestionId: text (FK → question.id, cascade)
+  operator: enum (7 operators)
+  conditionValue: json
+  action: enum (5 actions)
+  targetQuestionId: text (FK → question.id, set null)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+// Indexes: surveyId, sourceQuestionId
+```
+
+**response table:**
+```typescript
+response: {
+  id: text (PK)
+  surveyId: text (FK → survey.id, cascade)
+  respondentId: text
+  fingerprint: text
+  metadata: json (ResponseMetadata)
+  isComplete: boolean (default: false)
+  startedAt: timestamp
+  completedAt: timestamp
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+// Indexes: surveyId, fingerprint, isComplete, + composite indexes for analytics
+```
+
+**answer table:**
+```typescript
+answer: {
+  id: text (PK)
+  responseId: text (FK → response.id, cascade)
+  questionId: text (FK → question.id, cascade)
+  value: json
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+// Indexes: responseId, questionId, composite(questionId, responseId)
+```
+
+---
+
+### Relationship Structure
+
+```
+user (1)
+├── sessions (many)
+├── accounts (many)
+├── members (many) → organizations
+├── invitations_sent (many)
+├── surveys_owned (many) → organization required
+└── (indirect) surveys via organization membership
+
+organization (1)
+├── members (many) → users
+├── invitations (many)
+└── surveys (many)
+
+survey (1)
+├── owner (1) → user
+├── organization (1) → organization
+├── questions (many)
+├── responses (many)
+└── logicRules (many)
+
+question (1)
+├── survey (1)
+├── answers (many)
+├── sourceLogicRules (many)
+└── targetLogicRules (many)
+
+response (1)
+├── survey (1)
+└── answers (many)
+
+answer (1)
+├── response (1)
+└── question (1)
+```
+
+---
+
+### Key Constraints & Indexes Summary
+
+**Unique Constraints:**
+- `user.email`
+- `session.token`
+- `organization.slug`
+- `member(userId, organizationId)` - one membership per user per org
+- `survey.slug`
+
+**Foreign Key Cascades:**
+- All FKs to `user.id` → `onDelete: 'cascade'`
+- All FKs to `organization.id` → `onDelete: 'cascade'`
+- All FKs to `survey.id` → `onDelete: 'cascade'`
+- All FKs to `question.id` → `onDelete: 'cascade'` (except targetQuestionId → `set null`)
+- All FKs to `response.id` → `onDelete: 'cascade'`
+
+**Session has:** `activeOrganizationId` field (text, indexed) for tracking user's current org context.
+</teammate-message>
+
+<teammate-message teammate_id="db-explorer" color="blue">
+{"type":"idle_notification","from":"db-explorer","timestamp":"2026-02-18T22:26:45.770Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="api-explorer" color="green" summary="API exploration complete - survey procedures overview">
+## API Layer Exploration Complete
+
+### File Paths for Survey-Related Routers
+
+| Router | File Path |
+|--------|-----------|
+| surveyRouter | `/Users/orksys/Projects/orksys-survey/packages/api/src/routers/survey.ts` |
+| questionRouter | `/Users/orksys/Projects/orksys-survey/packages/api/src/routers/question.ts` |
+| logicRuleRouter | `/Users/orksys/Projects/orksys-survey/packages/api/src/routers/logic-rule.ts` |
+| responseRouter | `/Users/orksys/Projects/orksys-survey/packages/api/src/routers/response.ts` |
+| analyticsRouter | `/Users/orksys/Projects/orksys-survey/packages/api/src/routers/analytics.ts` |
+| insightsRouter | `/Users/orksys/Projects/orksys-survey/packages/api/src/routers/insights.ts` |
+
+### Base Procedures (from `/Users/orksys/Projects/orksys-survey/packages/api/src/index.ts`)
+
+1. **publicProcedure** - No auth required
+2. **protectedProcedure** - Requires authenticated session
+3. **organizationProcedure** - Requires auth + active organization membership (any role)
+4. **adminProcedure** - Requires auth + organization membership with "owner" or "admin" role
+5. **ownerProcedure** - Requires auth + organization membership with "owner" role only
+
+### Survey CRUD Operations
+
+**surveyRouter** (`/Users/orksys/Projects/orksys-survey/packages/api/src/routers/survey.ts`):
+
+| Procedure | Access Level | Input | Description |
+|-----------|--------------|-------|-------------|
+| `list` | organizationProcedure | `{ page, limit, status?, search? }` | List surveys for the active organization with pagination/filtering |
+| `getById` | organizationProcedure | `{ id }` | Get single survey by ID (org-scoped) |
+| `getBySlug` | publicProcedure | `{ slug }` | Get published survey by slug (public - for survey runner) |
+| `create` | adminProcedure | `{ slug, title, description?, settings? }` | Create new survey in active organization |
+| `update` | adminProcedure | `{ id, data }` | Update survey (org-scoped) |
+| `changeStatus` | adminProcedure | `{ id, status }` | Change survey status (draft/published/closed/archived) |
+| `delete` | ownerProcedure | `{ id }` | Delete single survey |
+| `bulkDelete` | ownerProcedure | `{ ids: string[] }` | Delete multiple surveys |
+
+### Question Operations (questionRouter)
+
+| Procedure | Access Level | Description |
+|-----------|--------------|-------------|
+| `list` | organizationProcedure | List questions for a survey |
+| `create` | adminProcedure | Create new question |
+| `update` | adminProcedure | Update question |
+| `delete` | adminProcedure | Delete question |
+| `reorder` | adminProcedure | Reorder questions |
+| `bulkCreate` | adminProcedure | Create multiple questions |
+| `bulkDelete` | adminProcedure | Delete multiple questions |
+
+### Logic Rule Operations (logicRuleRouter)
+
+| Procedure | Access Level | Description |
+|-----------|--------------|-------------|
+| `list` | organizationProcedure | List logic rules for a survey |
+| `create` | adminProcedure | Create logic rule |
+| `update` | adminProcedure | Update logic rule |
+| `delete` | adminProcedure | Delete logic rule |
+| `validate` | adminProcedure | Validate logic rules for circular dependencies |
+
+### Response Operations (responseRouter)
+
+| Procedure | Access Level | Description |
+|-----------|--------------|-------------|
+| `getSurveyForRunner` | publicProcedure | Get published survey with questions/logic for public runner |
+| `submit` | publicProcedure | Submit a response (public) |
+| `list` | organizationProcedure | List responses for a survey |
+| `getById` | organizationProcedure | Get single response |
+| `getStats` | organizationProcedure | Get response stats |
+| `delete` | adminProcedure | Delete response |
+| `bulkDelete` | adminProcedure | Bulk delete responses |
+
+### Analytics Operations (analyticsRouter)
+
+| Procedure | Access Level | Description |
+|-----------|--------------|-------------|
+| `getSummary` | organizationProcedure | Get survey summary stats |
+| `getQuestionAnalytics` | organizationProcedure | Get per-question analytics |
+| `getTrends` | organizationProcedure | Get response trends over time |
+| `getDemographics` | organizationProcedure | Get demographic breakdowns |
+| `exportResponses` | organizationProcedure | Export responses as CSV/JSON |
+
+### Insights Operations (insightsRouter)
+
+| Procedure | Access Level | Description |
+|-----------|--------------|-------------|
+| `getTextSummary` | organizationProcedure | AI-generated text summary |
+| `getSentimentAnalysis` | organizationProcedure | AI sentiment analysis |
+| `getKeywords` | organizationProcedure | AI keyword extraction |
+| `refreshAnalysis` | adminProcedure | Force re-analysis |
+| `getStatus` | organizationProcedure | Check if AI insights available |
+
+### Context Structure (from `/Users/orksys/Projects/orksys-survey/packages/api/src/context.ts`)
+
+```typescript
+interface Context {
+  session: Session | null;           // Better Auth session
+  activeOrganization: {              // Current active org from session
+    id: string;
+    name: string;
+    slug: string;
+    logo: string | null;
+  } | null;
+  membership: {                      // User's membership in active org
+    id: string;
+    role: "owner" | "admin" | "member";
+    organizationId: string;
+  } | null;
+}
+```
+
+### Organization-Scoped Patterns
+
+1. **All survey operations are organization-scoped** - Every protected procedure uses `context.activeOrganization.id` to filter by the current organization
+
+2. **Survey ownership model**:
+   - Surveys have both `userId` (creator) and `organizationId` (owning org)
+   - Access control is based on `organizationId` membership, not `userId`
+   - The `verifySurveyAccess()` helper pattern is used across routers to validate survey belongs to organization
+
+3. **Role-based access**:
+   - **Member** (`organizationProcedure`): Can view surveys, questions, responses, analytics
+   - **Admin** (`adminProcedure`): Can create/update/delete surveys, questions, logic rules, responses
+   - **Owner** (`ownerProcedure`): Can delete surveys (destructive operations)
+
+4. **Public access**:
+   - `survey.getBySlug` - Public read for published surveys
+   - `response.getSurveyForRunner` - Public read for survey runner
+   - `response.submit` - Public write for submitting responses
+
+### Database Schema (Organization-related)
+
+From `/Users/orksys/Projects/orksys-survey/packages/db/src/schema/organization.ts`:
+- `organization` table: id, name, slug, logo, metadata
+- `member` table: id, userId, organizationId, role (owner/admin/member)
+- `invitation` table: id, email, inviterId, organizationId, role, status, expiresAt
+
+From `/Users/orksys/Projects/orksys-survey/packages/db/src/schema/survey.ts`:
+- `survey` table includes: userId (creator), organizationId (owning org)
+- All survey-related tables (question, logicRule, response, answer) reference survey.id
+</teammate-message>
+
+<teammate-message teammate_id="frontend-explorer" color="yellow" summary="Frontend survey UI analysis complete">
+## Frontend Survey Management & Sharing Analysis
+
+### 1. Survey List Page (`apps/web/src/app/(app)/surveys/page.tsx`)
+
+**How surveys are listed:**
+- Displays surveys in a card-based list layout
+- Each survey shows: title, description, status badge, creation date, and slug
+- Supports pagination (10 items per page)
+- Search filter (text search on title/description)
+- Status filters: draft, published, closed, archived
+- Actions per survey: Edit, Analytics, Publish/Close, Delete
+
+**Current organization context:**
+- The list uses `orpc.survey.list` which filters by user's active organization (handled on backend)
+- No visible organization indicator in the list UI itself
+
+### 2. Survey Detail/Builder Page (`apps/web/src/app/(app)/surveys/[surveyId]/page.tsx`)
+
+**Structure:**
+- Uses `SurveyBuilder` component with 3 tabs: Build, Preview, Share
+- Share tab only visible when survey status is "published"
+- Builder header shows breadcrumb: "Surveys / {title}" with status badge
+
+### 3. Survey Sharing/Distribution (`apps/web/src/components/distribution/`)
+
+**DistributionPanel (`distribution-panel.tsx`):**
+- Generates public survey URL: `{baseUrl}/s/{slug}`
+- Provides three sharing methods:
+
+**a) Public URL (`copyable-field.tsx`):**
+- Simple copy-to-clipboard field
+- URL format: `/s/{slug}`
+
+**b) QR Code (`qr-code-generator.tsx`):**
+- Generates QR code from survey URL
+- Downloadable as PNG
+- Filename: `{slug}-qr-code.png`
+
+**c) Embed Codes (`embed-code-preview.tsx`):**
+- Three embed options:
+  - **Iframe**: Standard iframe embed
+  - **Popup**: Script tag that loads `/embed/{slug}.js`
+  - **Button**: Styled HTML button linking to survey
+
+### 4. URL Structure for Survey Access
+
+**Public respondent URLs:**
+- Survey page: `/s/{slug}` → `apps/web/src/app/s/[slug]/page.tsx`
+- Embed mode: `/s/{slug}?embed=true`
+- Completion page: `/s/{slug}/complete`
+
+**Management URLs (authenticated):**
+- Survey list: `/surveys`
+- Survey builder: `/surveys/{surveyId}`
+- Analytics: `/surveys/{surveyId}/analytics`
+- New survey: `/surveys/new`
+
+### 5. Organization Context in UI
+
+**App Header (`apps/web/src/components/app-header/app-header.tsx`):**
+- Shows `OrganizationSwitcher` dropdown (when user has organizations)
+- Displays current active organization name
+- Allows switching between organizations
+- Navigation: Dashboard, Surveys, Todos
+
+**Organization Switcher (`apps/web/src/components/organization-switcher.tsx`):**
+- Uses Better Auth's organization plugin
+- Fetches organizations via `authClient.organization.list()`
+- Switches active org via `authClient.organization.setActive()`
+- Refreshes page on switch to update data
+
+### Key Observations for Multi-Organization Support:
+
+1. **Survey URLs are flat** - Currently use only `/s/{slug}` without organization context
+2. **Slug uniqueness** - Must be globally unique since URLs don't include org
+3. **Organization filtering** - Happens on backend via activeOrganizationId in session
+4. **Share tab visibility** - Only shown when survey is published (good UX)
+5. **No org indicator in public survey** - Respondents don't see which organization owns the survey
+</teammate-message>
+
+<teammate-message teammate_id="api-explorer" color="green">
+{"type":"idle_notification","from":"api-explorer","timestamp":"2026-02-18T22:26:57.152Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="frontend-explorer" color="yellow">
+{"type":"idle_notification","from":"frontend-explorer","timestamp":"2026-02-18T22:27:01.570Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+keep goin my guy
+
+---
+
+I would like to extend the org switcher with option to Create new org, and when creating survey allow for selection of org that I as user
+  have access to. I would like you to utilize frontend design skill, vercel composition skill and all shadcn components that would fit in.
+
+lets use the doc repos for easy paste copy and adapt workflow (use team to explore repos as needed)
+
+---
+
+[Request interrupted by user]
+
+---
+
+Plan the remaining work, use needed skills and gather knowledge from the cloned doc repos
+
+---
+
+[Request interrupted by user for tool use]

@@ -3,7 +3,7 @@
   "checkpoint_id": "780169b37921",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 34,
+  "checkpoints_count": 36,
   "files_touched": [
     "CLAUDE.md",
     "PHASE3.md",
@@ -174,6 +174,7 @@
     "apps/web/src/components/survey-builder/question-palette/structure-item.tsx",
     "apps/web/src/components/survey-builder/survey-settings-form.tsx",
     "apps/web/src/components/survey-builder/types.ts",
+    "apps/web/src/components/survey-runner/context.tsx",
     "apps/web/src/components/survey-runner/hooks/use-runner-actions.ts",
     "apps/web/src/components/survey-runner/hooks/use-runner-state.ts",
     "apps/web/src/components/survey-runner/questions/choice-question.tsx",
@@ -188,6 +189,7 @@
     "apps/web/src/components/survey-runner/questions/text-question.tsx",
     "apps/web/src/components/survey-runner/questions/textarea-question.tsx",
     "apps/web/src/components/survey-runner/questions/types.ts",
+    "apps/web/src/components/survey-runner/runner-complete.tsx",
     "apps/web/src/components/survey-runner/runner-progress.tsx",
     "apps/web/src/components/ui/accordion.tsx",
     "apps/web/src/components/ui/alert-dialog.tsx",
@@ -315,13 +317,20 @@
       "context": "/78/0169b37921/9/context.md",
       "content_hash": "/78/0169b37921/9/content_hash.txt",
       "prompt": "/78/0169b37921/9/prompt.txt"
+    },
+    {
+      "metadata": "/78/0169b37921/10/metadata.json",
+      "transcript": "/78/0169b37921/10/full.jsonl",
+      "context": "/78/0169b37921/10/context.md",
+      "content_hash": "/78/0169b37921/10/content_hash.txt",
+      "prompt": "/78/0169b37921/10/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1423619,
+    "input_tokens": 1780053,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 28597824,
-    "output_tokens": 156940,
-    "api_call_count": 465
+    "cache_read_tokens": 34830912,
+    "output_tokens": 173999,
+    "api_call_count": 557
   }
 }

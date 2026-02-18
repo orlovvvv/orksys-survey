@@ -1,0 +1,49 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "780169b37921",
+  "session_id": "c587182e-1308-44e5-8b05-c4fd6c7931bb",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-18T23:32:49.281617Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "PLAN.md",
+    "apps/web/src/app/(app)/settings/profile/page.tsx",
+    "apps/web/src/app/page.tsx",
+    "apps/web/src/app/s/[slug]/complete/page.tsx",
+    "apps/web/src/app/s/[slug]/layout.tsx",
+    "apps/web/src/app/s/[slug]/page.tsx",
+    "apps/web/src/components/account/profile/email-verification-banner.tsx",
+    "apps/web/src/components/analytics/ai-insights.tsx",
+    "apps/web/src/components/analytics/question-charts.tsx",
+    "apps/web/src/components/analytics/response-table.tsx",
+    "apps/web/src/components/distribution/distribution-panel.tsx",
+    "apps/web/src/components/landing/navigation.tsx",
+    "apps/web/src/components/survey-builder/builder-canvas.tsx",
+    "apps/web/src/components/survey-builder/properties-panel.tsx",
+    "apps/web/src/components/survey-builder/question-card.tsx",
+    "apps/web/src/components/survey-builder/question-palette.tsx",
+    "apps/web/src/components/survey-runner/context.tsx",
+    "apps/web/src/components/survey-runner/runner-complete.tsx",
+    "apps/web/src/lib/auth-client.ts",
+    "packages/api/src/routers/survey.ts"
+  ],
+  "agent": "Claude Code",
+  "token_usage": {
+    "input_tokens": 356434,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6233088,
+    "output_tokens": 17059,
+    "api_call_count": 92
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T23:32:48.848807Z",
+    "agent_lines": 283,
+    "human_added": 18685,
+    "human_modified": 13,
+    "human_removed": 0,
+    "total_committed": 18981,
+    "agent_percentage": 1.4909646488593857
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/c587182e-1308-44e5-8b05-c4fd6c7931bb.jsonl"
+}
