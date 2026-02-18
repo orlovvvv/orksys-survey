@@ -1,0 +1,540 @@
+Implement the following plan:
+
+# Landing Page Dark Mode Contrast Fixes
+
+## Context
+
+After the theme refactoring, several landing page components have visual issues in dark mode due to:
+1. Hardcoded background colors that don't adapt to theme
+2. Inverted color scheme applied incorrectly (light backgrounds in dark mode)
+3. Logo elements with poor contrast against their backgrounds
+
+**User-reported issues:**
+- Dark mode top header has bright background with muted/grayish text (poor contrast)
+- Hero section in dark mode has bright background but uses light text (poor readability)
+- "Trusted by product teams at" logos are not visible (black on black basically)
+- Footer should have coloring similar to "Loved by teams worldwide" section
+
+---
+
+## Root Cause Analysis
+
+### Issue 1: Hero Section - Hardcoded White Background
+
+**File:** `apps/web/src/index.css` (line 110)
+
+The `.mesh-gradient` class has a hardcoded white background:
+```css
+.mesh-gradient {
+  background-color: #ffffff;  /* HARDCODED - doesn't adapt to dark mode */
+  ...
+}
+```
+
+**Problem:** In dark mode, hero section stays white while text uses `text-foreground` (which becomes light), resulting in light text on white background - unreadable.
+
+### Issue 2: Navigation - Inverted Color Scheme in Dark Mode
+
+**File:** `apps/web/src/components/landing/navigation.tsx`
+
+The navigation uses `bg-foreground` with `text-background` (inverted scheme):
+- Light mode: dark nav bar with light text ✓
+- Dark mode: light nav bar with dark text ✗ (user expects dark nav bar)
+
+**Problem:** The inverted scheme flips in dark mode, making the navigation bright when users expect it to remain dark for visual consistency.
+
+**Solution:** Navigation should always be dark - use explicit dark colors instead of theme variables.
+
+### Issue 3: Social Proof - Invisible Logos in Dark Mode
+
+**File:** `apps/web/src/components/landing/social-proof.tsx`
+
+Logos use `bg-foreground` with CSS mask technique:
+- Light mode: foreground is dark → dark logos on light background ✓
+- Dark mode: foreground is light → light logos on light background (from hero) ✗
+
+**Problem:** Social proof sits after hero section. In dark mode:
+- Hero has white background (hardcoded)
+- Logos become light (foreground is light in dark mode)
+- Result: invisible light-on-light
+
+### Issue 4: Footer - Different Style Than Testimonials
+
+**File:** `apps/web/src/components/landing/footer/index.tsx`
+
+Footer uses `bg-foreground` (inverted, always dark in light mode, always light in dark mode).
+Testimonials uses `bg-muted` (adapts to theme, light gray in light mode, dark gray in dark mode).
+
+**Problem:** Footer should use a consistent "dark section" approach that works in both modes.
+
+---
+
+## Implementation Plan
+
+### Fix 1: Mesh Gradient - Use Theme Variable
+
+**File:** `apps/web/src/index.css`
+
+```diff
+.mesh-gradient {
+- background-color: #ffffff;
++ background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(at 0% 0%, hsl(var(--primary) / 0.05) 0, transparent 50%),
+    ...
+}
+```
+
+This makes the hero background adapt to theme: light in light mode, dark in dark mode.
+
+### Fix 2: Navigation - Force Dark Styling
+
+**File:** `apps/web/src/components/landing/navigation.tsx`
+
+Replace theme-based colors with explicit dark colors that work in both modes:
+
+```diff
+- <div className="... border-background/10 bg-foreground ...">
++ <div className="... border-white/10 bg-zinc-900 ...">
+
+- className="text-background" (brand name)
++ className="text-white"
+
+- className="text-background/60" (nav links)
++ className="text-zinc-400 hover:text-white"
+
+- className="text-background/60" (login link)
++ className="text-zinc-400 hover:text-white"
+```
+
+**Rationale:** The navigation is a design element that should always be dark (floating pill style). Using explicit `bg-zinc-900` ensures consistent appearance in both light and dark mode.
+
+### Fix 3: Social Proof - Add Dark Section Wrapper
+
+**File:** `apps/web/src/components/landing/social-proof.tsx`
+
+Wrap in a dark section that matches the footer/testimonials inverted style:
+
+```tsx
+export function SocialProof({ className }: { className?: string }) {
+  return (
+    <div className={cn("rounded-[40px] bg-zinc-900 px-6 py-12 text-center", className)}>
+      <p className="font-sans font-semibold text-zinc-400 text-xs uppercase tracking-widest">
+        Trusted by product teams at
+      </p>
+      <div className="mt-8 flex flex-wrap justify-center gap-8 md:gap-12">
+        {companyLogos.map((logo) => (
+          <CompanyLogo key={logo.name} name={logo.name} svgContent={logo.svg} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+And update the logo component to use white color:
+
+```diff
+function CompanyLogo({ name, svgContent }: { name: string; svgContent: string }) {
+  return (
+    <div
+      className="mask-image h-8 w-24"
+      style={{
+        maskImage: `url('data:image/svg+xml;base64,${svgContent}')`,
+        WebkitMaskImage: `url('data:image/svg+xml;base64,${svgContent}')`,
+-       backgroundColor: "hsl(var(--foreground))",
++       backgroundColor: "white",
+      }}
+      role="img"
+      aria-label={name}
+    />
+  );
+}
+```
+
+**Rationale:** Placing social proof in a dark container with white logos ensures visibility in both modes.
+
+### Fix 4: Footer - Use Explicit Dark Styling
+
+**File:** `apps/web/src/components/landing/footer/index.tsx`
+
+```diff
+- <div className="rounded-[40px] bg-foreground px-6 py-16 md:px-12 md:py-20">
++ <div className="rounded-[40px] bg-zinc-900 px-6 py-16 md:px-12 md:py-20">
+```
+
+**File:** `apps/web/src/components/landing/footer/brand-section.tsx`
+
+```diff
+- className="text-background" (brand name)
++ className="text-white"
+
+- className="text-background/60" (description)
++ className="text-zinc-400"
+```
+
+**File:** `apps/web/src/components/landing/footer/newsletter-section.tsx`
+
+```diff
+- className="text-background/80" (label)
++ className="text-zinc-300"
+
+- className="border-background/20 bg-background/10 text-background placeholder:text-background/50"
++ className="border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
+
+- className="text-background"
++ className="text-white"
+```
+
+**File:** `apps/web/src/components/landing/footer/link-group.tsx`
+
+```diff
+- className="text-background" (title)
++ className="text-white"
+
+- className="text-background/60 hover:text-background" (links)
++ className="text-zinc-400 hover:text-white"
+```
+
+**File:** `apps/web/src/components/landing/footer/legal-section.tsx`
+
+```diff
+- className="border-background/20" (divider)
++ className="border-white/10"
+
+- className="text-background/50" (copyright and links)
++ className="text-zinc-500 hover:text-zinc-400"
+```
+
+**Rationale:** Using explicit `bg-zinc-900` and `text-white/text-zinc-*` ensures the footer always appears as a dark section regardless of theme, matching the "Loved by teams worldwide" testimonial section's featured card style.
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `apps/web/src/index.css` | Fix `.mesh-gradient` background |
+| `apps/web/src/components/landing/navigation.tsx` | Force dark styling |
+| `apps/web/src/components/landing/social-proof.tsx` | Add dark wrapper, fix logo colors |
+| `apps/web/src/components/landing/footer/index.tsx` | Use explicit dark bg |
+| `apps/web/src/components/landing/footer/brand-section.tsx` | Update text colors |
+| `apps/web/src/components/landing/footer/newsletter-section.tsx` | Update text/input colors |
+| `apps/web/src/components/landing/footer/link-group.tsx` | Update text colors |
+| `apps/web/src/components/landing/footer/legal-section.tsx` | Update border/text colors |
+
+---
+
+## Design Principles Applied
+
+1. **Intentional Dark Sections:** Navigation, social proof, and footer are designed to be dark in both themes - they use explicit `bg-zinc-900` rather than theme variables.
+
+2. **Content Sections Adapt:** Hero, testimonials, features use theme variables (`bg-background`, `bg-muted`, `bg-card`) and properly adapt to theme.
+
+3. **Consistent Contrast:** All text on dark sections uses `text-white` or `text-zinc-*` for proper contrast.
+
+4. **No Inverted Variables:** Avoid the `bg-foreground` + `text-background` pattern which flips confusingly in dark mode.
+
+---
+
+## Verification Plan
+
+1. Run `pnpm dev:web` to start the dev server
+2. Toggle between light and dark mode using the theme switcher
+3. Verify each component:
+   - **Navigation:** Should appear as dark floating pill with white text in both modes
+   - **Hero Section:** Should have light bg in light mode, dark bg in dark mode, with readable text
+   - **Social Proof:** Should appear as dark rounded section with visible white logos
+   - **Footer:** Should appear as dark section with white/zinc text, matching style of testimonials featured card
+4. Run `pnpm check-types` to verify no TypeScript errors
+5. Run `pnpm check` to verify no lint errors
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+Beautiful surveys. Actionable is barely visible, do somehting my guy
+
+---
+
+on light mode looks great but on dark mode still barely visible, make visibility adjustments exclusively for dark mode now
+
+---
+
+Trusted by product teams at needs to be removed
+
+---
+
+remove ACME and ohther "logos" alogn with the gray wrapper around them (at least its gray in dark mode)
+
+---
+
+footer container should match hero background in color
+
+---
+
+keep it dark colored on both light nad dark, adjust content for visibility
+
+---
+
+add separate dark/light mode toggle on landing page:
+- similar structure in regard to container with rounded-full className
+- icon button inside that is a theme toggle
+- positioned at top header level, with gap of 2 or 4 from  the header itself
+
+---
+
+it should be placed NEXT ot the top header not top right of the page, NEXT TO THE HEADER itself with space of simething like 2 or 4 in tailwind gap sizing
+
+---
+
+ok, but you broke the previous width of header, and the button should have wrapper around it the with height same as header but width adjusted to be a full circle instead
+
+---
+
+cool add w-full so it actualy extends to that max width
+
+---
+
+its not responsive and items inside header overlap (even on desktop size screen), use frontend skills available and proper tailwind to resolve this
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-react-best-practices
+
+# Vercel React Best Practices
+
+Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 57 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
+
+## When to Apply
+
+Reference these guidelines when:
+- Writing new React components or Next.js pages
+- Implementing data fetching (client or server-side)
+- Reviewing code for performance issues
+- Refactoring existing React/Next.js code
+- Optimizing bundle size or load times
+
+## Rule Categories by Priority
+
+| Priority | Category | Impact | Prefix |
+|----------|----------|--------|--------|
+| 1 | Eliminating Waterfalls | CRITICAL | `async-` |
+| 2 | Bundle Size Optimization | CRITICAL | `bundle-` |
+| 3 | Server-Side Performance | HIGH | `server-` |
+| 4 | Client-Side Data Fetching | MEDIUM-HIGH | `client-` |
+| 5 | Re-render Optimization | MEDIUM | `rerender-` |
+| 6 | Rendering Performance | MEDIUM | `rendering-` |
+| 7 | JavaScript Performance | LOW-MEDIUM | `js-` |
+| 8 | Advanced Patterns | LOW | `advanced-` |
+
+## Quick Reference
+
+### 1. Eliminating Waterfalls (CRITICAL)
+
+- `async-defer-await` - Move await into branches where actually used
+- `async-parallel` - Use Promise.all() for independent operations
+- `async-dependencies` - Use better-all for partial dependencies
+- `async-api-routes` - Start promises early, await late in API routes
+- `async-suspense-boundaries` - Use Suspense to stream content
+
+### 2. Bundle Size Optimization (CRITICAL)
+
+- `bundle-barrel-imports` - Import directly, avoid barrel files
+- `bundle-dynamic-imports` - Use next/dynamic for heavy components
+- `bundle-defer-third-party` - Load analytics/logging after hydration
+- `bundle-conditional` - Load modules only when feature is activated
+- `bundle-preload` - Preload on hover/focus for perceived speed
+
+### 3. Server-Side Performance (HIGH)
+
+- `server-auth-actions` - Authenticate server actions like API routes
+- `server-cache-react` - Use React.cache() for per-request deduplication
+- `server-cache-lru` - Use LRU cache for cross-request caching
+- `server-dedup-props` - Avoid duplicate serialization in RSC props
+- `server-serialization` - Minimize data passed to client components
+- `server-parallel-fetching` - Restructure components to parallelize fetches
+- `server-after-nonblocking` - Use after() for non-blocking operations
+
+### 4. Client-Side Data Fetching (MEDIUM-HIGH)
+
+- `client-swr-dedup` - Use SWR for automatic request deduplication
+- `client-event-listeners` - Deduplicate global event listeners
+- `client-passive-event-listeners` - Use passive listeners for scroll
+- `client-localstorage-schema` - Version and minimize localStorage data
+
+### 5. Re-render Optimization (MEDIUM)
+
+- `rerender-defer-reads` - Don't subscribe to state only used in callbacks
+- `rerender-memo` - Extract expensive work into memoized components
+- `rerender-memo-with-default-value` - Hoist default non-primitive props
+- `rerender-dependencies` - Use primitive dependencies in effects
+- `rerender-derived-state` - Subscribe to derived booleans, not raw values
+- `rerender-derived-state-no-effect` - Derive state during render, not effects
+- `rerender-functional-setstate` - Use functional setState for stable callbacks
+- `rerender-lazy-state-init` - Pass function to useState for expensive values
+- `rerender-simple-expression-in-memo` - Avoid memo for simple primitives
+- `rerender-move-effect-to-event` - Put interaction logic in event handlers
+- `rerender-transitions` - Use startTransition for non-urgent updates
+- `rerender-use-ref-transient-values` - Use refs for transient frequent values
+
+### 6. Rendering Performance (MEDIUM)
+
+- `rendering-animate-svg-wrapper` - Animate div wrapper, not SVG element
+- `rendering-content-visibility` - Use content-visibility for long lists
+- `rendering-hoist-jsx` - Extract static JSX outside components
+- `rendering-svg-precision` - Reduce SVG coordinate precision
+- `rendering-hydration-no-flicker` - Use inline script for client-only data
+- `rendering-hydration-suppress-warning` - Suppress expected mismatches
+- `rendering-activity` - Use Activity component for show/hide
+- `rendering-conditional-render` - Use ternary, not && for conditionals
+- `rendering-usetransition-loading` - Prefer useTransition for loading state
+
+### 7. JavaScript Performance (LOW-MEDIUM)
+
+- `js-batch-dom-css` - Group CSS changes via classes or cssText
+- `js-index-maps` - Build Map for repeated lookups
+- `js-cache-property-access` - Cache object properties in loops
+- `js-cache-function-results` - Cache function results in module-level Map
+- `js-cache-storage` - Cache localStorage/sessionStorage reads
+- `js-combine-iterations` - Combine multiple filter/map into one loop
+- `js-length-check-first` - Check array length before expensive comparison
+- `js-early-exit` - Return early from functions
+- `js-hoist-regexp` - Hoist RegExp creation outside loops
+- `js-min-max-loop` - Use loop for min/max instead of sort
+- `js-set-map-lookups` - Use Set/Map for O(1) lookups
+- `js-tosorted-immutable` - Use toSorted() for immutability
+
+### 8. Advanced Patterns (LOW)
+
+- `advanced-event-handler-refs` - Store event handlers in refs
+- `advanced-init-once` - Initialize app once per app load
+- `advanced-use-latest` - useLatest for stable callback refs
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/async-parallel.md
+rules/bundle-barrel-imports.md
+```
+
+Each rule file contains:
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+
+ARGUMENTS: responsive navigation header with logo, nav links, and CTA button that works on mobile and desktop
+
+---
+
+on smaller screens while some items are hidden the rest is adjusted to the left, why? allow Login and Create Survey to stay in place on the right of the header area while keeping logo on the left
+
+---
+
+Login button should replace Create Survey, that means:
+- logged out shows, sign up
+- logged in shows, Create Survey
+
+old login button is now obsolete, also the header needs a proper use of <Link> component and direct user either to sections or to the protected pages correctly
+
+---
+
+Lets design a solid header for the protected pages I would like you to utilize frontend design skill, vercel composition skill and all shadcn component that would fit in with the design (like Navigation Menu for example), well positioned components should look nice and be functional.
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-composition-patterns
+
+# React Composition Patterns
+
+Composition patterns for building flexible, maintainable React components. Avoid
+boolean prop proliferation by using compound components, lifting state, and
+composing internals. These patterns make codebases easier for both humans and AI
+agents to work with as they scale.
+
+## When to Apply
+
+Reference these guidelines when:
+
+- Refactoring components with many boolean props
+- Building reusable component libraries
+- Designing flexible component APIs
+- Reviewing component architecture
+- Working with compound components or context providers
+
+## Rule Categories by Priority
+
+| Priority | Category                | Impact | Prefix          |
+| -------- | ----------------------- | ------ | --------------- |
+| 1        | Component Architecture  | HIGH   | `architecture-` |
+| 2        | State Management        | MEDIUM | `state-`        |
+| 3        | Implementation Patterns | MEDIUM | `patterns-`     |
+| 4        | React 19 APIs           | MEDIUM | `react19-`      |
+
+## Quick Reference
+
+### 1. Component Architecture (HIGH)
+
+- `architecture-avoid-boolean-props` - Don't add boolean props to customize
+  behavior; use composition
+- `architecture-compound-components` - Structure complex components with shared
+  context
+
+### 2. State Management (MEDIUM)
+
+- `state-decouple-implementation` - Provider is the only place that knows how
+  state is managed
+- `state-context-interface` - Define generic interface with state, actions, meta
+  for dependency injection
+- `state-lift-state` - Move state into provider components for sibling access
+
+### 3. Implementation Patterns (MEDIUM)
+
+- `patterns-explicit-variants` - Create explicit variant components instead of
+  boolean modes
+- `patterns-children-over-render-props` - Use children for composition instead
+  of renderX props
+
+### 4. React 19 APIs (MEDIUM)
+
+> **⚠️ React 19+ only.** Skip this section if using React 18 or earlier.
+
+- `react19-no-forwardref` - Don't use `forwardRef`; use `use()` instead of `useContext()`
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/architecture-avoid-boolean-props.md
+rules/state-context-interface.md
+```
+
+Each rule file contains:
+
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+
+ARGUMENTS: designing a flexible app header component with navigation menu, user menu, and organization switcher that works well with React 19 patterns
+
+---
+
+[Request interrupted by user for tool use]

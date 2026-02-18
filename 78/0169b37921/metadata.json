@@ -3,7 +3,7 @@
   "checkpoint_id": "780169b37921",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 20,
+  "checkpoints_count": 34,
   "files_touched": [
     "CLAUDE.md",
     "PHASE3.md",
@@ -28,6 +28,7 @@
     "apps/web/src/app/(auth)/layout.tsx",
     "apps/web/src/app/(auth)/reset-password/page.tsx",
     "apps/web/src/app/(auth)/verify-email/page.tsx",
+    "apps/web/src/app/page.tsx",
     "apps/web/src/app/s/[orgSlug]/[surveySlug]/complete/page.tsx",
     "apps/web/src/app/s/[orgSlug]/[surveySlug]/layout.tsx",
     "apps/web/src/app/s/[orgSlug]/[surveySlug]/page.tsx",
@@ -100,6 +101,14 @@
     "apps/web/src/components/landing/core-features/index.tsx",
     "apps/web/src/components/landing/core-features/mockups/analytics-mockup.tsx",
     "apps/web/src/components/landing/core-features/mockups/logic-flow-mockup.tsx",
+    "apps/web/src/components/landing/footer/brand-section.tsx",
+    "apps/web/src/components/landing/footer/index.tsx",
+    "apps/web/src/components/landing/footer/legal-section.tsx",
+    "apps/web/src/components/landing/footer/link-group.tsx",
+    "apps/web/src/components/landing/footer/newsletter-section.tsx",
+    "apps/web/src/components/landing/hero-section.tsx",
+    "apps/web/src/components/landing/index.ts",
+    "apps/web/src/components/landing/navigation.tsx",
     "apps/web/src/components/landing/social-proof.tsx",
     "apps/web/src/components/landing/theme-toggle.tsx",
     "apps/web/src/components/landing/ui/section-header.tsx",
@@ -299,13 +308,20 @@
       "context": "/78/0169b37921/8/context.md",
       "content_hash": "/78/0169b37921/8/content_hash.txt",
       "prompt": "/78/0169b37921/8/prompt.txt"
+    },
+    {
+      "metadata": "/78/0169b37921/9/metadata.json",
+      "transcript": "/78/0169b37921/9/full.jsonl",
+      "context": "/78/0169b37921/9/context.md",
+      "content_hash": "/78/0169b37921/9/content_hash.txt",
+      "prompt": "/78/0169b37921/9/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1194296,
+    "input_tokens": 1423619,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 24608512,
-    "output_tokens": 127207,
-    "api_call_count": 397
+    "cache_read_tokens": 28597824,
+    "output_tokens": 156940,
+    "api_call_count": 465
   }
 }
