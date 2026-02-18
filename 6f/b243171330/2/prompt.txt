@@ -1,0 +1,253 @@
+Implement the following plan:
+
+# Phase 3 Completion Plan: Remaining Tasks
+
+## Context
+
+Phase 3 (Respondent Experience) is **partially implemented**. The core survey runner, distribution components, and logic engine exist. This plan addresses the 4 remaining issues identified in `PHASE3.md`:
+
+1. **Duplicate Check Bug** - API ignores `allowMultipleResponses` setting
+2. **Distribution UI Integration** - Components exist but not in Builder UI
+3. **List Mode Support** - Only one-at-a-time mode exists
+4. **Survey Settings UI** - Settings dropdown has no functionality
+
+**Design Principles (from vercel-composition-patterns skill):**
+- Use explicit variant components instead of boolean props
+- Lift state into context providers for sibling access
+- Each variant is self-documenting with clear composition
+
+---
+
+## Task 1: Fix Duplicate Check Bug (QUICK FIX)
+
+**File:** `packages/api/src/routers/response.ts`
+
+**Current Code (line 130-146):**
+```typescript
+if (input.fingerprint) {
+    const existingResponse = await db...
+    if (existingResponse[0]) {
+        throw new Error("You have already responded to this survey");
+    }
+}
+```
+
+**Fix:**
+```typescript
+// Only check duplicates if multiple responses NOT allowed
+if (input.fingerprint && !surveyResult[0].settings?.allowMultipleResponses) {
+    const existingResponse = await db
+        .select()
+        .from(response)
+        .where(and(
+            eq(response.surveyId, input.surveyId),
+            eq(response.fingerprint, input.fingerprint),
+        ))
+        .limit(1);
+
+    if (existingResponse[0]) {
+        throw new Error("You have already responded to this survey");
+    }
+}
+```
+
+---
+
+## Task 2: Integrate Distribution UI into Builder
+
+**Approach:** Add "Share" tab to the SurveyBuilder (follows existing tab pattern)
+
+### Files to Modify
+
+**1. `apps/web/src/components/survey-builder/index.tsx`**
+- Extend `activeTab` type: `"build" | "preview" | "share"`
+- Add `shareOpen` state for mobile Sheet (optional)
+
+**2. `apps/web/src/components/survey-builder/builder-header.tsx`**
+- Add third tab button "Share" with `Share2` icon
+- Only show for published surveys (UX improvement)
+
+**3. `apps/web/src/components/survey-builder/builder-canvas.tsx`**
+- Add conditional render when `activeTab === "share"`:
+```tsx
+if (activeTab === "share") {
+    return (
+        <div className="flex-1 overflow-y-auto p-6">
+            <DistributionPanel slug={survey.slug} />
+        </div>
+    );
+}
+```
+
+---
+
+## Task 3: Add List Mode Support to Survey Runner
+
+**Schema Change:** Add `displayMode` to `SurveySettings`
+
+### 3.1 Schema Update
+
+**File:** `packages/db/src/schema/survey.ts`
+
+Add to `SurveySettings` interface:
+```typescript
+displayMode?: "one_at_a_time" | "list";
+```
+
+### 3.2 Context Update
+
+**File:** `apps/web/src/components/survey-runner/context.tsx`
+
+Add to context value:
+```typescript
+displayMode: settings?.displayMode ?? "one_at_a_time";
+validateAllQuestions: () => { /* returns errors map */ }
+```
+
+### 3.3 Canvas Update (Explicit Variants Pattern)
+
+**File:** `apps/web/src/components/survey-runner/runner-canvas.tsx`
+
+Create explicit variants instead of boolean props:
+```tsx
+export function RunnerCanvas() {
+    const { displayMode, visibleQuestions } = useSurveyRunner();
+
+    if (displayMode === "list") {
+        return <ListModeCanvas questions={visibleQuestions} />;
+    }
+    return <OneAtATimeCanvas />;
+}
+
+function ListModeCanvas({ questions }: { questions: Question[] }) {
+    return (
+        <div className="flex-1 overflow-y-auto px-6 py-8">
+            <div className="mx-auto max-w-2xl space-y-8">
+                {questions.map((question, index) => (
+                    <div key={question.id}>
+                        <QuestionRenderer question={question} showNumber={index + 1} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function OneAtATimeCanvas() {
+    // Current implementation
+}
+```
+
+### 3.4 Navigation Update
+
+**File:** `apps/web/src/components/survey-runner/runner-navigation.tsx`
+
+In list mode:
+- Hide Back/Next buttons
+- Show only Submit button
+- Validate all questions on submit
+
+---
+
+## Task 4: Survey Settings UI
+
+**Approach:** Add a Settings Sheet/Dialog accessible from BuilderHeader dropdown
+
+### 4.1 Create Settings Dialog
+
+**New File:** `apps/web/src/components/survey-builder/survey-settings-dialog.tsx`
+
+Form fields:
+- Title, Description (already editable elsewhere)
+- Status (draft/published/closed)
+- Display Mode toggle
+- Progress Bar toggle
+- Question Numbers toggle
+- Allow Multiple Responses toggle
+- Thank You Message
+- Redirect URL
+
+### 4.2 Connect to BuilderHeader
+
+**File:** `apps/web/src/components/survey-builder/builder-header.tsx**
+
+Update the "Survey Settings" dropdown item:
+```tsx
+<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+    <Settings className="mr-2 h-4 w-4" />
+    Survey Settings
+</DropdownMenuItem>
+```
+
+### 4.3 API for Updating Settings
+
+**File:** `packages/api/src/routers/survey.ts`
+
+Ensure `update` procedure handles `settings` partial updates with merge logic.
+
+---
+
+## Files to Modify Summary
+
+| File | Task | Changes |
+|------|------|---------|
+| `packages/api/src/routers/response.ts` | 1 | Fix duplicate check condition |
+| `packages/db/src/schema/survey.ts` | 3 | Add `displayMode` to SurveySettings |
+| `apps/web/src/components/survey-builder/index.tsx` | 2 | Extend tab type |
+| `apps/web/src/components/survey-builder/builder-header.tsx` | 2, 4 | Add Share tab, Settings trigger |
+| `apps/web/src/components/survey-builder/builder-canvas.tsx` | 2 | Render DistributionPanel |
+| `apps/web/src/components/survey-runner/context.tsx` | 3 | Add displayMode, validateAllQuestions |
+| `apps/web/src/components/survey-runner/runner-canvas.tsx` | 3 | Explicit variant components |
+| `apps/web/src/components/survey-runner/runner-navigation.tsx` | 3 | Hide nav in list mode |
+
+## Files to Create
+
+| File | Task | Description |
+|------|------|-------------|
+| `apps/web/src/components/survey-builder/survey-settings-dialog.tsx` | 4 | Settings form dialog |
+
+---
+
+## Verification
+
+1. **Duplicate Check Fix:**
+   - Create survey with `allowMultipleResponses: true`
+   - Submit twice with same browser → should succeed
+   - Set `allowMultipleResponses: false`
+   - Submit twice → should be blocked
+
+2. **Distribution Tab:**
+   - Open survey builder for published survey
+   - Click "Share" tab
+   - Verify URL, QR code, embed code display correctly
+
+3. **List Mode:**
+   - Set survey `displayMode: "list"`
+   - Open survey runner
+   - Verify all questions render on single page
+   - Submit validates all required questions
+
+4. **Survey Settings:**
+   - Click "Survey Settings" from dropdown
+   - Toggle settings, save
+   - Verify settings persist and affect runner behavior
+
+---
+
+## Implementation Order
+
+1. **Task 1** (5 min) - Quick API fix, highest impact
+2. **Task 2** (15 min) - Distribution tab integration
+3. **Task 3** (30 min) - List mode with explicit variants
+4. **Task 4** (20 min) - Settings dialog
+
+**Total estimated effort:** ~70 minutes
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+commit and push to main
