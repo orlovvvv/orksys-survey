@@ -1,0 +1,550 @@
+Implement the following plan:
+
+# Comprehensive Theme/Dark Mode Refactoring Plan
+
+## Context
+
+This plan addresses the systematic refactoring of React components to properly utilize the shadcn/ui theme system with CSS variables, ensuring consistent dark/light mode support across the orksys-survey web application.
+
+**Current State:**
+- Theme infrastructure exists: `next-themes` with class-based dark mode (`.dark` class)
+- OKLCH color space for CSS variables in `apps/web/src/index.css`
+- Full set of shadcn theme variables defined
+- ThemeProvider and ModeToggle components exist
+- **50+ components** have hardcoded colors instead of using theme variables
+
+**Target State:**
+- All components use semantic theme variables (`bg-background`, `text-foreground`, etc.)
+- Proper dark mode support with no visual inconsistencies
+- Consistent color usage across the application
+- No hardcoded hex colors or non-theme Tailwind colors
+
+---
+
+## Phase 1: Add Missing Theme Variables
+
+Some semantic colors are missing from the theme. Add to `apps/web/src/index.css`:
+
+### 1.1 Add Success/Warning Semantic Colors
+
+```css
+/* Add to :root */
+--success: oklch(0.65 0.2 145);
+--success-foreground: oklch(0.98 0 0);
+--warning: oklch(0.80 0.15 85);
+--warning-foreground: oklch(0.20 0.02 85);
+
+/* Add to .dark */
+--success: oklch(0.70 0.18 145);
+--success-foreground: oklch(0.12 0.01 145);
+--warning: oklch(0.75 0.15 85);
+--warning-foreground: oklch(0.15 0.02 85);
+```
+
+### 1.2 Add to Tailwind Theme Mapping
+
+Add to `@theme inline` block:
+```css
+--color-success: var(--success);
+--color-success-foreground: var(--success-foreground);
+--color-warning: var(--warning);
+--color-warning-foreground: var(--warning-foreground);
+```
+
+---
+
+## Phase 2: Survey Runner Components (8 files)
+
+**Priority: HIGH** - These are user-facing survey response pages.
+
+### Color Mapping Table
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-white` | `bg-card` |
+| `border-neutral-200/300` | `border-border` |
+| `text-neutral-900` | `text-foreground` |
+| `text-neutral-500/600` | `text-muted-foreground` |
+| `bg-neutral-900` | `bg-primary` |
+| `text-white` (on dark bg) | `text-primary-foreground` |
+| `text-red-500/600` | `text-destructive` |
+| `bg-red-50` | `bg-destructive/10` |
+| `text-green-600` | `text-success` |
+
+### Files to Modify
+
+#### 2.1 `runner-header.tsx`
+```diff
+- <header className="border-neutral-200 border-b bg-white px-6 py-4">
++ <header className="border-border border-b bg-card px-6 py-4">
+```
+
+#### 2.2 `runner-navigation.tsx`
+```diff
+- <div className="border-neutral-200 border-t bg-white px-6 py-4">
++ <div className="border-border border-t bg-card px-6 py-4">
+
+- className="bg-neutral-900 hover:bg-neutral-800"
++ className="bg-primary hover:bg-primary/90"
+
+- className="text-neutral-600"
++ className="text-muted-foreground"
+
+- <div className="rounded-lg bg-red-50 px-4 py-2 text-center text-red-600 text-sm">
++ <div className="rounded-lg bg-destructive/10 px-4 py-2 text-center text-destructive text-sm">
+```
+
+#### 2.3 `runner-canvas.tsx`
+```diff
+- <p className="text-neutral-500">
++ <p className="text-muted-foreground">
+```
+
+#### 2.4 `runner-complete.tsx`
+```diff
+- <CheckCircle2 className="size-8 text-green-600" />
++ <CheckCircle2 className="size-8 text-success" />
+```
+
+#### 2.5 `questions/text-question.tsx`, `questions/textarea-question.tsx`, `questions/contact-question.tsx`, `questions/dropdown-question.tsx`
+```diff
+- className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
++ className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+```
+
+#### 2.6 `questions/rating-question.tsx`
+```diff
+- ? "border-neutral-900 bg-neutral-900 text-white"
++ ? "border-primary bg-primary text-primary-foreground"
+```
+
+#### 2.7 `questions/question-field.tsx`
+```diff
+- <span className="ml-1 text-red-500">*</span>
++ <span className="ml-1 text-destructive">*</span>
+
+- {error && <p className="text-red-500 text-sm">{error}</p>}
++ {error && <p className="text-destructive text-sm">{error}</p>}
+```
+
+---
+
+## Phase 3: Survey Builder Components (15 files)
+
+**Priority: HIGH** - Core admin functionality.
+
+### Color Mapping Table
+
+| Current | Replace With |
+|---------|--------------|
+| `bg-white` | `bg-card` or `bg-background` |
+| `border-neutral-100/200` | `border-border` |
+| `text-violet-*` | `text-primary` |
+| `bg-violet-*` | `bg-primary` or `bg-primary/10` |
+| `ring-violet-*` | `ring-primary` or `ring-ring` |
+| `hover:border-violet-*` | `hover:border-primary` |
+
+### Files to Modify
+
+#### 3.1 `builder-header/index.tsx`
+```diff
+- <header className="... border-neutral-100 border-b bg-white ...">
++ <header className="... border-border border-b bg-card ...">
+
+- published: "bg-green-100 text-green-700",
+- closed: "bg-orange-100 text-orange-700",
++ published: "bg-success/10 text-success",
++ closed: "bg-warning/10 text-warning",
+
+- <DropdownMenuItem className="text-red-600">
++ <DropdownMenuItem className="text-destructive">
+```
+
+#### 3.2 `question-palette/index.tsx`
+```diff
+- <div className="... border-neutral-100 border-r bg-white">
++ <div className="... border-border border-r bg-card">
+```
+
+#### 3.3 `question-palette/question-type-button.tsx`
+```diff
+- "bg-white hover:border-neutral-200 hover:bg-neutral-50 active:bg-violet-50 active:ring-2 active:ring-violet-500"
++ "bg-card hover:border-border hover:bg-muted active:bg-primary/10 active:ring-2 active:ring-primary"
+
+- <Icon className="... text-neutral-400 ... group-hover:text-violet-500" />
++ <Icon className="... text-muted-foreground ... group-hover:text-primary" />
+```
+
+#### 3.4 `question-palette/structure-item.tsx`
+```diff
+- ? "border border-violet-500/20 bg-violet-50 text-neutral-900"
++ ? "border border-primary/20 bg-primary/10 text-foreground"
+
+- ? "bg-violet-500 text-white"
++ ? "bg-primary text-primary-foreground"
+```
+
+#### 3.5 `question-palette/cancel-drop-zone.tsx`
+```diff
+- <div className="... bg-red-50/90 text-red-600 ...">
++ <div className="... bg-destructive/10 text-destructive ...">
+```
+
+#### 3.6 `properties-panel/question-properties-panel.tsx`, `properties-panel/empty-properties-panel.tsx`
+```diff
+- <div className="... border-neutral-100 border-l bg-white">
++ <div className="... border-border border-l bg-card">
+
+- <Loader2 className="... text-violet-500" />
++ <Loader2 className="... text-primary" />
+```
+
+#### 3.7 `question-card/question-card-content.tsx`
+```diff
+- "hover:border-violet-300 hover:bg-violet-50/30"
++ "hover:border-primary/50 hover:bg-primary/5"
+
+- "border-violet-500 ring-1 ring-violet-500"
++ "border-primary ring-1 ring-ring"
+
+- "cursor-grabbing bg-white shadow-xl ring-2 ring-violet-500"
++ "cursor-grabbing bg-card shadow-xl ring-2 ring-ring"
+
+- className="... bg-violet-100"
+- <Icon className="... text-violet-600" />
++ className="... bg-primary/10"
++ <Icon className="... text-primary" />
+
+- className="text-red-500"
++ className="text-destructive"
+```
+
+#### 3.8 `builder-canvas/index.tsx`
+```diff
+- isOver ? "bg-violet-50/50" : ""
++ isOver ? "bg-primary/5" : ""
+
+- hover:border-violet-300 hover:bg-violet-50/50
++ hover:border-primary/50 hover:bg-primary/5
+
+- className="mb-4 rounded-full bg-violet-100 p-4"
+- <Plus className="... text-violet-500" />
++ className="mb-4 rounded-full bg-primary/10 p-4"
++ <Plus className="... text-primary" />
+```
+
+#### 3.9 `logic-builder/index.tsx`
+```diff
+- <div className="rounded-xl border border-violet-100 bg-violet-50 p-4">
++ <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+
+- <Bolt className="... text-violet-500" />
++ <Bolt className="... text-primary" />
+
+- className="... border-violet-200 text-violet-600 hover:bg-violet-50"
++ className="... border-primary/30 text-primary hover:bg-primary/5"
+```
+
+#### 3.10 `logic-builder/rule-list-item.tsx`
+```diff
+- <div className="... border border-neutral-200 bg-white ...">
++ <div className="... border border-border bg-card ...">
+
+- className="h-6 w-6 text-red-500"
++ className="h-6 w-6 text-destructive"
+```
+
+#### 3.11 `primitives/delete-confirm-button.tsx`
+```diff
+- className="... text-red-600 hover:bg-red-50 hover:text-red-700"
++ className="... text-destructive hover:bg-destructive/10"
+```
+
+#### 3.12 `question-editors/rating/rating-scale-editor.tsx`
+```diff
+- className="h-5 w-5 fill-violet-500 text-violet-500"
++ className="h-5 w-5 fill-primary text-primary"
+```
+
+---
+
+## Phase 4: Landing Page Components (20 files)
+
+**Priority: MEDIUM** - Marketing pages, should support dark mode.
+
+### Special Considerations
+
+Some landing components have **intentional dark sections** (hero, footer) that should remain dark in both modes. Use judgment:
+
+- **Sections with `bg-zinc-900`, `bg-neutral-900`, `bg-black`**: These are design choices, not theme violations
+- **Convert text colors**: `text-white` → `text-background` when on dark backgrounds
+- **Cards and containers**: Should use `bg-card` to adapt to theme
+
+### Files to Modify
+
+#### 4.1 `navigation.tsx`
+```diff
+- className="... border-white/10 bg-zinc-900 ... text-white ..."
++ className="... border-background/10 bg-foreground ... text-background ..."
+```
+Note: Navigation is intentionally dark, but should use theme variables.
+
+#### 4.2 `hero-section.tsx`
+```diff
+- className="... border-neutral-200 bg-white/50 ..."
++ className="... border-border bg-background/50 ..."
+
+- className="... border-neutral-200 bg-white/80 ... text-neutral-900 ... placeholder:text-neutral-400 ..."
++ className="... border-border bg-background/80 ... text-foreground ... placeholder:text-muted-foreground ..."
+```
+
+#### 4.3 `footer/*.tsx` files
+The footer is intentionally dark. Update to use theme variables:
+```diff
+- text-white
++ text-background (when on dark bg)
+
+- text-neutral-400
++ text-background/60
+
+- bg-neutral-900
++ bg-foreground
+```
+
+#### 4.4 `testimonials.tsx`
+```diff
+- <div className="rounded-[32px] bg-white p-8 shadow-sm">
++ <div className="rounded-[32px] bg-card p-8 shadow-sm">
+```
+
+#### 4.5 `bento-features.tsx`, `pricing.tsx`, `core-features/*.tsx`
+```diff
+- bg-white → bg-card
+- border-neutral-200 → border-border
+- text-neutral-* → text-muted-foreground or text-foreground
+```
+
+#### 4.6 `survey-mockup/*.tsx`
+```diff
+- bg-white → bg-card
+- border-neutral-100/200 → border-border
+- text-violet-* → text-primary
+- bg-violet-* → bg-primary/10
+```
+
+#### 4.7 `social-proof.tsx`
+```diff
+- backgroundColor: "black"
++ backgroundColor: "hsl(var(--foreground))"
+```
+
+---
+
+## Phase 5: Distribution Components (4 files)
+
+**Priority: MEDIUM**
+
+### Files to Modify
+
+#### 5.1 `embed-code-preview.tsx`
+```diff
+- <button style="... background: #000; color: #fff; ...">
++ <button style={`... background: hsl(var(--foreground)); color: hsl(var(--background)); ...`}>
+```
+
+#### 5.2 `qr-code-generator.tsx`
+```diff
+- dark: "#000000",
+- light: "#FFFFFF",
++ dark: "hsl(var(--foreground))",
++ light: "hsl(var(--background))",
+```
+
+#### 5.3 `copyable-field.tsx`, `code-block.tsx`
+```diff
+- text-neutral-700 → text-foreground
+- bg-neutral-50 → bg-muted
+- border-neutral-200 → border-border
+- text-green-600 → text-success
+```
+
+---
+
+## Phase 6: Analytics Components (3 files)
+
+**Priority: LOW**
+
+### Special Considerations
+
+Analytics often use **semantic colors** (green=good, red=bad, yellow=warning). These should use the new success/warning/destructive theme variables.
+
+### Files to Modify
+
+#### 6.1 `analytics-overview.tsx`
+```diff
+- color: "text-blue-500" → color: "text-primary"
+- color: "text-green-500" → color: "text-success"
+- color: "text-orange-500" → color: "text-warning"
+- text-red-500 → text-destructive
+```
+
+#### 6.2 `response-table/columns.tsx`
+```diff
+- bg-green-100 text-green-800 → bg-success/10 text-success
+- bg-yellow-100 text-yellow-800 → bg-warning/10 text-warning
+```
+
+#### 6.3 `ai-insights/sentiment-bars.tsx`
+```diff
+- text-green-500 → text-success
+- text-yellow-500 → text-warning
+- text-red-500 → text-destructive
+```
+
+---
+
+## Phase 7: Form Components (1 file)
+
+**Priority: MEDIUM**
+
+#### 7.1 `forms/form-field.tsx`
+```diff
+- <span className="ml-1 text-red-500">*</span>
++ <span className="ml-1 text-destructive">*</span>
+
+- {error && <p className="text-red-500 text-sm">{error}</p>}
++ {error && <p className="text-destructive text-sm">{error}</p>}
+```
+
+---
+
+## Phase 8: Global Audit and Cleanup
+
+### 8.1 Search for Remaining Hardcoded Colors
+
+Run these searches after phases 1-7:
+```bash
+# Find remaining hex colors
+rg '#[0-9a-fA-F]{3,6}' apps/web/src/components --type tsx
+
+# Find remaining neutral- colors
+rg 'neutral-[0-9]+' apps/web/src/components --type tsx
+
+# Find remaining violet- colors
+rg 'violet-[0-9]+' apps/web/src/components --type tsx
+
+# Find remaining red- colors (should use destructive)
+rg '(?<!de)red-[0-9]+' apps/web/src/components --type tsx
+
+# Find remaining green- colors (should use success)
+rg 'green-[0-9]+' apps/web/src/components --type tsx
+```
+
+### 8.2 Verify Dark Mode
+
+Manual verification checklist:
+1. Toggle dark mode using the theme switcher
+2. Check each major section:
+   - [ ] Landing page hero
+   - [ ] Landing page features
+   - [ ] Landing page footer
+   - [ ] Survey builder (all panels)
+   - [ ] Survey runner (all question types)
+   - [ ] Analytics dashboard
+   - [ ] Distribution panel
+3. Look for:
+   - Text that's invisible (same color as background)
+   - Borders that disappear
+   - Incorrect contrast ratios
+
+---
+
+## Files Summary
+
+| Phase | Directory | Files | Priority |
+|-------|-----------|-------|----------|
+| 1 | Theme setup | 1 | CRITICAL |
+| 2 | survey-runner | 8 | HIGH |
+| 3 | survey-builder | 15 | HIGH |
+| 4 | landing | 20 | MEDIUM |
+| 5 | distribution | 4 | MEDIUM |
+| 6 | analytics | 3 | LOW |
+| 7 | forms | 1 | MEDIUM |
+| 8 | audit | - | CRITICAL |
+
+**Total: ~52 files to modify**
+
+---
+
+## Quick Reference: Color Mappings
+
+| Hardcoded | Theme Variable | Usage |
+|-----------|----------------|-------|
+| `bg-white` | `bg-background` | Page backgrounds |
+| `bg-white` | `bg-card` | Cards, panels |
+| `text-neutral-900` | `text-foreground` | Primary text |
+| `text-neutral-500/600` | `text-muted-foreground` | Secondary text |
+| `border-neutral-200` | `border-border` | Borders |
+| `bg-neutral-50` | `bg-muted` | Subtle backgrounds |
+| `text-red-500` | `text-destructive` | Errors |
+| `bg-red-50` | `bg-destructive/10` | Error backgrounds |
+| `text-green-500` | `text-success` | Success states |
+| `text-yellow-500` | `text-warning` | Warning states |
+| `violet-*` | `primary-*` | Brand colors |
+| `#fff`, `#000` | `hsl(var(--background))`, etc. | Inline styles |
+
+---
+
+## Verification Plan
+
+### After Each Phase:
+1. Run `pnpm check-types` - ensure no TypeScript errors
+2. Run `pnpm check` - ensure no lint errors
+3. Manual toggle between light/dark mode
+4. Visual inspection of affected components
+
+### Final Verification:
+1. All hardcoded colors removed
+2. Dark mode works across all pages
+3. No visual regressions in light mode
+4. Proper contrast ratios maintained
+5. Type check passes
+6. Lint check passes
+
+---
+
+## Estimated Scope
+
+| Phase | Effort |
+|-------|--------|
+| Phase 1: Add theme variables | Small |
+| Phase 2: Survey runner | Medium |
+| Phase 3: Survey builder | Large |
+| Phase 4: Landing | Large |
+| Phase 5: Distribution | Small |
+| Phase 6: Analytics | Small |
+| Phase 7: Forms | Small |
+| Phase 8: Audit | Medium |
+
+**Total: Medium-Large effort (~50 files)**
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+some landing page elements still need adjustments after the theme changes, go through each landing page component and ensure text contrast is kept, as well as the background color.
+
+Main concerns are:
+- dark mode top header is now bright with text also using some muted or grayish color (poor contrast)
+- hero section (dark mode) still has bright bg but uses light text (poor contrast and readability)
+- "Trusted by product teams at" logos/text is not visibles at all (black on black basicaly)
+- footer should have coloring similar to section with "Loved by teams worldwide"
+
+Find these components and make plans for adjustments. Use frontend design skill and vercel composition skills.
+
+---
+
+[Request interrupted by user for tool use]

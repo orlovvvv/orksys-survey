@@ -3,7 +3,7 @@
   "checkpoint_id": "780169b37921",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 19,
+  "checkpoints_count": 20,
   "files_touched": [
     "CLAUDE.md",
     "PHASE3.md",
@@ -96,7 +96,14 @@
     "apps/web/src/components/distribution/embed-code-preview.tsx",
     "apps/web/src/components/forms/form-field.tsx",
     "apps/web/src/components/forms/index.ts",
+    "apps/web/src/components/landing/core-features/feature-card.tsx",
+    "apps/web/src/components/landing/core-features/index.tsx",
+    "apps/web/src/components/landing/core-features/mockups/analytics-mockup.tsx",
+    "apps/web/src/components/landing/core-features/mockups/logic-flow-mockup.tsx",
+    "apps/web/src/components/landing/social-proof.tsx",
     "apps/web/src/components/landing/theme-toggle.tsx",
+    "apps/web/src/components/landing/ui/section-header.tsx",
+    "apps/web/src/components/landing/ui/section.tsx",
     "apps/web/src/components/organization-switcher.tsx",
     "apps/web/src/components/organization/hooks/index.ts",
     "apps/web/src/components/organization/hooks/use-invitations.ts",
@@ -116,6 +123,7 @@
     "apps/web/src/components/survey-builder/builder-canvas/preview-canvas.tsx",
     "apps/web/src/components/survey-builder/builder-canvas/share-canvas.tsx",
     "apps/web/src/components/survey-builder/builder-header.tsx",
+    "apps/web/src/components/survey-builder/builder-header/builder-tabs.tsx",
     "apps/web/src/components/survey-builder/builder-tabs.tsx",
     "apps/web/src/components/survey-builder/context.tsx",
     "apps/web/src/components/survey-builder/drag-overlay-renderer.tsx",
@@ -144,6 +152,7 @@
     "apps/web/src/components/survey-builder/question-card/constants.ts",
     "apps/web/src/components/survey-builder/question-card/index.tsx",
     "apps/web/src/components/survey-builder/question-card/question-card-content.tsx",
+    "apps/web/src/components/survey-builder/question-editors/choice-editor.tsx",
     "apps/web/src/components/survey-builder/question-editors/option-item.tsx",
     "apps/web/src/components/survey-builder/question-editors/rating/linear-scale-editor.tsx",
     "apps/web/src/components/survey-builder/question-editors/rating/nps-editor.tsx",
@@ -170,6 +179,7 @@
     "apps/web/src/components/survey-runner/questions/text-question.tsx",
     "apps/web/src/components/survey-runner/questions/textarea-question.tsx",
     "apps/web/src/components/survey-runner/questions/types.ts",
+    "apps/web/src/components/survey-runner/runner-progress.tsx",
     "apps/web/src/components/ui/accordion.tsx",
     "apps/web/src/components/ui/alert-dialog.tsx",
     "apps/web/src/components/ui/alert.tsx",
@@ -207,6 +217,7 @@
     "apps/web/src/components/ui/toggle.tsx",
     "apps/web/src/hooks/use-media-query.tsx",
     "apps/web/src/hooks/use-mobile.ts",
+    "apps/web/src/index.css",
     "apps/web/src/lib/auth-client.ts",
     "packages/api/src/routers/analytics.ts",
     "packages/api/src/routers/index.ts",
@@ -281,13 +292,20 @@
       "context": "/78/0169b37921/7/context.md",
       "content_hash": "/78/0169b37921/7/content_hash.txt",
       "prompt": "/78/0169b37921/7/prompt.txt"
+    },
+    {
+      "metadata": "/78/0169b37921/8/metadata.json",
+      "transcript": "/78/0169b37921/8/full.jsonl",
+      "context": "/78/0169b37921/8/context.md",
+      "content_hash": "/78/0169b37921/8/content_hash.txt",
+      "prompt": "/78/0169b37921/8/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 998697,
+    "input_tokens": 1194296,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 22052288,
-    "output_tokens": 106263,
-    "api_call_count": 354
+    "cache_read_tokens": 24608512,
+    "output_tokens": 127207,
+    "api_call_count": 397
   }
 }
