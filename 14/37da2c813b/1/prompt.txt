@@ -1,0 +1,218 @@
+Implement the following plan:
+
+# oRPC Best Practices - Official SSR Optimization Pattern
+
+## Context
+
+Based on official oRPC documentation at https://orpc.dev/docs/best-practices/optimize-ssr, implementing the recommended SSR optimization pattern that enables direct server-side API calls during SSR, avoiding unnecessary network requests.
+
+---
+
+## Official SSR Optimization Pattern
+
+### Problem
+In standard SSR, the server makes HTTP requests back to its own API endpoints, adding latency and consuming resources.
+
+### Solution
+Use `globalThis` to share a server client without bundling it into client code:
+- Server: invokes router logic directly via `createRouterClient`
+- Client: uses HTTP via `createORPCClient`
+
+---
+
+## Implementation
+
+### File 1: `apps/web/src/utils/orpc.server.ts` (Server-Only)
+
+```typescript
+import "server-only";
+
+import type { appRouter } from "@orksys-survey/api/routers/index";
+
+import { createRouterClient } from "@orpc/server";
+import { headers } from "next/headers";
+
+globalThis.$client = createRouterClient(appRouter, {
+	context: async () => ({
+		headers: await headers(),
+	}),
+});
+```
+
+### File 2: `apps/web/src/utils/orpc.ts` (Client + Fallback)
+
+```typescript
+import type { RouterClient } from "@orpc/server";
+import type { appRouter } from "@orksys-survey/api/routers/index";
+
+import { createORPCClient } from "@orpc/client";
+import { RPCLink } from "@orpc/client/fetch";
+import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+import { QueryCache, QueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+declare global {
+	var $client: RouterClient<typeof appRouter> | undefined;
+}
+
+export const queryClient = new QueryClient({
+	queryCache: new QueryCache({
+		onError: (error, query) => {
+			toast.error(`Error: ${error.message}`, {
+				action: {
+					label: "retry",
+					onClick: query.invalidate,
+				},
+			});
+		},
+	}),
+});
+
+const link = new RPCLink({
+	url: () => {
+		if (typeof window === "undefined") {
+			throw new Error("RPCLink is not allowed on the server side.");
+		}
+		return `${window.location.origin}/api/rpc`;
+	},
+	fetch(url, options) {
+		return fetch(url, {
+			...options,
+			credentials: "include",
+		});
+	},
+});
+
+/**
+ * Fallback to client-side client if server-side client is not available.
+ */
+export const client: RouterClient<typeof appRouter> =
+	globalThis.$client ?? createORPCClient(link);
+
+export const orpc = createTanstackQueryUtils(client);
+```
+
+### File 3: `apps/web/src/app/layout.tsx` (Import server client)
+
+```typescript
+import type { Metadata } from "next";
+
+import { Geist, Geist_Mono } from "next/font/google";
+
+import "../index.css";
+import "../utils/orpc.server"; // Import for pre-rendering
+import Providers from "@/components/providers";
+
+// ... rest unchanged
+```
+
+### File 4: `apps/web/instrumentation.ts` (NEW - for runtime)
+
+```typescript
+export async function register() {
+	await import("./src/utils/orpc.server");
+}
+```
+
+---
+
+## Key Changes from Current Implementation
+
+| Aspect | Before | After (Official Pattern) |
+|--------|--------|--------------------------|
+| Global var name | `$orpcClient` | `$client` (official convention) |
+| Client type | `AppRouterClient` | `RouterClient<typeof appRouter>` |
+| RPCLink url | String with ternary | Function that throws on server |
+| Type in both files | Different types | Same type in both files |
+
+---
+
+## Files to Modify
+
+| File | Action | Changes |
+|------|--------|---------|
+| `apps/web/src/utils/orpc.server.ts` | MODIFY | Use `$client`, `RouterClient<typeof appRouter>` |
+| `apps/web/src/utils/orpc.ts` | MODIFY | Use `$client`, function-based url, same type |
+| `apps/web/src/app/layout.tsx` | KEEP | Already imports `orpc.server` |
+| `apps/web/instrumentation.ts` | CREATE | Import orpc.server for runtime |
+| `packages/api/src/types/orpc.d.ts` | DELETE | Not in official docs |
+
+---
+
+## Critical Requirements
+
+1. **Same global variable name**: Both files must use `$client`
+2. **Same type**: Both files must use `RouterClient<typeof appRouter>`
+3. **Function-based url**: RPCLink url should be a function that throws on server
+4. **Import order**: `orpc.server.ts` must be imported before any orpc usage
+
+---
+
+## Verification
+
+1. **Type Check:** `pnpm turbo build --filter=web` - should pass without type errors
+2. **Dev Server:** `pnpm dev:web` - app should load
+3. **SSR Test:** Server console should NOT show HTTP calls to `/api/rpc` during SSR
+4. **Client Test:** Client should make HTTP calls to `/api/rpc` normally
+
+---
+
+## Summary
+
+Following official oRPC SSR optimization pattern:
+- Server invokes router directly via `createRouterClient` (no HTTP overhead)
+- Client falls back to `createORPCClient` with HTTP
+- Uses `globalThis.$client` to share server client across the request
+- Import in both `instrumentation.ts` (runtime) and `layout.tsx` (pre-rendering)
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+after the updates i got
+## Error Type
+Runtime Error
+
+## Error Message
+An error occurred while loading instrumentation hook: The edge runtime does not support Node.js 'crypto' module.
+Learn More: https://nextjs.org/docs/messages/node-module-in-edge-runtime
+
+Next.js version: 16.1.6 (Turbopack)
+
+lets address it
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+that assumption is wrong, export const runtime = "nodejs"; did not change a thing, use verce next skill and use official docs to resolve these issues
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+use mcp for web search not the tool
+
+---
+
+great work, commit the changes
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+New plan:
+I would like to plan landing page theme and color overhaul for all of the elemnts on page to properly use shadcn theming system alone without deviating into hardcoded colors.
+
+---
+
+[Request interrupted by user for tool use]

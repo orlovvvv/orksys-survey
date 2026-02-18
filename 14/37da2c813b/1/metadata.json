@@ -1,9 +1,11 @@
 {
   "cli_version": "0.4.4",
   "checkpoint_id": "1437da2c813b",
+  "session_id": "bd20b5b4-166a-45de-a16c-7b941ddedfb8",
   "strategy": "manual-commit",
+  "created_at": "2026-02-18T10:47:11.532971Z",
   "branch": "main",
-  "checkpoints_count": 3,
+  "checkpoints_count": 2,
   "files_touched": [
     "PLAN.md",
     "apps/web/instrumentation.ts",
@@ -11,15 +13,6 @@
     "apps/web/src/app/(app)/surveys/new/page.tsx",
     "apps/web/src/app/(app)/surveys/page.tsx",
     "apps/web/src/app/onboarding/page.tsx",
-    "apps/web/src/components/landing/bento-features.tsx",
-    "apps/web/src/components/landing/core-features.tsx",
-    "apps/web/src/components/landing/cta-section.tsx",
-    "apps/web/src/components/landing/footer.tsx",
-    "apps/web/src/components/landing/hero-section.tsx",
-    "apps/web/src/components/landing/navigation.tsx",
-    "apps/web/src/components/landing/pricing.tsx",
-    "apps/web/src/components/landing/survey-mockup.tsx",
-    "apps/web/src/components/landing/testimonials.tsx",
     "apps/web/src/components/onboarding/create-organization-form.tsx",
     "apps/web/src/components/onboarding/select-organization.tsx",
     "apps/web/src/components/organization-switcher.tsx",
@@ -34,32 +27,26 @@
     "apps/web/src/components/ui/textarea.tsx",
     "apps/web/src/components/ui/tooltip.tsx",
     "apps/web/src/hooks/use-media-query.ts",
-    "apps/web/src/index.css",
     "apps/web/src/middleware.ts",
     "apps/web/src/utils/orpc.server.ts",
     "apps/web/src/utils/orpc.ts"
   ],
-  "sessions": [
-    {
-      "metadata": "/14/37da2c813b/0/metadata.json",
-      "transcript": "/14/37da2c813b/0/full.jsonl",
-      "context": "/14/37da2c813b/0/context.md",
-      "content_hash": "/14/37da2c813b/0/content_hash.txt",
-      "prompt": "/14/37da2c813b/0/prompt.txt"
-    },
-    {
-      "metadata": "/14/37da2c813b/1/metadata.json",
-      "transcript": "/14/37da2c813b/1/full.jsonl",
-      "context": "/14/37da2c813b/1/context.md",
-      "content_hash": "/14/37da2c813b/1/content_hash.txt",
-      "prompt": "/14/37da2c813b/1/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
   "token_usage": {
-    "input_tokens": 183499,
+    "input_tokens": 88642,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 6398144,
-    "output_tokens": 24090,
-    "api_call_count": 123
-  }
+    "cache_read_tokens": 1783744,
+    "output_tokens": 8409,
+    "api_call_count": 44
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T10:47:11.385145Z",
+    "agent_lines": 2040,
+    "human_added": 1165,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3205,
+    "agent_percentage": 63.65054602184087
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/bd20b5b4-166a-45de-a16c-7b941ddedfb8.jsonl"
 }
