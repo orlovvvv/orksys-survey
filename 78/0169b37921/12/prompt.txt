@@ -1,0 +1,213 @@
+Implement the following plan:
+
+# Documentation Worktrees Setup
+
+## Context
+
+Set up 4 documentation/reference repositories for learning latest patterns from key dependencies:
+- **shadcn/ui** - UI component patterns
+- **Next.js** - App Router, RSC, data patterns
+- **oRPC** - Type-safe API patterns (current project dependency)
+- **Better Auth** - Authentication patterns (current project dependency)
+
+These repos serve as read-only reference material for understanding best practices and latest features.
+
+---
+
+## Repository URLs
+
+| Library | GitHub URL |
+|---------|------------|
+| shadcn/ui | https://github.com/shadcn-ui/ui |
+| Next.js | https://github.com/vercel/next.js |
+| oRPC | https://github.com/middleapi/orpc |
+| Better Auth | https://github.com/better-auth/better-auth |
+
+---
+
+## Directory Structure
+
+```
+/Users/orksys/Projects/
+├── docs-worktrees/
+│   ├── shadcn-ui/
+│   │   └── CLAUDE.md
+│   ├── nextjs/
+│   │   └── CLAUDE.md
+│   ├── orpc/
+│   │   └── CLAUDE.md
+│   └── better-auth/
+│       └── CLAUDE.md
+├── orksys-survey/          (main project)
+└── ... (other projects)
+```
+
+---
+
+## Implementation Steps
+
+### Step 1: Create parent directory
+```bash
+mkdir -p /Users/orksys/Projects/docs-worktrees
+```
+
+### Step 2: Clone repositories (shallow clones)
+```bash
+cd /Users/orksys/Projects/docs-worktrees
+
+# shadcn/ui - UI components
+git clone --depth 1 https://github.com/shadcn-ui/ui.git shadcn-ui
+
+# Next.js - Framework
+git clone --depth 1 https://github.com/vercel/next.js.git nextjs
+
+# oRPC - Type-safe RPC
+git clone --depth 1 https://github.com/middleapi/orpc.git orpc
+
+# Better Auth - Authentication
+git clone --depth 1 https://github.com/better-auth/better-auth.git better-auth
+```
+
+### Step 3: Create CLAUDE.md for each repo
+
+**shadcn-ui/CLAUDE.md:**
+```markdown
+# shadcn/ui Documentation Worktree
+
+This is a **documentation and research worktree** for shadcn/ui.
+
+## Purpose
+- Learn latest component patterns and APIs
+- Reference for base-ui primitives usage
+- Study styling conventions (base-nova theme)
+
+## Key Directories
+- `apps/www/` - Documentation site
+- `packages/shadcn/` - Core component source
+- `packages/ui/` - UI components
+
+## Usage
+Read-only reference. Do not make changes.
+Update with: `git pull origin main`
+```
+
+**nextjs/CLAUDE.md:**
+```markdown
+# Next.js Documentation Worktree
+
+This is a **documentation and research worktree** for Next.js.
+
+## Purpose
+- Learn App Router patterns
+- Study React Server Components
+- Reference for data fetching and caching
+
+## Key Directories
+- `docs/` - Documentation source
+- `packages/next/` - Framework source
+- `examples/` - Example applications
+
+## Usage
+Read-only reference. Do not make changes.
+Update with: `git pull origin main`
+```
+
+**orpc/CLAUDE.md:**
+```markdown
+# oRPC Documentation Worktree
+
+This is a **documentation and research worktree** for oRPC.
+
+## Purpose
+- Study type-safe API patterns
+- Reference for oRPC client/server setup
+- Learn best practices for procedure definitions
+
+## Key Directories
+- `packages/` - Core packages
+- `examples/` - Example implementations
+- `docs/` - Documentation
+
+## Usage
+Read-only reference. Do not make changes.
+Update with: `git pull origin main`
+```
+
+**better-auth/CLAUDE.md:**
+```markdown
+# Better Auth Documentation Worktree
+
+This is a **documentation and research worktree** for Better Auth.
+
+## Purpose
+- Study authentication patterns
+- Reference for plugin configurations
+- Learn session management best practices
+
+## Key Directories
+- `packages/better-auth/` - Core package
+- `packages/*` - Plugins
+- `docs/` - Documentation
+- `examples/` - Example implementations
+
+## Usage
+Read-only reference. Do not make changes.
+Update with: `git pull origin main`
+```
+
+---
+
+## Files to Create
+
+| Path | Action |
+|------|--------|
+| `/Users/orksys/Projects/docs-worktrees/` | Create directory |
+| `/Users/orksys/Projects/docs-worktrees/shadcn-ui/` | Clone repo |
+| `/Users/orksys/Projects/docs-worktrees/shadcn-ui/CLAUDE.md` | Create |
+| `/Users/orksys/Projects/docs-worktrees/nextjs/` | Clone repo |
+| `/Users/orksys/Projects/docs-worktrees/nextjs/CLAUDE.md` | Create |
+| `/Users/orksys/Projects/docs-worktrees/orpc/` | Clone repo |
+| `/Users/orksys/Projects/docs-worktrees/orpc/CLAUDE.md` | Create |
+| `/Users/orksys/Projects/docs-worktrees/better-auth/` | Clone repo |
+| `/Users/orksys/Projects/docs-worktrees/better-auth/CLAUDE.md` | Create |
+
+---
+
+## Verification
+
+1. Verify all 4 directories exist with repos cloned
+2. Verify each has a CLAUDE.md file
+3. Test reading a file from each repo
+4. Verify shallow clone worked: `cd nextjs && git log --oneline | wc -l` should show 1
+
+---
+
+## Notes
+
+- Using **shallow clones** (`--depth 1`) because:
+  - Only need latest code for reference
+  - Significantly smaller disk usage (Next.js repo is huge)
+  - Faster clone times
+  - Can still update with `git pull`
+
+- These are **not** true git worktrees linked to a main repo. For documentation purposes, simple clones are more practical and easier to maintain.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+great mention the doc repos in the main @CLAUDE.md for this repo
+
+---
+
+Lets allow user to create new organizations and invite members, use full potential of organizations plugin. I would like you to utilize
+  frontend design skill, vercel composition skill and all shadcn components that would fit in.
+
+lets use the doc repos for easy paste copy and adapt workflow (use team to explore repos as needed)
+
+---
+
+[Request interrupted by user for tool use]
