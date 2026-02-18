@@ -1,0 +1,940 @@
+Implement the following plan:
+
+# Fix Survey Builder Re-animation Issue - Complete Investigation
+
+## Context
+
+When dragging an item from bottom to top in the survey builder, items that shift down get **re-animated** (fade-in) after the drag ends. This is a classic symptom of **mount/unmount cycles** or **animation library interpreting reorder as "enter"**.
+
+## Root Cause Investigation
+
+Based on the user's feedback, the issue is NOT just inverted `initial` logic. The real problem is likely one of:
+
+### 1. `AnimatePresence` Without `initial={false}`
+
+```tsx
+// builder-canvas.tsx line 158
+<AnimatePresence mode="popLayout">
+```
+
+**Missing `initial={false}`!** This means:
+- All children run their `initial` animation on first mount
+- AND potentially on any reconciliation that Framer Motion interprets as "enter"
+
+### 2. `initial` Prop Defined on All Items
+
+```tsx
+// builder-canvas.tsx lines 253-259
+initial={isOptimistic ? false : { opacity: 0, y: 20, scale: 0.95 }}
+animate={isOptimistic ? false : { opacity: 1, y: 0, scale: 1 }}
+```
+
+**Problem:** ALL existing items have `initial={{ opacity: 0, y: 20 }}` defined.
+- If React/Framer Motion remounts an item (even briefly), it will fade in from opacity 0
+- The `layout` animation should handle position changes, NOT `initial`/`animate`
+
+### 3. Complex `layout` Logic Creates Edge Cases
+
+```tsx
+const layoutEnabled = !activeDragItem && !justReordered;
+// ...
+layout={layoutEnabled ? "position" : false}
+```
+
+**Problem:** This toggles `layout` on/off:
+- During drag: `layout={false}` - Framer Motion stops tracking position
+- After drag: `layout="position"` - Framer Motion starts tracking again
+- This transition could trigger unwanted animations
+
+### 4. `mode="popLayout"` on AnimatePresence
+
+```tsx
+<AnimatePresence mode="popLayout">
+```
+
+`mode="popLayout"` is designed for items that EXIT and re-enter. But in a reorder:
+- Items don't exit, they just move
+- This mode might interfere with normal layout animations
+
+---
+
+## Solution: Layered Fixes
+
+### Fix 1: Add `initial={false}` to AnimatePresence
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+```tsx
+// Line 158, change:
+<AnimatePresence mode="popLayout">
+
+// To:
+<AnimatePresence mode="popLayout" initial={false}>
+```
+
+This prevents the first render from triggering enter animations.
+
+### Fix 2: Remove `initial`/`animate` for Position Changes
+
+**The key insight:** `initial`/`animate` are for **enter animations**. For reorders, use **only `layout`**.
+
+Change the question card rendering (lines 249-280):
+
+```tsx
+// BEFORE (problematic):
+<motion.div
+  key={question.id}
+  layout={layoutEnabled ? "position" : false}
+  initial={isOptimistic ? false : { opacity: 0, y: 20, scale: 0.95 }}
+  animate={isOptimistic ? false : { opacity: 1, y: 0, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+  transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
+>
+
+// AFTER (correct):
+<motion.div
+  key={question.id}
+  layout={!activeDragItem ? "position" : false}  // Only disable during drag
+  initial={isOptimistic ? { opacity: 0, y: 20, scale: 0.95 } : false}  // NEW items animate in
+  animate={{ opacity: 1, y: 0, scale: 1 }}  // Always animate to visible
+  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+  transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
+>
+```
+
+**Key changes:**
+1. `initial={isOptimistic ? {...} : false}` - Only NEW items get enter animation
+2. `animate={{ opacity: 1, y: 0, scale: 1 }}` - Always animate to visible (not conditional)
+3. Remove `justReordered` from `layout` logic - only check `activeDragItem`
+
+### Fix 3: Remove `justReordered` State (Cleanup)
+
+After fixes 1 & 2, the `justReordered` state is unnecessary:
+
+**File:** `apps/web/src/components/survey-builder/index.tsx`
+
+Remove:
+- `const [justReordered, setJustReordered] = useState(false);`
+- The `useEffect` that resets `justReordered` (lines 115-122)
+- `setJustReordered(true)` in `handleDragEnd` (line 285)
+- `justReordered` prop from `<BuilderCanvas ... />` (line 429)
+- `dropAnimation={justReordered ? null : defaultDropAnimation}` on DragOverlay (line 452)
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+Remove:
+- `justReordered` from props interface (line 42)
+- `justReordered` from destructured props (line 50)
+- All references to `justReordered` in exit animations (lines 228-234, 298-305)
+- The `layoutEnabled` variable (line 247)
+
+### Fix 4: Simplify Drop Indicator Exit Animations
+
+The drop indicator exit animations have complex conditional logic:
+
+```tsx
+exit={
+  justReordered
+    ? { opacity: 1, height: "auto", transition: { duration: 0 } }
+    : { opacity: 0, height: 0 }
+}
+```
+
+After removing `justReordered`, simplify to:
+
+```tsx
+exit={{ opacity: 0, height: 0 }}
+```
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `builder-canvas.tsx` | Add `initial={false}` to AnimatePresence, fix `initial` prop logic, simplify `layout` prop, remove `justReordered` |
+| `index.tsx` | Remove `justReordered` state and all references |
+
+---
+
+## Implementation Steps
+
+### Step 1: Fix `builder-canvas.tsx`
+
+1. Add `initial={false}` to AnimatePresence (line 158)
+2. Fix the `initial` prop on question motion.div (lines 253-259)
+3. Simplify `layout` prop logic (remove `justReordered` check)
+4. Remove `justReordered` from props and all references
+
+### Step 2: Simplify `index.tsx`
+
+1. Remove `justReordered` state declaration
+2. Remove the `useEffect` that resets `justReordered`
+3. Remove `setJustReordered(true)` from `handleDragEnd`
+4. Remove `justReordered` prop from `BuilderCanvas`
+5. Simplify `DragOverlay` dropAnimation
+
+---
+
+## Verification
+
+1. **Start dev server:** `pnpm dev:web`
+2. **Add debug logging** to verify no remounts:
+   ```tsx
+   useEffect(() => {
+     console.log('mount', question.id);
+     return () => console.log('unmount', question.id);
+   }, [question.id]);
+   ```
+3. **Test bottom-to-top drag:** Drag last item to top position
+   - Expected: NO "unmount/mount" logs, NO re-animation after drop
+4. **Test top-to-bottom drag:** Drag first item to bottom position
+   - Expected: Same behavior
+5. **Test new item creation:** Add a new question from palette
+   - Expected: New item animates in, existing items don't animate
+
+---
+
+## Summary
+
+The issue has multiple contributing factors:
+
+1. **`AnimatePresence` missing `initial={false}`** - causes first-render animations
+2. **Inverted `initial` logic** - ALL items have enter animation defined, not just new ones
+3. **Unnecessary `justReordered` complexity** - workaround for wrong diagnosis
+
+The fix:
+1. Add `initial={false}` to AnimatePresence
+2. Fix `initial` prop: new items animate, existing items don't
+3. Simplify `layout` prop: only disable during active drag
+4. Remove `justReordered` complexity entirely
+
+**Key principle:** Use `layout` for position changes (reorder), use `initial`/`animate` only for true mount/unmount animations.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+commit these changes
+
+---
+
+push it (create remote)
+
+---
+
+create it with gh and then push
+
+---
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me analyze the conversation chronologically:
+
+1. **Initial Request**: The user asked me to implement a detailed plan to fix a "Survey Builder Re-animation Issue". The plan was provided in full detail, explaining:
+   - The problem: items getting re-animated (fade-in) when dragging from bottom to top
+   - Root causes identified: missing `initial={false}` on AnimatePresence, inverted `initial` prop logic, complex `layout` logic, and `mode="popLayout"` issues
+   - Solution: layered fixes to both `builder-canvas.tsx` and `index.tsx`
+
+2. **My Approach**:
+   - First read both files to understand current state
+   - Made edits to `builder-canvas.tsx`:
+     - Removed `justReordered` from props interface and destructuring
+     - Added `initial={false}` to AnimatePresence
+     - Fixed drop indicator exit animations (removed conditional logic)
+     - Fixed question card animation props (initial only for optimistic items, simplified layout prop)
+   - Made edits to `index.tsx`:
+     - Removed `justReordered` state
+     - Removed the useEffect that reset `justReordered`
+     - Removed `setJustReordered(false)` from `handleDragStart`
+     - Removed `setJustReordered(true)` from `handleDragEnd`
+     - Removed `justReordered` prop from `BuilderCanvas`
+     - Simplified `DragOverlay` dropAnimation
+
+3. **Errors encountered**:
+   - One Edit operation failed due to indentation mismatch (tabs vs spaces) - fixed by re-reading the file to get exact indentation
+
+4. **Verification**:
+   - Ran TypeScript type check (passed)
+   - Ran Biome linter (fixed some formatting)
+   - Verified no `justReordered` references remained using grep
+
+5. **Commit**: User asked to commit changes - created commit with conventional commit message
+
+6. **Push**: User asked to push and create remote - `origin` didn't exist, so I created GitHub repo using `gh` CLI and pushed
+
+Summary:
+1. Primary Request and Intent:
+   The user asked me to implement a detailed plan to fix a "Survey Builder Re-animation Issue" where items in a survey builder would get re-animated (fade-in) when dragging items from bottom to top. The root cause was improper use of Framer Motion's `initial`, `animate`, and `layout` props, combined with missing `initial={false}` on AnimatePresence. After implementation, the user requested committing and pushing the changes to a new GitHub repository.
+
+2. Key Technical Concepts:
+   - Framer Motion animation library (`AnimatePresence`, `motion.div`, `initial`, `animate`, `layout`, `exit` props)
+   - React state management and component re-rendering
+   - DnD Kit (drag and drop library) integration with Framer Motion
+   - Optimistic updates for new items (using `temp-` prefixed IDs)
+   - The principle: use `layout` for position changes (reorder), use `initial`/`animate` only for mount/unmount animations
+   - Conventional commit message format
+
+3. Files and Code Sections:
+   - `apps/web/src/components/survey-builder/builder-canvas.tsx`
+      - Core file for rendering the survey builder canvas with animated question cards
+      - Removed `justReordered` from props interface and destructuring
+      - Added `initial={false}` to AnimatePresence to prevent first-render animations
+      - Fixed question card animation props so only NEW items animate in
+      - Simplified drop indicator exit animations
+      - Key code changes:
+      ```tsx
+      // Props interface (removed justReordered)
+      interface BuilderCanvasProps {
+        questions: Question[];
+        onQuestionsChange: (questions: Question[]) => void;
+        activeDragItem: DragItem | null;
+        overId: string | null;
+      }
+      
+      // AnimatePresence with initial={false}
+      <AnimatePresence mode="popLayout" initial={false}>
+      
+      // Fixed question card animation props
+      <motion.div
+        key={question.id}
+        layout={!activeDragItem ? "position" : false}
+        initial={
+          isOptimistic
+            ? { opacity: 0, y: 20, scale: 0.95 }
+            : false
+        }
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{
+          opacity: 0,
+          scale: 0.95,
+          transition: { duration: 0.15 },
+        }}
+      >
+      
+      // Simplified drop indicator exit (removed conditional)
+      exit={{ opacity: 0, height: 0 }}
+      ```
+
+   - `apps/web/src/components/survey-builder/index.tsx`
+      - Main survey builder component with DnD context and state management
+      - Removed `justReordered` state declaration
+      - Removed the `useEffect` that reset `justReordered`
+      - Removed `setJustReordered` calls from drag handlers
+      - Removed `justReordered` prop from `BuilderCanvas`
+      - Simplified `DragOverlay` to always use `defaultDropAnimation`
+      - Key code removals:
+      ```tsx
+      // Removed:
+      const [justReordered, setJustReordered] = useState(false);
+      
+      // Removed useEffect:
+      useEffect(() => {
+        if (justReordered) {
+          const timer = setTimeout(() => {
+            setJustReordered(false);
+          }, 300);
+          return () => clearTimeout(timer);
+        }
+      }, [justReordered]);
+      
+      // Removed from handleDragStart:
+      setJustReordered(false);
+      
+      // Removed from handleDragEnd:
+      setJustReordered(true);
+      
+      // Simplified DragOverlay:
+      <DragOverlay dropAnimation={defaultDropAnimation}>
+      ```
+
+4. Errors and fixes:
+   - **Edit operation failed due to indentation mismatch**: When trying to fix the second drop indicator's exit animation, the old_string didn't match because of different indentation (tabs vs spaces). Fixed by re-reading the file to get the exact indentation pattern and using the correct string.
+
+5. Problem Solving:
+   - Successfully implemented all fixes from the plan to prevent re-animation on reorder
+   - Verified with TypeScript compiler that no type errors were introduced
+   - Ran Biome linter to ensure code quality
+   - Verified no `justReordered` references remained using grep
+   - Created GitHub repository using `gh` CLI when no remote existed
+
+6. All user messages:
+   - "Implement the following plan: [detailed plan for fixing survey builder re-animation issue]"
+   - "commit these changes"
+   - "push it (create remote)"
+   - "create it with gh and then push"
+
+7. Pending Tasks:
+   - None explicitly requested
+
+8. Current Work:
+   The implementation was completed successfully. The final action was creating a GitHub repository and pushing the changes:
+   - Created repo: `gh repo create orksys-survey --public --source=. --remote=origin`
+   - Pushed: `git push -u origin main`
+   - Repository URL: https://github.com/orlovvvv/orksys-survey
+   - Commit: `61ee03d` with message "fix(survey-builder): prevent re-animation on reorder by fixing Framer Motion props"
+
+9. Optional Next Step:
+   No pending tasks. The re-animation fix has been implemented, committed, and pushed to the new GitHub repository. The user's requests have been fully completed.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+---
+
+I would like you to lookup oRPC best practices:
+---
+url: /docs/best-practices/optimize-ssr.md
+description: >-
+  Optimize SSR performance in Next.js, SvelteKit, and other frameworks by using
+  oRPC to make direct server-side API calls, avoiding unnecessary network
+  requests.
+---
+
+# Optimize Server-Side Rendering (SSR) for Fullstack Frameworks
+
+This guide demonstrates an optimized approach for setting up Server-Side Rendering (SSR) with oRPC in fullstack frameworks like Next.js, Nuxt, and SvelteKit. This method enhances performance by eliminating redundant network calls during the server rendering process.
+
+## The Problem with Standard SSR Data Fetching
+
+In a typical SSR setup within fullstack frameworks, data fetching often involves the server making an HTTP request back to its own API endpoints.
+
+![Standard SSR: Server calls its own API via HTTP.](/images/standard-ssr-diagram.svg)
+
+This pattern works, but it introduces unnecessary overhead: the server needs to make an HTTP request to itself to fetch the data, which can add extra latency and consume resources.
+
+Ideally, during SSR, the server should fetch data by directly invoking the relevant API logic within the same process.
+
+![Optimized SSR: Server calls API logic directly.](/images/optimized-ssr-diagram.svg)
+
+Fortunately, oRPC provides both a [server-side client](/docs/client/server-side) and [client-side client](/docs/client/client-side), so you can leverage the former during SSR and automatically fall back to the latter in the browser.
+
+## Conceptual approach
+
+```ts
+// Use this for server-side calls
+const orpc = createRouterClient(router)
+
+// Fallback to this for client-side calls
+const orpc: RouterClient<typeof router> = createORPCClient(someLink)
+```
+
+But how? A naive `typeof window === 'undefined'` check works, but exposes your router logic to the client. We need a hack that ensures server‑only code never reaches the browser.
+
+## Implementation
+
+We'll use `globalThis` to share the server client without bundling it into client code.
+
+::: code-group
+
+```ts [lib/orpc.ts]
+import type { RouterClient } from '@orpc/server'
+import { RPCLink } from '@orpc/client/fetch'
+import { createORPCClient } from '@orpc/client'
+
+declare global {
+  var $client: RouterClient<typeof router> | undefined
+}
+
+const link = new RPCLink({
+  url: () => {
+    if (typeof window === 'undefined') {
+      throw new Error('RPCLink is not allowed on the server side.')
+    }
+
+    return `${window.location.origin}/rpc`
+  },
+})
+
+/**
+ * Fallback to client-side client if server-side client is not available.
+ */
+export const client: RouterClient<typeof router> = globalThis.$client ?? createORPCClient(link)
+```
+
+```ts [lib/orpc.server.ts]
+import 'server-only'
+
+import { createRouterClient } from '@orpc/server'
+
+globalThis.$client = createRouterClient(router, {
+  /**
+   * Provide initial context if needed.
+   *
+   * Because this client instance is shared across all requests,
+   * only include context that's safe to reuse globally.
+   * For per-request context, use middleware context or pass a function as the initial context.
+   */
+  context: async () => ({
+    headers: await headers(), // provide headers if initial context required
+  }),
+})
+```
+
+:::
+
+::: details `OpenAPILink` support?
+When you use [OpenAPILink](/docs/openapi/client/openapi-link), its `JsonifiedClient` turns native values (like Date or URL) into plain JSON, so your client types no longer match the output of `createRouterClient`. To fix this, oRPC offers `createJsonifiedRouterClient`, which builds a router client that matches the output of OpenAPILink.
+
+::: code-group
+
+```ts [lib/orpc.ts]
+import type { RouterClient } from '@orpc/server'
+import type { JsonifiedClient } from '@orpc/openapi-client'
+import { OpenAPILink } from '@orpc/openapi-client/fetch'
+import { createORPCClient } from '@orpc/client'
+
+declare global {
+  var $client: JsonifiedClient<RouterClient<typeof router>> | undefined
+}
+
+const link = new OpenAPILink(contract, {
+  url: () => {
+    if (typeof window === 'undefined') {
+      throw new Error('OpenAPILink is not allowed on the server side.')
+    }
+
+    return `${window.location.origin}/api`
+  },
+})
+
+/**
+ * Fallback to client-side client if server-side client is not available.
+ */
+export const client: JsonifiedClient<RouterClient<typeof router>> = globalThis.$client ?? createORPCClient(link)
+```
+
+```ts [lib/orpc.server.ts]
+import 'server-only'
+
+import { createJsonifiedRouterClient } from '@orpc/openapi'
+
+globalThis.$client = createJsonifiedRouterClient(router, {
+  /**
+   * Provide initial context if needed.
+   *
+   * Because this client instance is shared across all requests,
+   * only include context that's safe to reuse globally.
+   * For per-request context, use middleware context or pass a function as the initial context.
+   */
+  context: async () => ({
+    headers: await headers(), // provide headers if initial context required
+  }),
+})
+```
+
+:::
+
+Finally, ensure `lib/orpc.server.ts` is imported before any other code on the server. In Next.js, add it to both `instrumentation.ts` and `app/layout.tsx`:
+
+::: code-group
+
+```ts [instrumentation.ts]
+export async function register() {
+  // Conditionally import if facing runtime compatibility issues
+  // if (process.env.NEXT_RUNTIME === "nodejs") {
+  await import('./lib/orpc.server')
+  // }
+}
+```
+
+```ts [app/layout.tsx]
+import '../lib/orpc.server' // for pre-rendering
+
+// Rest of the code
+```
+
+:::
+
+Now, importing `client` from `lib/orpc.ts` gives you a server-side client during SSR and a client-side client on the client without leaking your router logic.
+
+## Alternative Approach
+
+The above approach is the most straightforward and performant, but you can also use a `fetch` adapter approach that enables plugins like `DedupeRequestsPlugin` and works with any `handler/link` pair that supports the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
+
+::: info
+oRPC doesn't restrict you to any specific approach for optimizing SSR - you can choose whatever approach works best for your framework or requirements.
+:::
+
+```ts [lib/orpc.server.ts]
+import 'server-only'
+
+import { createORPCClient } from '@orpc/client'
+import { RPCLink } from '@orpc/client/fetch'
+import type { RouterClient } from '@orpc/server'
+import { handler } from '@/app/rpc/[[...rest]]/route'
+
+const link = new RPCLink({
+  url: 'http://placeholder',
+  method: inferRPCMethodFromRouter(router),
+  plugins: [
+    new DedupeRequestsPlugin({
+      groups: [{
+        condition: () => true,
+        context: {},
+      }],
+    }),
+  ],
+  fetch: async (request) => {
+    const { response } = await handler.handle(request, {
+      context: {
+        headers: await headers(), // Provide headers if needed
+      },
+    })
+
+    return response ?? new Response('Not Found', { status: 404 })
+  },
+})
+
+globalThis.$client = createORPCClient<RouterClient<typeof router>>(link)
+```
+
+## Using the client
+
+The `client` requires no special handling, just use it like regular clients.
+
+```tsx
+export default async function PlanetListPage() {
+  const planets = await client.planet.list({ limit: 10 })
+
+  return (
+    <div>
+      {planets.map(planet => (
+        <div key={planet.id}>{planet.name}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+::: info
+This example uses Next.js, but you can apply the same pattern in SvelteKit, Nuxt, or any framework.
+:::
+
+## TanStack Query
+
+Combining this oRPC setup with TanStack Query (React Query, Solid Query, etc.) provides a powerful pattern for data fetching, and state management, especially with Suspense hooks. Refer to these details in [Tanstack Query Integration Guide](/docs/integrations/tanstack-query-old/basic) and [Tanstack Query SSR Guide](https://tanstack.com/query/latest/docs/framework/react/guides/ssr).
+
+```tsx
+export default function PlanetListPage() {
+  const { data: planets } = useSuspenseQuery(
+    orpc.planet.list.queryOptions({
+      input: { limit: 10 },
+    }),
+  )
+
+  return (
+    <div>
+      {planets.map(planet => (
+        <div key={planet.id}>{planet.name}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+:::warning
+Above example uses suspense hooks, you might need to wrap your app within `<Suspense />` (or corresponding APIs) to make it work. In Next.js, maybe you need create `loading.tsx`.
+:::
+
+---
+url: /docs/best-practices/no-throw-literal.md
+description: Always throw `Error` instances instead of literal values.
+---
+
+# No Throw Literal
+
+In JavaScript, you can throw any value, but it's best to throw only `Error` instances.
+
+```ts
+// eslint-disable-next-line no-throw-literal
+throw 'error' // ✗ avoid
+throw new Error('error') // ✓ recommended
+```
+
+:::info
+oRPC treats thrown `Error` instances as best practice by default, as recommended by the [JavaScript Standard Style](https://standardjs.com/rules.html#throw-new-error-old-style).
+:::
+
+## Configuration
+
+Customize oRPC's behavior by setting `throwableError` in the `Registry`:
+
+```ts
+declare module '@orpc/server' { // or '@orpc/contract', or '@orpc/client'
+  interface Registry {
+    throwableError: Error // [!code highlight]
+  }
+}
+```
+
+:::info
+Avoid using `any` or `unknown` for `throwableError` because doing so prevents the client from inferring [type-safe errors](/docs/client/error-handling#using-safe-and-isdefinederror). Instead, use `null | undefined | {}` (equivalent to `unknown`) for stricter error type inference.
+:::
+
+:::tip
+If you configure `throwableError` as `null | undefined | {}`, adjust your code to check the `isSuccess` property instead of `error`:
+
+```ts
+const { error, data, isSuccess } = await safe(client('input'))
+
+if (!isSuccess) {
+  if (isDefinedError(error)) {
+    // handle type-safe error
+  }
+  // handle other errors
+}
+else {
+  // handle success
+}
+```
+
+:::
+
+## Bonus
+
+If you use ESLint, enable the [no-throw-literal](https://eslint.org/docs/rules/no-throw-literal) rule to enforce throwing only `Error` instances.
+
+---
+url: /docs/best-practices/monorepo-setup.md
+description: The most efficient way to set up a monorepo with oRPC
+---
+
+# Monorepo Setup
+
+A monorepo stores multiple related projects in a single repository, a common practice for managing interconnected projects like web applications and their APIs.
+
+This guide shows you how to efficiently set up a monorepo with oRPC while maintaining end-to-end type safety across all projects.
+
+::: info Playground
+Explore a sample monorepo setup in our [Multiservice Monorepo Playground](https://github.com/middleapi/orpc-multiservice-monorepo-playground).
+:::
+
+## TypeScript Project References
+
+When consuming, some parts of the client may end up being typed as `any` because the client environment doesn't have access to all types that oRPC procedures depend on. The most effective solution is to use [TypeScript Project References](https://www.typescriptlang.org/docs/handbook/project-references.html). This ensures the client can resolve all types used by oRPC procedures while also improving TypeScript performance.
+
+::: code-group
+
+```json [client/tsconfig.json]
+{
+  "compilerOptions": {
+    // ...
+  },
+  "references": [
+    { "path": "../server" } // [!code highlight]
+  ]
+}
+```
+
+```json [server/tsconfig.json]
+{
+  "compilerOptions": {
+    "composite": true // [!code highlight]
+    // ...
+  }
+}
+```
+
+:::
+
+::: tip Common `composite` option's constraint
+The most common issue with `composite` is missing type definitions, resulting in: `The inferred type of "X" cannot be named without a reference to "Y". This is likely not portable. A type annotation is necessary.`
+
+If you encounter this, try installing package `Y` if not already installed and adding this to your codebase where the error occurs:
+
+```ts
+import type * as _A from '../../node_modules/detail_Y_path_here'
+```
+
+:::
+
+## Recommended Structure
+
+* `/apps`: `references` dependencies in `tsconfig.json`
+* `/packages`: Enable `composite` in `tsconfig.json`
+
+The key principle is separating the server component (with `composite` enabled) into a dedicated package containing only necessary files. This approach simplifies dealing with the `composite` option's constraints.
+
+::: tip
+Avoid **alias imports** inside server components when possible. Instead, use **linked workspace packages** (e.g., [PNPM Workspace protocol](https://pnpm.io/workspaces#workspace-protocol-workspace)).
+:::
+
+::: code-group
+
+```txt [Contract First]
+apps/
+├─ api/    // Import `core-contract` and implement it
+├─ web/    // Import `core-contract` and set up @orpc/client here
+├─ app/
+packages/
+├─ core-contract/  // Define contract with @orpc/contract
+├─ .../
+```
+
+```txt [Service First]
+apps/
+├─ api/    // Import `core-service` and run it in your environment
+├─ web/    // Import `core-service` and set up @orpc/client here
+├─ app/
+packages/
+├─ core-service/   // Define procedures with @orpc/server
+├─ .../
+```
+
+```txt [Hybrid]
+apps/
+├─ api/    // Import `core-service` and set up @orpc/server here
+├─ web/    // Import `core-contract` and set up @orpc/client here
+├─ app/
+packages/
+├─ core-contract/  // Define contract with @orpc/contract
+├─ core-service/   // Import `core-contract` and implement it
+├─ .../
+```
+
+:::
+
+::: info
+This is just a suggestion. You can structure your monorepo however you like.
+:::
+
+## Related
+
+* [Publish Client to NPM](/docs/advanced/publish-client-to-npm)
+
+---
+url: /docs/best-practices/dedupe-middleware.md
+description: Enhance oRPC middleware performance by avoiding redundant executions.
+---
+
+# Dedupe Middleware
+
+This guide explains how to optimize your [middleware](/docs/middleware) for fast and efficient repeated execution.
+
+## Problem
+
+When a procedure [calls](/docs/client/server-side#using-the-call-utility) another procedure, overlapping middleware might be applied in both.
+
+Similarly, when using `.use(auth).router(router)`, some procedures inside `router` might already include the `auth` middleware.
+
+:::warning
+Redundant middleware execution can hurt performance, especially if the middleware is resource-intensive.
+:::
+
+## Solution
+
+Use the `context` to track middleware execution and prevent duplication. For example:
+
+```ts twoslash
+import { os } from '@orpc/server'
+
+declare function connectDb(): Promise<'a_fake_db'>
+// ---cut---
+const dbProvider = os
+  .$context<{ db?: Awaited<ReturnType<typeof connectDb>> }>()
+  .middleware(async ({ context, next }) => {
+    /**
+     * If db already exists, skip the connection.
+     */
+    const db = context.db ?? await connectDb() // [!code highlight]
+
+    return next({ context: { db } })
+  })
+```
+
+Now `dbProvider` middleware can be safely applied multiple times without duplicating the database connection:
+
+```ts twoslash
+import { call, os } from '@orpc/server'
+
+declare function connectDb(): Promise<'a_fake_db'>
+const dbProvider = os
+  .$context<{ db?: Awaited<ReturnType<typeof connectDb>> }>()
+  .middleware(async ({ context, next }) => {
+    const db = context.db ?? await connectDb()
+
+    return next({ context: { db } })
+  })
+// ---cut---
+const foo = os.use(dbProvider).handler(({ context }) => 'Hello World')
+
+const bar = os.use(dbProvider).handler(({ context }) => {
+  /**
+   * Now when you call foo, the dbProvider middleware no need to connect to the database again.
+   */
+  const result = call(foo, 'input', { context }) // [!code highlight]
+
+  return 'Hello World'
+})
+
+/**
+ * Now even when `dbProvider` is applied multiple times, it still only connects to the database once.
+ */
+const router = os
+  .use(dbProvider) // [!code highlight]
+  .use(({ next }) => {
+    // Additional middleware logic
+    return next()
+  })
+  .router({
+    foo,
+    bar,
+  })
+```
+
+## Built-in Dedupe Middleware
+
+oRPC can automatically dedupe some middleware under specific conditions.
+
+::: info
+Deduplication occurs only if the router middlewares is a **subset** of the **leading** procedure middlewares and appears in the **same order**.
+:::
+
+```ts
+const router = os.use(logging).use(dbProvider).router({
+  // ✅ Deduplication occurs:
+  ping: os.use(logging).use(dbProvider).use(auth).handler(({ context }) => 'ping'),
+  pong: os.use(logging).use(dbProvider).handler(({ context }) => 'pong'),
+
+  // ⛔ Deduplication does not occur:
+  diff_subset: os.use(logging).handler(({ context }) => 'ping'),
+  diff_order: os.use(dbProvider).use(logging).handler(({ context }) => 'pong'),
+  diff_leading: os.use(monitor).use(logging).use(dbProvider).handler(({ context }) => 'bar'),
+})
+
+// --- equivalent to ---
+
+const router = {
+  // ✅ Deduplication occurs:
+  ping: os.use(logging).use(dbProvider).use(auth).handler(({ context }) => 'ping'),
+  pong: os.use(logging).use(dbProvider).handler(({ context }) => 'pong'),
+
+  // ⛔ Deduplication does not occur:
+  diff_subset: os.use(logging).use(dbProvider).use(logging).handler(({ context }) => 'ping'),
+  diff_order: os.use(logging).use(dbProvider).use(dbProvider).use(logging).handler(({ context }) => 'pong'),
+  diff_leading: os.use(logging).use(dbProvider).use(monitor).use(logging).use(dbProvider).handler(({ context }) => 'bar'),
+}
+```
+
+### Configuration
+
+Disable middleware deduplication by setting `dedupeLeadingMiddlewares` to `false` in `.$config`:
+
+```ts
+const base = os.$config({ dedupeLeadingMiddlewares: false })
+```
+
+:::warning
+The deduplication behavior is safe unless you want to apply middleware multiple times.
+:::
+
+
+and check how well the oRPC capabilities are utilized, use skills from vercel available (composition, react and next skills)
+
+---
+
+[Request interrupted by user for tool use]
