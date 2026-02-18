@@ -3,7 +3,7 @@
   "checkpoint_id": "780169b37921",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 21,
+  "checkpoints_count": 22,
   "files_touched": [
     "CLAUDE.md",
     "PHASE3.md",
@@ -292,13 +292,20 @@
       "context": "/78/0169b37921/5/context.md",
       "content_hash": "/78/0169b37921/5/content_hash.txt",
       "prompt": "/78/0169b37921/5/prompt.txt"
+    },
+    {
+      "metadata": "/78/0169b37921/6/metadata.json",
+      "transcript": "/78/0169b37921/6/full.jsonl",
+      "context": "/78/0169b37921/6/context.md",
+      "content_hash": "/78/0169b37921/6/content_hash.txt",
+      "prompt": "/78/0169b37921/6/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 832946,
+    "input_tokens": 1070625,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 15183168,
-    "output_tokens": 72743,
-    "api_call_count": 266
+    "cache_read_tokens": 20368064,
+    "output_tokens": 96602,
+    "api_call_count": 337
   }
 }

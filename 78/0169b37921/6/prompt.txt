@@ -1,0 +1,245 @@
+Implement the following plan:
+
+# Organization Management & Member Invitations
+
+## Context
+
+Implement organization management UI to allow users to manage team members and send invitations using the Better Auth organizations plugin. The backend is already configured with roles (owner, admin, member) and permissions. This adds the frontend UI layer.
+
+---
+
+## File Structure
+
+```
+apps/web/src/
+├── app/(app)/
+│   ├── settings/
+│   │   └── organization/
+│   │       └── page.tsx                    # Organization settings page
+│   └── invitations/
+│       └── [invitationId]/
+│           └── page.tsx                    # Invitation accept/reject page
+│
+└── components/organization/
+    ├── index.ts
+    ├── types.ts
+    ├── member-list.tsx                     # Member table with actions
+    ├── member-actions-menu.tsx             # Role change, remove member
+    ├── invitation-list.tsx                 # Pending invitations
+    ├── invite-member-dialog.tsx            # Responsive dialog/sheet
+    ├── role-badge.tsx                      # Badge for owner/admin/member
+    └── hooks/
+        ├── index.ts
+        ├── use-organization-members.ts
+        ├── use-invitations.ts
+        └── use-member-actions.ts
+```
+
+---
+
+## Implementation Steps
+
+### Step 1: Types & Hooks
+
+**`components/organization/types.ts`**
+```typescript
+export type MemberRole = "owner" | "admin" | "member";
+export type InvitationStatus = "pending" | "accepted" | "rejected" | "canceled";
+
+export interface Member {
+  id: string;
+  userId: string;
+  user: { id: string; name: string; email: string; image?: string };
+  role: MemberRole;
+  createdAt: Date;
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: MemberRole;
+  status: InvitationStatus;
+  expiresAt: Date;
+  createdAt: Date;
+}
+```
+
+**`components/organization/hooks/use-organization-members.ts`**
+- Query for `authClient.organization.listMembers()`
+- Returns `{ members, isLoading, refetch }`
+
+**`components/organization/hooks/use-member-actions.ts`**
+- Mutations for `removeMember`, `updateMemberRole`
+- Invalidates queries on success, shows toast notifications
+
+**`components/organization/hooks/use-invitations.ts`**
+- Query for `authClient.organization.listInvitations()`
+- Mutations for `inviteMember`, `cancelInvitation`
+
+### Step 2: Role Badge Component
+
+**`components/organization/role-badge.tsx`**
+- Owner: primary variant
+- Admin: secondary variant
+- Member: outline variant
+
+### Step 3: Member List Component
+
+**`components/organization/member-list.tsx`**
+- Table layout with columns: Avatar, Name, Email, Role, Joined, Actions
+- Responsive: Table on desktop, Card list on mobile
+- Member actions dropdown for admins/owners
+
+**`components/organization/member-actions-menu.tsx`**
+- Change Role submenu (member <-> admin, owner only for admin assignment)
+- Remove member (confirmation dialog)
+- Disabled for self and last owner
+
+### Step 4: Invitation List Component
+
+**`components/organization/invitation-list.tsx`**
+- Shows pending invitations with email, role, expires date
+- Cancel button for pending invitations
+- Empty state when no invitations
+
+### Step 5: Invite Member Dialog
+
+**`components/organization/invite-member-dialog.tsx`**
+- Responsive: Dialog on desktop, Sheet on mobile (use `useIsMobile`)
+- Form with email input and role select
+- Uses `@tanstack/react-form` + Zod (follow `create-organization-form.tsx` pattern)
+- Success/error toasts with `sonner`
+
+### Step 6: Settings Page
+
+**`app/(app)/settings/organization/page.tsx`**
+- Tabs: Members | Invitations
+- Members tab: MemberList + InviteMemberDialog
+- Invitations tab: InvitationList
+- Page header with organization name
+
+### Step 7: Invitation Acceptance Page
+
+**`app/(app)/invitations/[invitationId]/page.tsx`**
+- Fetch invitation via `authClient.organization.getInvitation()`
+- Show organization name, role, inviter info
+- Accept/Reject buttons
+- Handle: not authenticated (redirect to sign in), expired, already accepted
+- On accept: call `acceptInvitation`, set active org, redirect to dashboard
+
+### Step 8: Navigation Updates
+
+- Add "Settings" link to user menu (`components/user-menu.tsx`)
+- Add to app sidebar if applicable
+
+---
+
+## Key Patterns to Follow
+
+### Form Pattern (from create-organization-form.tsx)
+```typescript
+const form = useForm({
+  defaultValues: { email: "", role: "member" },
+  onSubmit: async ({ value }) => {
+    const result = await authClient.organization.inviteMember({
+      email: value.email,
+      role: value.role,
+    });
+    if (result.error) {
+      toast.error(result.error.message);
+      return;
+    }
+    toast.success("Invitation sent");
+    onSuccess?.();
+  },
+  validators: {
+    onSubmit: z.object({
+      email: z.string().email(),
+      role: z.enum(["member", "admin"]),
+    }),
+  },
+});
+```
+
+### Responsive Dialog/Sheet Pattern
+```typescript
+function InviteMemberDialog() {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild><Button>Invite</Button></SheetTrigger>
+        <SheetContent><InviteForm onSuccess={() => setOpen(false)} /></SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button>Invite</Button></DialogTrigger>
+      <DialogContent><InviteForm onSuccess={() => setOpen(false)} /></DialogContent>
+    </Dialog>
+  );
+}
+```
+
+---
+
+## API Methods (No new routes needed)
+
+All operations use existing Better Auth client methods:
+
+| Operation | Method |
+|-----------|--------|
+| List members | `authClient.organization.listMembers()` |
+| Invite member | `authClient.organization.inviteMember({ email, role })` |
+| Remove member | `authClient.organization.removeMember({ memberIdOrEmail })` |
+| Update role | `authClient.organization.updateMemberRole({ memberId, role })` |
+| List invitations | `authClient.organization.listInvitations()` |
+| Cancel invitation | `authClient.organization.cancelInvitation({ invitationId })` |
+| Get invitation | `authClient.organization.getInvitation({ id })` |
+| Accept invitation | `authClient.organization.acceptInvitation({ invitationId })` |
+| Reject invitation | `authClient.organization.rejectInvitation({ invitationId })` |
+
+---
+
+## Permission Rules
+
+From `packages/auth/src/permissions.ts`:
+
+- **Owner**: Full access, can assign admin role, manage billing
+- **Admin**: Can invite/remove members, create/cancel invitations
+- **Member**: Can view organization, cannot manage members
+
+UI should hide action buttons for users without permission.
+
+---
+
+## Verification
+
+1. Create organization, invite member via email
+2. Accept invitation as new user
+3. Verify member appears in list with correct role
+4. Test role change (admin can change member role)
+5. Test remove member (admin can remove members)
+6. Test cancel invitation
+7. Test responsive layouts (mobile/desktop)
+8. Verify permission restrictions (member cannot see invite/manage buttons)
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.claude/projects/-Users-orksys-Projects-orksys-survey/f4beaebf-80fe-4c24-8669-e4d7f64cae6f.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+Lets allow user to comfortably manage their accoutn to the fullest (and see plan they're on), use full potential of better auth. I would like you to utilize
+  frontend design skill, vercel composition skill and all shadcn components that would fit in.
+
+lets use the doc repos for easy paste copy and adapt workflow (use team to explore repos as needed)
+
+---
+
+[Request interrupted by user for tool use]
