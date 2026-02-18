@@ -1,0 +1,248 @@
+Implement the following plan:
+
+# Protected Pages Header Design
+
+## Context
+
+The current header for protected pages (`apps/web/src/components/header.tsx`) is a simple horizontal navigation that lacks:
+- Mobile responsiveness (no hamburger menu)
+- Modern design patterns
+- Compound component flexibility
+- Avatar in user menu
+- Breadcrumb support
+
+This plan creates a modern, flexible header component using compound component patterns, shadcn/ui components, and React 19 best practices.
+
+---
+
+## Component Structure
+
+```
+apps/web/src/components/app-header/
+├── index.ts                    # Public exports
+├── context.tsx                 # Header context for state sharing
+├── app-header.tsx              # Root header component
+├── header-nav.tsx              # Desktop navigation
+├── mobile-menu.tsx             # Mobile sheet menu
+├── breadcrumb.tsx              # Breadcrumb component
+└── types.ts                    # Shared types
+```
+
+---
+
+## API Design
+
+```tsx
+// Simplified API (recommended)
+<AppHeader
+  navItems={navItems}
+  showOrgSwitcher
+  showThemeToggle
+  showUserMenu
+  breadcrumbs={[{ label: "Surveys" }]}
+/>
+
+// Compound API (for flexibility)
+<AppHeader>
+  <AppHeader.Logo />
+  <AppHeader.Nav />
+  <AppHeader.Actions>
+    <AppHeader.OrgSwitcher />
+    <AppHeader.ThemeToggle />
+    <AppHeader.UserMenu />
+  </AppHeader.Actions>
+</AppHeader>
+```
+
+---
+
+## Key Features
+
+1. **Desktop Layout**: Logo + centered nav + right actions (org switcher, theme, user menu)
+2. **Mobile Layout**: Hamburger menu triggers Sheet with navigation
+3. **Active state**: Visual indicator for current page
+4. **Breadcrumbs**: Optional breadcrumb support
+5. **Avatar**: User initials/image in user menu dropdown
+
+---
+
+## Implementation Steps
+
+### Step 1: Create types.ts
+```tsx
+export interface NavItem {
+  href: string;
+  label: string;
+  icon?: ReactNode;
+  badge?: string | number;
+  disabled?: boolean;
+}
+
+export interface AppHeaderContextValue {
+  navItems: NavItem[];
+  currentPath: string;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+}
+
+export interface AppHeaderProps {
+  children?: ReactNode;
+  className?: string;
+  navItems?: NavItem[];
+  showOrgSwitcher?: boolean;
+  showThemeToggle?: boolean;
+  showUserMenu?: boolean;
+  breadcrumbs?: Array<{ label: string; href?: string }>;
+  sticky?: boolean;
+  border?: "none" | "bottom" | "full";
+}
+```
+
+### Step 2: Create context.tsx
+- Use React 19 `use()` instead of `useContext()`
+- Provide: `navItems`, `currentPath`, `mobileMenuOpen`, `setMobileMenuOpen`
+- Use `usePathname()` for current path tracking
+
+### Step 3: Create app-header.tsx
+- Root component with provider wrapper
+- Desktop: Logo (left) + Nav (center) + Actions (right)
+- Mobile: Logo + Hamburger button (left) + Actions (right)
+- Integrate existing: `OrganizationSwitcher`, `ModeToggle`, `UserMenu`
+
+### Step 4: Create header-nav.tsx
+- Simple tab-like navigation using `Button` with `variant="ghost"`
+- Active state: `bg-accent text-accent-foreground` + bottom underline
+- Hidden on mobile (`hidden md:flex`)
+
+### Step 5: Create mobile-menu.tsx
+- Use `Sheet` component with `side="left"`
+- Navigation links with active states
+- Footer with Settings and Sign Out
+
+### Step 6: Create breadcrumb.tsx
+- Home icon + ChevronRight separators
+- Last item is non-clickable
+- Hidden on mobile
+
+### Step 7: Update user-menu.tsx
+- Add `Avatar` component with user image or initials
+- Improve dropdown with user info header
+
+### Step 8: Update (app)/layout.tsx
+```tsx
+import { AppHeader } from "@/components/app-header";
+
+const navItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/surveys", label: "Surveys" },
+  { href: "/todos", label: "Todos" },
+];
+
+export default function AppLayout({ children }) {
+  return (
+    <div className="grid h-svh grid-rows-[auto_1fr]">
+      <AppHeader navItems={navItems} showOrgSwitcher showThemeToggle showUserMenu />
+      {children}
+    </div>
+  );
+}
+```
+
+### Step 9: Create index.ts exports
+
+---
+
+## Files to Modify/Create
+
+| File | Action |
+|------|--------|
+| `apps/web/src/components/app-header/types.ts` | Create |
+| `apps/web/src/components/app-header/context.tsx` | Create |
+| `apps/web/src/components/app-header/app-header.tsx` | Create |
+| `apps/web/src/components/app-header/header-nav.tsx` | Create |
+| `apps/web/src/components/app-header/mobile-menu.tsx` | Create |
+| `apps/web/src/components/app-header/breadcrumb.tsx` | Create |
+| `apps/web/src/components/app-header/index.ts` | Create |
+| `apps/web/src/components/user-menu.tsx` | Modify - add Avatar |
+| `apps/web/src/app/(app)/layout.tsx` | Modify - use new header |
+
+---
+
+## Styling Approach
+
+- Uses semantic CSS variables: `bg-card`, `text-foreground`, `border-border`
+- Active states: `bg-accent text-accent-foreground`
+- Responsive: `hidden md:flex` for desktop nav, `md:hidden` for mobile toggle
+- Header height: `h-14` (56px)
+- Spacing: `gap-2`, `px-4`
+
+---
+
+## Accessibility
+
+- `aria-label` on mobile menu toggle
+- `aria-current="page"` on active nav items
+- Sheet provides focus trap
+- Keyboard navigable
+
+---
+
+## Verification
+
+1. Run `pnpm dev:web`
+2. Navigate to `/dashboard` (requires login)
+3. Verify:
+   - Header displays with nav items centered
+   - Active page is highlighted
+   - Organization switcher works
+   - Theme toggle works
+   - User menu shows avatar with initials
+   - On mobile (<768px): hamburger menu appears
+   - Mobile menu sheet slides in from left
+   - Breadcrumbs display when provided
+4. Run `pnpm check-types` to verify no TypeScript errors
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+some content on protected page also need theme/color adjustments (text to be light on dark mode and vice versa)
+
+---
+
+The protected page header looks bad and does not utilize the capabilities of shadcn componetns fully along with not utilizng the theme that was setup (base-nova), ALL of the components currently set up FROM shadcn need to be regenerated via shadcn cli
+
+---
+
+Displatch explore agents, find bad use/implementation of button that goes agains base-ui standards that cause errors such as this ## Error Type
+Console Error
+
+## Error Message
+Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+
+Next.js version: 16.1.6 (Turbopack)
+, then list out all component to things, dispatch team of agents to address all of these in parallel
+
+---
+
+use npx shadcn@latest add https://21st.dev/r/sshahaider/header-with-search command to get the header, and replace current protected page header with it (adapt to the app itself tough - login elements are obsolete but need to be replaced with org switcher AND proper user nav menu)
+
+---
+
+user nav menu should be wider to take into account longer emails even if user full name is short, adjust its width to match the content (with a reasonable limit to width of course)
+
+---
+
+create a gitworktree dir for documentation repos:
+- clone latest main from shadcn repo, write CLAUDE.md for it that mentions that this is documentation and research focused gitworktree, use it to learn all latest shadcn pattenrs
+
+do the same for latest nextjs repo, oRPC repo, better auth repo. Total 4 repos should be as documentation worktrees with their own short and concise CLAUDE.md within each. 
+
+Lets plan it.
+
+---
+
+[Request interrupted by user for tool use]
