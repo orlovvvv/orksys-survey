@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "6fb243171330",
+  "session_id": "8e4fbd22-787b-4bfc-a30e-5d60e486cdaa",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-18T12:41:31.369174Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "apps/web/src/app/page.tsx",
+    "apps/web/src/components/landing/bento-features.tsx",
+    "apps/web/src/components/landing/core-features.tsx",
+    "apps/web/src/components/landing/cta-section.tsx",
+    "apps/web/src/components/landing/footer.tsx",
+    "apps/web/src/components/landing/hero-section.tsx",
+    "apps/web/src/components/landing/index.ts",
+    "apps/web/src/components/landing/navigation.tsx",
+    "apps/web/src/components/landing/pricing.tsx",
+    "apps/web/src/components/landing/social-proof.tsx",
+    "apps/web/src/components/landing/survey-mockup.tsx",
+    "apps/web/src/components/landing/testimonials.tsx",
+    "apps/web/src/components/landing/ui/index.ts",
+    "apps/web/src/components/landing/ui/section-header.tsx",
+    "apps/web/src/components/landing/ui/section.tsx"
+  ],
+  "agent": "Claude Code",
+  "token_usage": {
+    "input_tokens": 208376,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2445824,
+    "output_tokens": 19884,
+    "api_call_count": 32
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T12:41:31.18462Z",
+    "agent_lines": 743,
+    "human_added": 3154,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3897,
+    "agent_percentage": 19.065948165255325
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/8e4fbd22-787b-4bfc-a30e-5d60e486cdaa.jsonl"
+}
