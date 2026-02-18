@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Archive,
+	BarChart3,
 	Calendar,
 	ClipboardList,
 	Edit,
@@ -211,6 +212,17 @@ export default function SurveysPage() {
 												>
 													<Edit className="mr-2 h-4 w-4" />
 													Edit
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuItem>
+												<Link
+													href={{
+														pathname: `/surveys/${survey.id}/analytics`,
+													}}
+													className="flex items-center"
+												>
+													<BarChart3 className="mr-2 h-4 w-4" />
+													Analytics
 												</Link>
 											</DropdownMenuItem>
 											{survey.status === "draft" && (

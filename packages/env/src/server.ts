@@ -12,6 +12,9 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),
+		// Groq AI Integration
+		GROQ_API_KEY: z.string().min(1).optional(),
+		GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

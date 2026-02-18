@@ -166,6 +166,19 @@ export const response = pgTable(
 		index("response_surveyId_idx").on(table.surveyId),
 		index("response_fingerprint_idx").on(table.fingerprint),
 		index("response_isComplete_idx").on(table.isComplete),
+		// Composite indexes for analytics queries
+		index("response_surveyId_completedAt_idx").on(
+			table.surveyId,
+			table.completedAt,
+		),
+		index("response_surveyId_isComplete_idx").on(
+			table.surveyId,
+			table.isComplete,
+		),
+		index("response_surveyId_createdAt_idx").on(
+			table.surveyId,
+			table.createdAt,
+		),
 	],
 );
 
@@ -190,6 +203,11 @@ export const answer = pgTable(
 	(table) => [
 		index("answer_responseId_idx").on(table.responseId),
 		index("answer_questionId_idx").on(table.questionId),
+		// Composite index for answer aggregations
+		index("answer_questionId_responseId_idx").on(
+			table.questionId,
+			table.responseId,
+		),
 	],
 );
 

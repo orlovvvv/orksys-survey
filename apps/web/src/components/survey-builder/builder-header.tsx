@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
 	ArrowLeft,
+	BarChart3,
 	Eye,
 	Hammer,
 	Loader2,
@@ -161,6 +162,17 @@ export function BuilderHeader({
 						<MoreHorizontal className="h-4 w-4" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
+						<DropdownMenuItem>
+							<Link
+								href={{
+									pathname: `/surveys/${survey.id}/analytics`,
+								}}
+								className="flex items-center"
+							>
+								<BarChart3 className="mr-2 h-4 w-4" />
+								Analytics
+							</Link>
+						</DropdownMenuItem>
 						<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
 							<Settings className="mr-2 h-4 w-4" />
 							Survey Settings

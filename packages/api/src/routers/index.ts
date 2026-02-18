@@ -1,6 +1,8 @@
 import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure, publicProcedure } from "../index";
+import { analyticsRouter } from "./analytics";
+import { insightsRouter } from "./insights";
 import { logicRuleRouter } from "./logic-rule";
 import { questionRouter } from "./question";
 import { responseRouter } from "./response";
@@ -22,6 +24,8 @@ export const appRouter = {
 	question: questionRouter,
 	logicRule: logicRuleRouter,
 	response: responseRouter,
+	analytics: analyticsRouter,
+	insights: insightsRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;
