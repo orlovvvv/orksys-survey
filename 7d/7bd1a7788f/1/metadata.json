@@ -1,7 +1,9 @@
 {
   "cli_version": "0.4.4",
   "checkpoint_id": "7d7bd1a7788f",
+  "session_id": "a956e5dd-bfbc-46c7-8c97-3969105b8cc9",
   "strategy": "manual-commit",
+  "created_at": "2026-02-18T07:18:31.646694Z",
   "branch": "main",
   "checkpoints_count": 1,
   "files_touched": [
@@ -15,7 +17,6 @@
     "apps/web/src/components/organization-switcher.tsx",
     "apps/web/src/components/survey-builder/builder-canvas.tsx",
     "apps/web/src/components/survey-builder/index.tsx",
-    "apps/web/src/components/survey-builder/question-card.tsx",
     "apps/web/src/components/survey-builder/utils.ts",
     "apps/web/src/components/ui/dialog.tsx",
     "apps/web/src/components/ui/popover.tsx",
@@ -29,27 +30,22 @@
     "apps/web/src/hooks/use-media-query.ts",
     "apps/web/src/middleware.ts"
   ],
-  "sessions": [
-    {
-      "metadata": "/7d/7bd1a7788f/0/metadata.json",
-      "transcript": "/7d/7bd1a7788f/0/full.jsonl",
-      "context": "/7d/7bd1a7788f/0/context.md",
-      "content_hash": "/7d/7bd1a7788f/0/content_hash.txt",
-      "prompt": "/7d/7bd1a7788f/0/prompt.txt"
-    },
-    {
-      "metadata": "/7d/7bd1a7788f/1/metadata.json",
-      "transcript": "/7d/7bd1a7788f/1/full.jsonl",
-      "context": "/7d/7bd1a7788f/1/context.md",
-      "content_hash": "/7d/7bd1a7788f/1/content_hash.txt",
-      "prompt": "/7d/7bd1a7788f/1/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
   "token_usage": {
-    "input_tokens": 204903,
+    "input_tokens": 142376,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 1426752,
-    "output_tokens": 15390,
-    "api_call_count": 35
-  }
+    "cache_read_tokens": 717632,
+    "output_tokens": 9394,
+    "api_call_count": 18
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T07:18:31.38834Z",
+    "agent_lines": 170,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 2001,
+    "total_committed": 170,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/a956e5dd-bfbc-46c7-8c97-3969105b8cc9.jsonl"
 }

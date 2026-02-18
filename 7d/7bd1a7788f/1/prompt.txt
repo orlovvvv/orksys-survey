@@ -1,0 +1,404 @@
+Implement the following plan:
+
+# Fix Survey Builder Re-animation Issue (Bottom-to-Top Drag)
+
+## Context
+
+When dragging an item from bottom to top in the survey builder, items that shift down get **re-animated** after the drag ends - even though dnd-kit already moved them visually during the drag. This does NOT happen when dragging top to bottom.
+
+## Root Cause Analysis
+
+### The Problem: Two Animation Systems Conflict
+
+There are **two separate animation systems** operating on the same elements:
+
+1. **dnd-kit's CSS transforms** - Applied via `useSortable` during drag, removed when drag ends
+2. **Framer Motion's `layout="position"`** - Animates position changes when enabled
+
+### The Timing Issue
+
+The `layoutEnabled` variable controls whether Framer Motion layout animations are active:
+
+```typescript
+const layoutEnabled = !activeDragItem && !dropped;
+```
+
+**The problematic sequence:**
+
+1. Drag ends → `dropped = true` → `layoutEnabled = false` (layout disabled)
+2. `setQuestions(newQuestions)` updates the array order → DOM reorders
+3. **500ms timeout fires** → `dropped = false` → `layoutEnabled = true`
+4. Framer Motion's `layout="position"` is now **enabled**
+5. Framer Motion detects DOM position changed → **re-animates all items**
+
+### Why Bottom-to-Top is Worse
+
+When dragging bottom-to-top:
+- Items between old/new positions shift DOWN
+- dnd-kit's transform showed them shifted during drag
+- When transform is removed + layout re-enables, Framer Motion sees a "new" position
+- The 500ms timeout is arbitrary and doesn't wait for DOM stabilization
+
+When dragging top-to-bottom:
+- Items shift UP to fill the gap
+- The visual direction matches the DOM reorder direction
+- Less noticeable because items are "settling into place" rather than "being pushed"
+
+### Key Insight
+
+The 500ms timeout in `index.tsx` (lines 116-123) is the culprit:
+
+```typescript
+useEffect(() => {
+  if (dropped) {
+    const timer = setTimeout(() => {
+      setDropped(false);  // This re-enables layout animations!
+    }, 500);
+    return () => clearTimeout(timer);
+  }
+}, [dropped]);
+```
+
+When `dropped` becomes `false`, `layoutEnabled` becomes `true`, and Framer Motion animates items to their current DOM positions - causing the re-animation flash.
+
+---
+
+## Solution: Disable Layout Animations for Reordered Items
+
+The fix is to **never re-enable layout animations for items that were just reordered**. Instead of using a timeout-based `dropped` state, we should track whether a reorder just happened and keep layout disabled until the next user interaction.
+
+### Approach: Track Reorder State Instead of Drop State
+
+Replace the `dropped` state with a `reorderJustHappened` state that:
+1. Is set to `true` when a reorder occurs
+2. Is reset to `false` on the NEXT drag start (not a timeout)
+
+This ensures layout animations stay disabled after a reorder until the user starts a new interaction.
+
+---
+
+## Files to Modify
+
+### 1. `apps/web/src/components/survey-builder/index.tsx`
+
+**Changes:**
+- Rename `dropped` to `justReordered`
+- Remove the 500ms timeout useEffect
+- Set `justReordered = true` only when actual reordering happens (not on every drop)
+- Reset `justReordered = false` in `handleDragStart`
+
+**Current problematic code (lines 116-123):**
+```typescript
+useEffect(() => {
+  if (dropped) {
+    const timer = setTimeout(() => {
+      setDropped(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }
+}, [dropped]);
+```
+
+**Fix: Remove this useEffect entirely** and reset in `handleDragStart` instead.
+
+### 2. `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+**Changes:**
+- Update the `layoutEnabled` computation to use the new state
+- Pass `justReordered` instead of `dropped`
+
+**Current:**
+```typescript
+const layoutEnabled = !activeDragItem && !dropped;
+```
+
+**New:**
+```typescript
+const layoutEnabled = !activeDragItem && !justReordered;
+```
+
+---
+
+## Implementation Plan
+
+### Step 1: Update `index.tsx`
+
+1. Rename `dropped` state to `justReordered`
+2. Remove the 500ms timeout useEffect
+3. In `handleDragStart`, reset `justReordered = false`
+4. In `handleDragEnd`, only set `justReordered = true` when actual reordering occurs:
+   ```typescript
+   if (oldIndex !== -1 && newIndex !== -1) {
+     setJustReordered(true);  // Only set when reorder actually happens
+     // ... rest of reorder logic
+   }
+   ```
+5. Update props passed to `BuilderCanvas`
+
+### Step 2: Update `builder-canvas.tsx`
+
+1. Rename `dropped` prop to `justReordered`
+2. Update `layoutEnabled` computation
+
+---
+
+## Verification
+
+1. **Start dev server:** `pnpm dev:web`
+2. **Navigate to survey builder** and add 5-6 questions
+3. **Test bottom-to-top drag:** Drag last item to top position
+   - Expected: Items shift during drag, NO re-animation after drop
+4. **Test top-to-bottom drag:** Drag first item to bottom position
+   - Expected: Same smooth behavior
+5. **Test consecutive drags:** Drag multiple items in sequence
+   - Expected: Each drag works smoothly
+6. **Test palette drop:** Add new question from palette
+   - Expected: New question appears smoothly without affecting others
+
+---
+
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `index.tsx` | Replace `dropped` with `justReordered`, remove timeout, reset on drag start |
+| `builder-canvas.tsx` | Use `justReordered` instead of `dropped` |
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+that did not change anything, the animation still occurs for already moved item (already reordered item)
+
+---
+
+[Request interrupted by user]
+
+---
+
+that did not change anything, the animation still occurs for already moved item (already reordered item), i suspect its due to how array itself is handled here, we have array of items, if I move first item to the last place its handled differently with current logic than when the last item of the array is moved to the first place. Investigate that behaviour, use vercel skills (react, next and composition skills, all of them)
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-react-best-practices
+
+# Vercel React Best Practices
+
+Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 57 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
+
+## When to Apply
+
+Reference these guidelines when:
+- Writing new React components or Next.js pages
+- Implementing data fetching (client or server-side)
+- Reviewing code for performance issues
+- Refactoring existing React/Next.js code
+- Optimizing bundle size or load times
+
+## Rule Categories by Priority
+
+| Priority | Category | Impact | Prefix |
+|----------|----------|--------|--------|
+| 1 | Eliminating Waterfalls | CRITICAL | `async-` |
+| 2 | Bundle Size Optimization | CRITICAL | `bundle-` |
+| 3 | Server-Side Performance | HIGH | `server-` |
+| 4 | Client-Side Data Fetching | MEDIUM-HIGH | `client-` |
+| 5 | Re-render Optimization | MEDIUM | `rerender-` |
+| 6 | Rendering Performance | MEDIUM | `rendering-` |
+| 7 | JavaScript Performance | LOW-MEDIUM | `js-` |
+| 8 | Advanced Patterns | LOW | `advanced-` |
+
+## Quick Reference
+
+### 1. Eliminating Waterfalls (CRITICAL)
+
+- `async-defer-await` - Move await into branches where actually used
+- `async-parallel` - Use Promise.all() for independent operations
+- `async-dependencies` - Use better-all for partial dependencies
+- `async-api-routes` - Start promises early, await late in API routes
+- `async-suspense-boundaries` - Use Suspense to stream content
+
+### 2. Bundle Size Optimization (CRITICAL)
+
+- `bundle-barrel-imports` - Import directly, avoid barrel files
+- `bundle-dynamic-imports` - Use next/dynamic for heavy components
+- `bundle-defer-third-party` - Load analytics/logging after hydration
+- `bundle-conditional` - Load modules only when feature is activated
+- `bundle-preload` - Preload on hover/focus for perceived speed
+
+### 3. Server-Side Performance (HIGH)
+
+- `server-auth-actions` - Authenticate server actions like API routes
+- `server-cache-react` - Use React.cache() for per-request deduplication
+- `server-cache-lru` - Use LRU cache for cross-request caching
+- `server-dedup-props` - Avoid duplicate serialization in RSC props
+- `server-serialization` - Minimize data passed to client components
+- `server-parallel-fetching` - Restructure components to parallelize fetches
+- `server-after-nonblocking` - Use after() for non-blocking operations
+
+### 4. Client-Side Data Fetching (MEDIUM-HIGH)
+
+- `client-swr-dedup` - Use SWR for automatic request deduplication
+- `client-event-listeners` - Deduplicate global event listeners
+- `client-passive-event-listeners` - Use passive listeners for scroll
+- `client-localstorage-schema` - Version and minimize localStorage data
+
+### 5. Re-render Optimization (MEDIUM)
+
+- `rerender-defer-reads` - Don't subscribe to state only used in callbacks
+- `rerender-memo` - Extract expensive work into memoized components
+- `rerender-memo-with-default-value` - Hoist default non-primitive props
+- `rerender-dependencies` - Use primitive dependencies in effects
+- `rerender-derived-state` - Subscribe to derived booleans, not raw values
+- `rerender-derived-state-no-effect` - Derive state during render, not effects
+- `rerender-functional-setstate` - Use functional setState for stable callbacks
+- `rerender-lazy-state-init` - Pass function to useState for expensive values
+- `rerender-simple-expression-in-memo` - Avoid memo for simple primitives
+- `rerender-move-effect-to-event` - Put interaction logic in event handlers
+- `rerender-transitions` - Use startTransition for non-urgent updates
+- `rerender-use-ref-transient-values` - Use refs for transient frequent values
+
+### 6. Rendering Performance (MEDIUM)
+
+- `rendering-animate-svg-wrapper` - Animate div wrapper, not SVG element
+- `rendering-content-visibility` - Use content-visibility for long lists
+- `rendering-hoist-jsx` - Extract static JSX outside components
+- `rendering-svg-precision` - Reduce SVG coordinate precision
+- `rendering-hydration-no-flicker` - Use inline script for client-only data
+- `rendering-hydration-suppress-warning` - Suppress expected mismatches
+- `rendering-activity` - Use Activity component for show/hide
+- `rendering-conditional-render` - Use ternary, not && for conditionals
+- `rendering-usetransition-loading` - Prefer useTransition for loading state
+
+### 7. JavaScript Performance (LOW-MEDIUM)
+
+- `js-batch-dom-css` - Group CSS changes via classes or cssText
+- `js-index-maps` - Build Map for repeated lookups
+- `js-cache-property-access` - Cache object properties in loops
+- `js-cache-function-results` - Cache function results in module-level Map
+- `js-cache-storage` - Cache localStorage/sessionStorage reads
+- `js-combine-iterations` - Combine multiple filter/map into one loop
+- `js-length-check-first` - Check array length before expensive comparison
+- `js-early-exit` - Return early from functions
+- `js-hoist-regexp` - Hoist RegExp creation outside loops
+- `js-min-max-loop` - Use loop for min/max instead of sort
+- `js-set-map-lookups` - Use Set/Map for O(1) lookups
+- `js-tosorted-immutable` - Use toSorted() for immutability
+
+### 8. Advanced Patterns (LOW)
+
+- `advanced-event-handler-refs` - Store event handlers in refs
+- `advanced-init-once` - Initialize app once per app load
+- `advanced-use-latest` - useLatest for stable callback refs
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/async-parallel.md
+rules/bundle-barrel-imports.md
+```
+
+Each rule file contains:
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+
+ARGUMENTS: Analyze Framer Motion layout animation issues with dnd-kit when reordering arrays. Specifically: moving an item from index 0 to last position vs moving an item from last position to index 0 - how does React/Framer Motion handle these differently? What are best practices for disabling layout animations during drag-and-drop reordering?
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-composition-patterns
+
+# React Composition Patterns
+
+Composition patterns for building flexible, maintainable React components. Avoid
+boolean prop proliferation by using compound components, lifting state, and
+composing internals. These patterns make codebases easier for both humans and AI
+agents to work with as they scale.
+
+## When to Apply
+
+Reference these guidelines when:
+
+- Refactoring components with many boolean props
+- Building reusable component libraries
+- Designing flexible component APIs
+- Reviewing component architecture
+- Working with compound components or context providers
+
+## Rule Categories by Priority
+
+| Priority | Category                | Impact | Prefix          |
+| -------- | ----------------------- | ------ | --------------- |
+| 1        | Component Architecture  | HIGH   | `architecture-` |
+| 2        | State Management        | MEDIUM | `state-`        |
+| 3        | Implementation Patterns | MEDIUM | `patterns-`     |
+| 4        | React 19 APIs           | MEDIUM | `react19-`      |
+
+## Quick Reference
+
+### 1. Component Architecture (HIGH)
+
+- `architecture-avoid-boolean-props` - Don't add boolean props to customize
+  behavior; use composition
+- `architecture-compound-components` - Structure complex components with shared
+  context
+
+### 2. State Management (MEDIUM)
+
+- `state-decouple-implementation` - Provider is the only place that knows how
+  state is managed
+- `state-context-interface` - Define generic interface with state, actions, meta
+  for dependency injection
+- `state-lift-state` - Move state into provider components for sibling access
+
+### 3. Implementation Patterns (MEDIUM)
+
+- `patterns-explicit-variants` - Create explicit variant components instead of
+  boolean modes
+- `patterns-children-over-render-props` - Use children for composition instead
+  of renderX props
+
+### 4. React 19 APIs (MEDIUM)
+
+> **⚠️ React 19+ only.** Skip this section if using React 18 or earlier.
+
+- `react19-no-forwardref` - Don't use `forwardRef`; use `use()` instead of `useContext()`
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/architecture-avoid-boolean-props.md
+rules/state-context-interface.md
+```
+
+Each rule file contains:
+
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+
+ARGUMENTS: Review the survey-builder component structure for potential issues with array state management and re-rendering. How should components be structured when combining dnd-kit drag-and-drop with Framer Motion animations on list items?
+
+---
+
+[Request interrupted by user for tool use]
