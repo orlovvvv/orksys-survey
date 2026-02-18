@@ -16,18 +16,18 @@ export default function Home() {
 		<main className="overflow-x-hidden antialiased">
 			<Navigation />
 			<HeroSection />
-			<div className="mx-auto max-w-7xl px-6">
-				<SurveyMockup />
-				<SocialProof />
-			</div>
+			<section className="px-6 py-12 md:px-12 lg:px-24">
+				<div className="mx-auto max-w-7xl">
+					<SurveyMockup />
+					<SocialProof />
+				</div>
+			</section>
 			<BentoFeatures />
 			<CoreFeatures />
 			<Testimonials />
 			<Pricing />
 			<CTASection />
-			<div className="mx-auto max-w-7xl px-6 pb-12">
-				<Footer />
-			</div>
+			<Footer />
 		</main>
 	);
 }

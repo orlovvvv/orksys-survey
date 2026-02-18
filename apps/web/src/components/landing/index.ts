@@ -8,3 +8,6 @@ export { Pricing } from "./pricing";
 export { SocialProof } from "./social-proof";
 export { SurveyMockup } from "./survey-mockup";
 export { Testimonials } from "./testimonials";
+
+// UI primitives
+export { Section, SectionHeader } from "./ui";

@@ -1,55 +1,32 @@
-import {
-	BarChart3,
-	GitBranch,
-	Heart,
-	LayoutGrid,
-	Rocket,
-	ShoppingCart,
-	Users,
-} from "lucide-react";
+import { GitBranch, Heart, Rocket, ShoppingCart, Users } from "lucide-react";
+
+import { Section, SectionHeader } from "./ui";
 
 export function CoreFeatures() {
 	return (
-		<section className="relative z-10 mx-auto max-w-7xl px-6 py-24">
-			<div className="relative overflow-hidden rounded-[32px] bg-white p-8 ring-1 ring-neutral-200">
-				<div className="flex w-full flex-col pb-12">
-					<div className="flex w-full items-end justify-between pb-5">
-						<div className="flex items-center gap-2 gap-x-2 gap-y-2">
-							<span className="h-px w-8 bg-violet-500" />
-							<span className="font-bold font-sans text-violet-500 text-xs uppercase tracking-[0.2em]">
-								Platform
-							</span>
-						</div>
+		<Section>
+			<div className="relative overflow-hidden rounded-[32px] bg-white p-6 ring-1 ring-neutral-200 md:p-8">
+				<SectionHeader
+					label="Platform"
+					title="Everything you need to understand your audience"
+					description="Handshake provides a streamlined interface for building complex surveys, managing audiences, and extracting value from feedback."
+					action={
 						<a
 							href="#"
-							className="group flex items-center gap-2 font-medium font-sans text-blue-600 text-sm transition-colors hover:text-blue-700"
+							className="group flex items-center gap-2 font-medium font-sans text-primary text-sm transition-colors hover:text-primary/80"
 						>
 							View integration list
 							<GitBranch className="h-4 w-4 transition-transform group-hover:translate-x-1" />
 						</a>
-					</div>
-
-					<div className="mb-8 h-px w-full bg-neutral-200" />
-
-					<div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-start lg:gap-16">
-						<h2 className="max-w-3xl font-display font-normal text-3xl text-neutral-900 leading-[1.05] tracking-tight md:text-4xl lg:text-5xl">
-							Everything you need to understand your audience
-						</h2>
-						<div className="flex-shrink-0 lg:max-w-sm lg:pt-2">
-							<p className="font-sans text-base text-neutral-600 leading-relaxed">
-								Handshake provides a streamlined interface for building complex
-								surveys, managing audiences, and extracting value from feedback.
-							</p>
-						</div>
-					</div>
-				</div>
+					}
+				/>
 
 				{/* Bento Grid Layout */}
-				<div className="grid grid-cols-1 gap-6 gap-x-6 gap-y-6 lg:grid-cols-3">
+				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{/* Card 1: Smart Logic (Vertical) */}
-					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg lg:col-span-1">
+					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg">
 						<div className="relative z-10">
-							<div className="mb-6 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 font-sans font-semibold text-blue-600 text-xs tracking-medium">
+							<div className="mb-6 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-sans font-semibold text-primary text-xs tracking-medium">
 								Logic & Branching
 							</div>
 							<h3 className="mb-3 font-display font-normal text-2xl text-neutral-900 tracking-tight">
@@ -93,9 +70,9 @@ export function CoreFeatures() {
 					</article>
 
 					{/* Card 2: Analytics (Horizontal) */}
-					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg lg:col-span-2">
+					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg md:col-span-2 lg:col-span-2">
 						<div className="relative z-10 max-w-lg">
-							<div className="mb-6 inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 font-sans font-semibold text-emerald-600 text-xs tracking-medium">
+							<div className="mb-6 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-sans font-semibold text-primary text-xs tracking-medium">
 								Data Visualization
 							</div>
 							<h3 className="mb-3 font-display font-normal text-2xl text-neutral-900 tracking-tight">
@@ -128,9 +105,9 @@ export function CoreFeatures() {
 									<div className="h-[30%] w-1/6 rounded-t bg-neutral-100" />
 									<div className="h-[40%] w-1/6 rounded-t bg-neutral-100" />
 									<div className="h-[20%] w-1/6 rounded-t bg-neutral-100" />
-									<div className="h-[60%] w-1/6 rounded-t bg-violet-500/60" />
-									<div className="h-[80%] w-1/6 rounded-t bg-violet-500/80" />
-									<div className="h-[90%] w-1/6 rounded-t bg-violet-500" />
+									<div className="h-[60%] w-1/6 rounded-t bg-primary/60" />
+									<div className="h-[80%] w-1/6 rounded-t bg-primary/80" />
+									<div className="h-[90%] w-1/6 rounded-t bg-primary" />
 								</div>
 							</div>
 
@@ -140,7 +117,12 @@ export function CoreFeatures() {
 									Sentiment
 								</p>
 								<div className="relative h-24 w-24">
-									<svg viewBox="0 0 36 36" className="h-full w-full">
+									<svg
+										viewBox="0 0 36 36"
+										className="h-full w-full"
+										role="img"
+										aria-label="75% positive sentiment"
+									>
 										<path
 											d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
 											fill="none"
@@ -150,7 +132,7 @@ export function CoreFeatures() {
 										<path
 											d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"
 											fill="none"
-											stroke="#8b5cf6"
+											stroke="hsl(var(--primary))"
 											strokeWidth="4"
 											strokeDasharray="75, 100"
 										/>
@@ -169,9 +151,9 @@ export function CoreFeatures() {
 					</article>
 
 					{/* Card 3: Audience (Horizontal) */}
-					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg lg:col-span-2">
+					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg md:col-span-2 lg:col-span-2">
 						<div className="relative z-10 max-w-lg">
-							<div className="mb-6 inline-flex items-center rounded-full bg-purple-50 px-3 py-1 font-sans font-semibold text-purple-600 text-xs tracking-medium">
+							<div className="mb-6 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-sans font-semibold text-primary text-xs tracking-medium">
 								Audience Management
 							</div>
 							<h3 className="mb-3 font-display font-normal text-2xl text-neutral-900 tracking-tight">
@@ -235,9 +217,9 @@ export function CoreFeatures() {
 					</article>
 
 					{/* Card 4: Templates (Vertical) */}
-					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg lg:col-span-1">
+					<article className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-neutral-200 bg-white p-8 transition-all duration-300 hover:shadow-lg">
 						<div className="relative z-10">
-							<div className="mb-6 inline-flex items-center rounded-full bg-pink-50 px-3 py-1 font-sans font-semibold text-pink-600 text-xs tracking-medium">
+							<div className="mb-6 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 font-sans font-semibold text-primary text-xs tracking-medium">
 								Templates
 							</div>
 							<h3 className="mb-3 font-display font-normal text-2xl text-neutral-900 tracking-tight">
@@ -253,14 +235,14 @@ export function CoreFeatures() {
 						<div className="relative h-[240px] w-full select-none overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 p-4">
 							<div className="grid grid-cols-2 gap-3">
 								<div className="flex flex-col gap-2 rounded-lg border border-neutral-100 bg-white p-3 shadow-sm">
-									<div className="flex h-6 w-6 items-center justify-center rounded bg-pink-100 text-pink-500">
+									<div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary">
 										<Heart className="h-[14px] w-[14px]" strokeWidth={2} />
 									</div>
 									<div className="h-1.5 w-16 rounded-full bg-neutral-200" />
 									<div className="h-1 w-10 rounded-full bg-neutral-100" />
 								</div>
 								<div className="flex flex-col gap-2 rounded-lg border border-neutral-100 bg-white p-3 shadow-sm">
-									<div className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 text-blue-500">
+									<div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary">
 										<ShoppingCart
 											className="h-[14px] w-[14px]"
 											strokeWidth={2}
@@ -270,14 +252,14 @@ export function CoreFeatures() {
 									<div className="h-1 w-8 rounded-full bg-neutral-100" />
 								</div>
 								<div className="flex flex-col gap-2 rounded-lg border border-neutral-100 bg-white p-3 shadow-sm">
-									<div className="flex h-6 w-6 items-center justify-center rounded bg-orange-100 text-orange-500">
+									<div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary">
 										<Users className="h-[14px] w-[14px]" strokeWidth={2} />
 									</div>
 									<div className="h-1.5 w-12 rounded-full bg-neutral-200" />
 									<div className="h-1 w-8 rounded-full bg-neutral-100" />
 								</div>
 								<div className="flex flex-col gap-2 rounded-lg border border-neutral-100 bg-white p-3 shadow-sm">
-									<div className="flex h-6 w-6 items-center justify-center rounded bg-purple-100 text-purple-500">
+									<div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary">
 										<Rocket className="h-[14px] w-[14px]" strokeWidth={2} />
 									</div>
 									<div className="h-1.5 w-16 rounded-full bg-neutral-200" />
@@ -288,6 +270,6 @@ export function CoreFeatures() {
 					</article>
 				</div>
 			</div>
-		</section>
+		</Section>
 	);
 }

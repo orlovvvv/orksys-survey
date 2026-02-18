@@ -31,7 +31,7 @@ export function SurveyMockup({ className }: { className?: string }) {
 				className,
 			)}
 		>
-			<div className="flex h-[750px] flex-col">
+			<div className="flex min-h-[500px] flex-col lg:h-[750px]">
 				<SurveyMockup.Header />
 				<div className="flex flex-1 overflow-hidden">
 					<SurveyMockup.LeftSidebar />
@@ -45,7 +45,7 @@ export function SurveyMockup({ className }: { className?: string }) {
 
 SurveyMockup.Header = function SurveyMockupHeader() {
 	return (
-		<header className="z-20 flex shrink-0 items-center justify-between border-neutral-100 border-b bg-white px-6 py-3">
+		<header className="z-20 flex shrink-0 flex-wrap items-center justify-between gap-4 border-neutral-100 border-b bg-white px-6 py-3">
 			<div className="flex items-center gap-4">
 				<div className="flex items-center gap-2 font-sans font-semibold text-neutral-900 text-sm">
 					<span className="text-neutral-400">My Workspace /</span>
@@ -53,23 +53,25 @@ SurveyMockup.Header = function SurveyMockupHeader() {
 				</div>
 			</div>
 
-			<div className="flex gap-1 rounded-lg bg-neutral-100 p-1">
-				<button className="rounded-md bg-white px-4 py-1.5 font-sans font-semibold text-neutral-900 text-xs shadow-sm">
-					Build
-				</button>
-				<button className="px-4 py-1.5 font-sans font-semibold text-neutral-500 text-xs hover:text-neutral-900">
-					Design
-				</button>
-				<button className="px-4 py-1.5 font-sans font-semibold text-neutral-500 text-xs hover:text-neutral-900">
-					Share
-				</button>
-				<button className="px-4 py-1.5 font-sans font-semibold text-neutral-500 text-xs hover:text-neutral-900">
-					Results
-				</button>
+			<div className="order-last flex w-full justify-center lg:order-none lg:w-auto">
+				<div className="flex gap-1 rounded-lg bg-neutral-100 p-1">
+					<button className="rounded-md bg-white px-4 py-1.5 font-sans font-semibold text-neutral-900 text-xs shadow-sm">
+						Build
+					</button>
+					<button className="px-4 py-1.5 font-sans font-semibold text-neutral-500 text-xs hover:text-neutral-900">
+						Design
+					</button>
+					<button className="px-4 py-1.5 font-sans font-semibold text-neutral-500 text-xs hover:text-neutral-900">
+						Share
+					</button>
+					<button className="px-4 py-1.5 font-sans font-semibold text-neutral-500 text-xs hover:text-neutral-900">
+						Results
+					</button>
+				</div>
 			</div>
 
 			<div className="flex items-center gap-3">
-				<div className="flex -space-x-2">
+				<div className="hidden -space-x-2 sm:flex">
 					<div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-pink-100 font-bold text-[10px] text-pink-600">
 						JD
 					</div>
@@ -79,7 +81,7 @@ SurveyMockup.Header = function SurveyMockupHeader() {
 				</div>
 				<button
 					type="button"
-					className="inline-flex items-center gap-2 rounded-lg bg-violet-500 px-4 py-2 font-sans font-semibold text-white text-xs shadow-orange-500/20 shadow-sm transition-all hover:bg-violet-600"
+					className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-sans font-semibold text-white text-xs shadow-orange-500/20 shadow-sm transition-all hover:bg-primary/90"
 				>
 					Publish
 					<Send className="h-4 w-4" />
@@ -91,7 +93,7 @@ SurveyMockup.Header = function SurveyMockupHeader() {
 
 SurveyMockup.LeftSidebar = function SurveyMockupLeftSidebar() {
 	return (
-		<div className="flex h-full w-64 flex-col overflow-y-auto border-neutral-100 border-r bg-white">
+		<div className="hidden h-full w-64 flex-col overflow-y-auto border-neutral-100 border-r bg-white lg:flex">
 			<div className="p-4">
 				<h3 className="mb-4 font-bold font-sans text-[10px] text-neutral-900 uppercase tracking-widest">
 					Question Types
@@ -131,14 +133,14 @@ function QuestionTypeItem({
 			className={cn(
 				"group flex cursor-move items-center gap-3 rounded-xl border p-3 transition-colors",
 				isActive
-					? "border-violet-500/20 bg-violet-50"
+					? "border-primary/20 bg-primary/5"
 					: "border-transparent bg-white hover:border-neutral-200 hover:bg-neutral-50",
 			)}
 		>
 			<Icon
 				className={cn(
 					"h-5 w-5 text-neutral-400 transition-colors",
-					isActive && "group-hover:text-violet-500",
+					isActive && "group-hover:text-primary",
 				)}
 			/>
 			<span className="font-medium text-neutral-700 text-sm">{label}</span>
@@ -160,7 +162,7 @@ function StructureItem({
 			className={cn(
 				"flex items-center justify-between rounded-lg p-2 font-medium text-sm transition-colors",
 				isActive
-					? "border border-violet-500/20 bg-violet-50 text-neutral-900"
+					? "border border-primary/20 bg-primary/5 text-neutral-900"
 					: "text-neutral-600 hover:bg-neutral-50",
 			)}
 		>
@@ -169,7 +171,7 @@ function StructureItem({
 					className={cn(
 						"flex h-5 w-5 items-center justify-center rounded text-[10px]",
 						isActive
-							? "bg-violet-500 text-white"
+							? "bg-primary text-white"
 							: number === 1
 								? "bg-green-100 text-green-600"
 								: "bg-neutral-200 text-neutral-600",
@@ -186,20 +188,20 @@ function StructureItem({
 
 SurveyMockup.CenterCanvas = function SurveyMockupCenterCanvas() {
 	return (
-		<div className="relative flex flex-1 items-center overflow-y-auto bg-neutral-50/50 px-8 py-10">
+		<div className="relative flex flex-1 items-center overflow-y-auto bg-neutral-50/50 px-4 py-6 md:px-8 md:py-10">
 			{/* Survey Card */}
-			<div className="relative w-full max-w-[600px] overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-neutral-200/50 shadow-xl">
+			<div className="relative mx-auto w-full max-w-[600px] overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-neutral-200/50 shadow-xl">
 				{/* Progress Bar */}
 				<div className="h-1.5 w-full bg-neutral-100">
-					<div className="h-full w-[40%] rounded-r-full bg-violet-500" />
+					<div className="h-full w-[40%] rounded-r-full bg-primary" />
 				</div>
 
-				<div className="p-10">
+				<div className="p-6 md:p-10">
 					<div className="mb-8">
-						<span className="mb-2 block font-bold text-[10px] text-violet-500 uppercase tracking-widest">
+						<span className="mb-2 block font-bold text-[10px] text-primary uppercase tracking-widest">
 							Question 2 of 4
 						</span>
-						<h2 className="font-display font-semibold text-2xl text-neutral-900 leading-tight">
+						<h2 className="font-display font-semibold text-neutral-900 text-xl leading-tight md:text-2xl">
 							How likely are you to recommend Handshake to a colleague or
 							friend?
 						</h2>
@@ -209,16 +211,16 @@ SurveyMockup.CenterCanvas = function SurveyMockupCenterCanvas() {
 					</div>
 
 					{/* Interactive NPS Scale Mockup */}
-					<div className="mb-4 flex justify-between gap-1">
+					<div className="mb-4 flex flex-wrap justify-center gap-1 sm:justify-between sm:gap-0">
 						{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
 							<button
 								key={num}
 								type="button"
 								className={cn(
-									"h-10 w-10 rounded-lg border font-semibold text-sm transition-all",
+									"h-9 w-9 rounded-lg border font-semibold text-sm transition-all sm:h-10 sm:w-10",
 									num === 9
-										? "scale-105 transform border-violet-500 bg-violet-500 text-white shadow-lg shadow-violet-500/30"
-										: "border-neutral-200 text-neutral-600 hover:border-violet-500 hover:bg-violet-50 hover:text-violet-500",
+										? "scale-105 transform border-primary bg-primary text-white shadow-lg shadow-primary/30"
+										: "border-neutral-200 text-neutral-600 hover:border-primary hover:bg-primary/5 hover:text-primary",
 								)}
 							>
 								{num}
@@ -227,11 +229,12 @@ SurveyMockup.CenterCanvas = function SurveyMockupCenterCanvas() {
 					</div>
 					<div className="flex justify-between font-medium text-neutral-400 text-xs uppercase tracking-wide">
 						<span>Not likely</span>
-						<span>Extremely likely</span>
+						<span className="hidden sm:inline">Extremely likely</span>
+						<span className="sm:hidden">Likely</span>
 					</div>
 
-					<div className="mt-8 flex justify-between border-neutral-100 border-t pt-8">
-						<span className="text-neutral-400 text-xs">
+					<div className="mt-8 flex flex-col-reverse justify-between gap-4 border-neutral-100 border-t pt-8 sm:flex-row sm:items-center">
+						<span className="text-center text-neutral-400 text-xs sm:text-left">
 							Powered by <strong>Handshake</strong>
 						</span>
 						<button
@@ -244,10 +247,10 @@ SurveyMockup.CenterCanvas = function SurveyMockupCenterCanvas() {
 				</div>
 			</div>
 
-			{/* Logic Visualization Overlay */}
-			<div className="absolute top-20 right-4 z-10 w-48 rounded-xl border border-neutral-200 bg-white p-3 shadow-lg">
+			{/* Logic Visualization Overlay - Hidden on mobile */}
+			<div className="absolute top-4 right-4 z-10 hidden w-48 rounded-xl border border-neutral-200 bg-white p-3 shadow-lg lg:top-20 lg:block">
 				<div className="mb-2 flex items-center gap-2">
-					<GitBranch className="h-4 w-4 text-violet-500" />
+					<GitBranch className="h-4 w-4 text-primary" />
 					<span className="font-bold text-neutral-900 text-xs uppercase">
 						Logic Flow
 					</span>
@@ -269,7 +272,7 @@ SurveyMockup.CenterCanvas = function SurveyMockupCenterCanvas() {
 
 SurveyMockup.RightSidebar = function SurveyMockupRightSidebar() {
 	return (
-		<div className="flex h-full w-72 flex-col border-neutral-100 border-l bg-white">
+		<div className="hidden h-full w-72 flex-col border-neutral-100 border-l bg-white lg:flex">
 			<div className="border-neutral-100 border-b p-4">
 				<div className="flex items-center justify-between">
 					<h3 className="font-bold font-sans text-[10px] text-neutral-900 uppercase tracking-widest">
@@ -296,7 +299,7 @@ SurveyMockup.RightSidebar = function SurveyMockupRightSidebar() {
 							className="peer sr-only"
 							readOnly
 						/>
-						<div className="h-5 w-9 rounded-full bg-neutral-200 after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-violet-500 peer-checked:after:translate-x-full" />
+						<div className="h-5 w-9 rounded-full bg-neutral-200 after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full" />
 					</label>
 				</div>
 
@@ -309,7 +312,7 @@ SurveyMockup.RightSidebar = function SurveyMockupRightSidebar() {
 						<input
 							type="text"
 							defaultValue="nps_score_q1"
-							className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-mono text-neutral-900 text-sm outline-none transition-colors focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+							className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-mono text-neutral-900 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
 							readOnly
 						/>
 						<Code className="absolute top-2.5 right-3 h-[14px] w-[14px] text-neutral-400" />
@@ -317,9 +320,9 @@ SurveyMockup.RightSidebar = function SurveyMockupRightSidebar() {
 				</div>
 
 				{/* Logic */}
-				<div className="rounded-xl border border-violet-100 bg-violet-50 p-4">
+				<div className="rounded-xl border border-primary/10 bg-primary/5 p-4">
 					<div className="mb-3 flex items-center gap-2">
-						<Bolt className="h-4 w-4 text-violet-500" />
+						<Bolt className="h-4 w-4 text-primary" />
 						<span className="font-semibold text-neutral-900 text-sm">
 							Skip Logic
 						</span>
@@ -329,7 +332,7 @@ SurveyMockup.RightSidebar = function SurveyMockupRightSidebar() {
 					</p>
 					<button
 						type="button"
-						className="w-full rounded-lg border border-violet-200 bg-white py-2 font-semibold text-violet-500 text-xs transition-colors hover:bg-violet-50"
+						className="w-full rounded-lg border border-primary/20 bg-white py-2 font-semibold text-primary text-xs transition-colors hover:bg-primary/5"
 					>
 						Add Rule
 					</button>
@@ -343,8 +346,8 @@ SurveyMockup.RightSidebar = function SurveyMockupRightSidebar() {
 					<div className="flex gap-2">
 						<button
 							type="button"
-							className="h-8 w-8 rounded-full bg-violet-500 ring-2 ring-neutral-200 ring-offset-2"
-							aria-label="Violet color"
+							className="h-8 w-8 rounded-full bg-primary ring-2 ring-neutral-200 ring-offset-2"
+							aria-label="Primary color"
 						/>
 						<button
 							type="button"
