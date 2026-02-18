@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "7d7bd1a7788f",
+  "session_id": "35896d9c-5776-49d4-9898-18f4a6567807",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-18T07:18:57.89122Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "PLAN.md",
+    "apps/web/src/app/(app)/surveys/[surveyId]/page.tsx",
+    "apps/web/src/app/(app)/surveys/new/page.tsx",
+    "apps/web/src/app/(app)/surveys/page.tsx",
+    "apps/web/src/app/onboarding/page.tsx",
+    "apps/web/src/components/onboarding/create-organization-form.tsx",
+    "apps/web/src/components/onboarding/select-organization.tsx",
+    "apps/web/src/components/organization-switcher.tsx",
+    "apps/web/src/components/survey-builder/builder-canvas.tsx",
+    "apps/web/src/components/survey-builder/index.tsx",
+    "apps/web/src/components/survey-builder/utils.ts",
+    "apps/web/src/components/ui/dialog.tsx",
+    "apps/web/src/components/ui/popover.tsx",
+    "apps/web/src/components/ui/radio-group.tsx",
+    "apps/web/src/components/ui/select.tsx",
+    "apps/web/src/components/ui/sheet.tsx",
+    "apps/web/src/components/ui/slider.tsx",
+    "apps/web/src/components/ui/tabs.tsx",
+    "apps/web/src/components/ui/textarea.tsx",
+    "apps/web/src/components/ui/tooltip.tsx",
+    "apps/web/src/hooks/use-media-query.ts",
+    "apps/web/src/middleware.ts"
+  ],
+  "agent": "Claude Code",
+  "token_usage": {
+    "input_tokens": 49514,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 956544,
+    "output_tokens": 4780,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T07:18:57.732733Z",
+    "agent_lines": 170,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 2001,
+    "total_committed": 170,
+    "agent_percentage": 100
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/35896d9c-5776-49d4-9898-18f4a6567807.jsonl"
+}

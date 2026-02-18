@@ -1,0 +1,221 @@
+Implement the following plan:
+
+# Fix Survey Builder Re-animation Issue - Complete Investigation
+
+## Context
+
+When dragging an item from bottom to top in the survey builder, items that shift down get **re-animated** (fade-in) after the drag ends. This is a classic symptom of **mount/unmount cycles** or **animation library interpreting reorder as "enter"**.
+
+## Root Cause Investigation
+
+Based on the user's feedback, the issue is NOT just inverted `initial` logic. The real problem is likely one of:
+
+### 1. `AnimatePresence` Without `initial={false}`
+
+```tsx
+// builder-canvas.tsx line 158
+<AnimatePresence mode="popLayout">
+```
+
+**Missing `initial={false}`!** This means:
+- All children run their `initial` animation on first mount
+- AND potentially on any reconciliation that Framer Motion interprets as "enter"
+
+### 2. `initial` Prop Defined on All Items
+
+```tsx
+// builder-canvas.tsx lines 253-259
+initial={isOptimistic ? false : { opacity: 0, y: 20, scale: 0.95 }}
+animate={isOptimistic ? false : { opacity: 1, y: 0, scale: 1 }}
+```
+
+**Problem:** ALL existing items have `initial={{ opacity: 0, y: 20 }}` defined.
+- If React/Framer Motion remounts an item (even briefly), it will fade in from opacity 0
+- The `layout` animation should handle position changes, NOT `initial`/`animate`
+
+### 3. Complex `layout` Logic Creates Edge Cases
+
+```tsx
+const layoutEnabled = !activeDragItem && !justReordered;
+// ...
+layout={layoutEnabled ? "position" : false}
+```
+
+**Problem:** This toggles `layout` on/off:
+- During drag: `layout={false}` - Framer Motion stops tracking position
+- After drag: `layout="position"` - Framer Motion starts tracking again
+- This transition could trigger unwanted animations
+
+### 4. `mode="popLayout"` on AnimatePresence
+
+```tsx
+<AnimatePresence mode="popLayout">
+```
+
+`mode="popLayout"` is designed for items that EXIT and re-enter. But in a reorder:
+- Items don't exit, they just move
+- This mode might interfere with normal layout animations
+
+---
+
+## Solution: Layered Fixes
+
+### Fix 1: Add `initial={false}` to AnimatePresence
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+```tsx
+// Line 158, change:
+<AnimatePresence mode="popLayout">
+
+// To:
+<AnimatePresence mode="popLayout" initial={false}>
+```
+
+This prevents the first render from triggering enter animations.
+
+### Fix 2: Remove `initial`/`animate` for Position Changes
+
+**The key insight:** `initial`/`animate` are for **enter animations**. For reorders, use **only `layout`**.
+
+Change the question card rendering (lines 249-280):
+
+```tsx
+// BEFORE (problematic):
+<motion.div
+  key={question.id}
+  layout={layoutEnabled ? "position" : false}
+  initial={isOptimistic ? false : { opacity: 0, y: 20, scale: 0.95 }}
+  animate={isOptimistic ? false : { opacity: 1, y: 0, scale: 1 }}
+  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+  transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
+>
+
+// AFTER (correct):
+<motion.div
+  key={question.id}
+  layout={!activeDragItem ? "position" : false}  // Only disable during drag
+  initial={isOptimistic ? { opacity: 0, y: 20, scale: 0.95 } : false}  // NEW items animate in
+  animate={{ opacity: 1, y: 0, scale: 1 }}  // Always animate to visible
+  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+  transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
+>
+```
+
+**Key changes:**
+1. `initial={isOptimistic ? {...} : false}` - Only NEW items get enter animation
+2. `animate={{ opacity: 1, y: 0, scale: 1 }}` - Always animate to visible (not conditional)
+3. Remove `justReordered` from `layout` logic - only check `activeDragItem`
+
+### Fix 3: Remove `justReordered` State (Cleanup)
+
+After fixes 1 & 2, the `justReordered` state is unnecessary:
+
+**File:** `apps/web/src/components/survey-builder/index.tsx`
+
+Remove:
+- `const [justReordered, setJustReordered] = useState(false);`
+- The `useEffect` that resets `justReordered` (lines 115-122)
+- `setJustReordered(true)` in `handleDragEnd` (line 285)
+- `justReordered` prop from `<BuilderCanvas ... />` (line 429)
+- `dropAnimation={justReordered ? null : defaultDropAnimation}` on DragOverlay (line 452)
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+Remove:
+- `justReordered` from props interface (line 42)
+- `justReordered` from destructured props (line 50)
+- All references to `justReordered` in exit animations (lines 228-234, 298-305)
+- The `layoutEnabled` variable (line 247)
+
+### Fix 4: Simplify Drop Indicator Exit Animations
+
+The drop indicator exit animations have complex conditional logic:
+
+```tsx
+exit={
+  justReordered
+    ? { opacity: 1, height: "auto", transition: { duration: 0 } }
+    : { opacity: 0, height: 0 }
+}
+```
+
+After removing `justReordered`, simplify to:
+
+```tsx
+exit={{ opacity: 0, height: 0 }}
+```
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `builder-canvas.tsx` | Add `initial={false}` to AnimatePresence, fix `initial` prop logic, simplify `layout` prop, remove `justReordered` |
+| `index.tsx` | Remove `justReordered` state and all references |
+
+---
+
+## Implementation Steps
+
+### Step 1: Fix `builder-canvas.tsx`
+
+1. Add `initial={false}` to AnimatePresence (line 158)
+2. Fix the `initial` prop on question motion.div (lines 253-259)
+3. Simplify `layout` prop logic (remove `justReordered` check)
+4. Remove `justReordered` from props and all references
+
+### Step 2: Simplify `index.tsx`
+
+1. Remove `justReordered` state declaration
+2. Remove the `useEffect` that resets `justReordered`
+3. Remove `setJustReordered(true)` from `handleDragEnd`
+4. Remove `justReordered` prop from `BuilderCanvas`
+5. Simplify `DragOverlay` dropAnimation
+
+---
+
+## Verification
+
+1. **Start dev server:** `pnpm dev:web`
+2. **Add debug logging** to verify no remounts:
+   ```tsx
+   useEffect(() => {
+     console.log('mount', question.id);
+     return () => console.log('unmount', question.id);
+   }, [question.id]);
+   ```
+3. **Test bottom-to-top drag:** Drag last item to top position
+   - Expected: NO "unmount/mount" logs, NO re-animation after drop
+4. **Test top-to-bottom drag:** Drag first item to bottom position
+   - Expected: Same behavior
+5. **Test new item creation:** Add a new question from palette
+   - Expected: New item animates in, existing items don't animate
+
+---
+
+## Summary
+
+The issue has multiple contributing factors:
+
+1. **`AnimatePresence` missing `initial={false}`** - causes first-render animations
+2. **Inverted `initial` logic** - ALL items have enter animation defined, not just new ones
+3. **Unnecessary `justReordered` complexity** - workaround for wrong diagnosis
+
+The fix:
+1. Add `initial={false}` to AnimatePresence
+2. Fix `initial` prop: new items animate, existing items don't
+3. Simplify `layout` prop: only disable during active drag
+4. Remove `justReordered` complexity entirely
+
+**Key principle:** Use `layout` for position changes (reorder), use `initial`/`animate` only for true mount/unmount animations.
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+commit these changes
