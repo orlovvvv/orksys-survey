@@ -1,0 +1,1103 @@
+Implement the following plan:
+
+# Comprehensive React Component Refactoring Plan
+
+## Context
+
+This plan addresses technical debt in React components exceeding 120 lines of code. The codebase has grown organically, resulting in:
+
+- **Massive files** with multiple components (e.g., `question-renderer.tsx` at 600 lines with 12 components)
+- **Boolean prop proliferation** making components hard to reason about
+- **Mixed concerns** (UI + state + mutations in single files)
+- **Duplicated patterns** across similar components
+- **Embedded logic** (debounce, DnD handlers) that should be extracted
+
+The goal is to refactor into focused, single-responsibility components following Vercel's composition patterns and React best practices.
+
+---
+
+## Summary of Components to Refactor
+
+| Priority | Components | Lines Range | Count |
+|----------|------------|-------------|-------|
+| Critical | question-renderer, survey-builder/index, logic-rule-form, question-palette, properties-panel | 300-600 | 5 |
+| High | builder-canvas, question-card, context (runner), response-table, question-charts, ai-insights, logic-builder/index, survey-settings-dialog, builder-header, rating-editor, demographics-panel | 200-300 | 11 |
+| Moderate | sign-up-form, choice-editor, create-organization-form, sign-in-form, embed-code-preview | 150-200 | 5 |
+| Native | sign-up, todos, sign-in | 180-208 | 3 |
+
+**Total: 24 components requiring refactoring**
+
+---
+
+## Shared Primitives to Create
+
+These primitives will be used across multiple refactored components:
+
+### 1. QuestionField (`survey-runner/questions/question-field.tsx`)
+Standardized question wrapper with label, description, required indicator, and error display.
+
+```tsx
+<QuestionField question={question} error={error}>
+  {/* Input controls */}
+</QuestionField>
+```
+
+### 2. AnimatedTabButton (`survey-builder/primitives/tab-button.tsx`)
+Tab with Framer Motion animated indicator, used in builder-header.
+
+```tsx
+<AnimatedTabButton active={isActive} icon={<Icon />} onClick={handler}>
+  Label
+</AnimatedTabButton>
+```
+
+### 3. InsightCard (`analytics/primitives/insight-card.tsx`)
+Card with built-in loading state for AI insights.
+
+```tsx
+<InsightCard title="Summary" isLoading={isLoading} icon={<Icon />}>
+  Content
+</InsightCard>
+```
+
+### 4. DemographicCard (`analytics/primitives/demographic-card.tsx`)
+Reusable chart card for demographic breakdowns.
+
+### 5. ToggleField (`survey-builder/primitives/toggle-field.tsx`)
+Switch + label + description pattern used in properties-panel.
+
+### 6. DeleteConfirmButton (`survey-builder/primitives/delete-confirm-button.tsx`)
+Two-state delete button with confirmation.
+
+---
+
+## Phase 1: Critical Infrastructure (Files >300 lines)
+
+### 1.1 question-renderer.tsx (600 → ~60-80 lines per file)
+
+**Current Issues:**
+- 12 question type components in one file
+- All components duplicate: label, required indicator, description, error display
+- Massive switch statement in QuestionRenderer
+
+**New Structure:**
+```
+apps/web/src/components/survey-runner/questions/
+  index.ts                    # QuestionRenderer + barrel exports (~60 lines)
+  types.ts                    # Shared types for question props
+  question-field.tsx          # Shared primitive (~40 lines)
+  text-question.tsx           # ~40 lines
+  textarea-question.tsx       # ~40 lines
+  choice-question.tsx         # ~60 lines (radio + checkbox)
+  dropdown-question.tsx       # ~40 lines
+  rating-question.tsx         # ~50 lines (rating + NPS + linear)
+  date-question.tsx           # ~40 lines
+  contact-question.tsx        # ~50 lines (email + phone)
+  file-upload-question.tsx    # ~50 lines
+```
+
+**Components to Extract:**
+- `QuestionField` - wrapper with label, description, error
+- Each question type to own file with `QuestionField` wrapper
+
+**Pattern Change:**
+```tsx
+// Before: Duplicated in every component
+<div className="space-y-2">
+  <label>{question.title}{question.required && <span>*</span>}</label>
+  {question.description && <p>{question.description}</p>}
+  <input ... />
+  {error && <p>{error}</p>}
+</div>
+
+// After: Shared primitive
+<QuestionField question={question} error={error}>
+  <input ... />
+</QuestionField>
+```
+
+---
+
+### 1.2 survey-builder/index.tsx (452 → ~100 lines)
+
+**Current Issues:**
+- Context + DnD + mutations + layout in one file
+- 120+ line `handleDragEnd` function
+- Drag overlay rendering mixed with main component
+
+**New Structure:**
+```
+apps/web/src/components/survey-builder/
+  index.tsx                   # Provider + Layout only (~100 lines)
+  context.tsx                 # Extracted context (~80 lines)
+  types.ts                    # DragItem types, context types
+  hooks/
+    use-drag-handlers.ts      # handleDragStart/Over/End (~150 lines)
+    use-question-mutations.ts # Create/reorder mutations (~80 lines)
+  drag-overlay-renderer.tsx   # Extracted overlay (~60 lines)
+```
+
+**Hooks to Extract:**
+- `useDragHandlers(questions, setQuestions, survey)` - returns handleDragStart/Over/End
+- `useQuestionMutations(survey)` - returns create/reorder mutations with optimistic updates
+
+---
+
+### 1.3 logic-rule-form.tsx (379 → ~120 lines)
+
+**Current Issues:**
+- Verbose TanStack Form with complex conditional rendering
+- Inline operator/action mappings
+
+**New Structure:**
+```
+apps/web/src/components/survey-builder/logic-builder/
+  logic-rule-form.tsx         # Main form (~120 lines)
+  form-fields.tsx             # Extracted field components (~120 lines)
+  constants.ts                # Operator/action labels, schemas
+  types.ts                    # Form types
+```
+
+**Components to Extract:**
+- `OperatorSelect` - dropdown for operators
+- `ConditionValueField` - conditional: select or text input
+- `ActionSelect` - dropdown for actions
+- `TargetQuestionSelect` - question selector
+
+---
+
+### 1.4 question-palette.tsx (363 → ~100 lines)
+
+**Current Issues:**
+- Multiple components in one file
+- Inline question type configuration
+
+**New Structure:**
+```
+apps/web/src/components/survey-builder/question-palette/
+  index.tsx                   # QuestionPalette component (~100 lines)
+  question-type-button.tsx    # Draggable button (~80 lines)
+  structure-item.tsx          # Question list item (~50 lines)
+  cancel-drop-zone.tsx        # Cancel drag zone (~30 lines)
+  constants.ts                # questionTypes config
+```
+
+---
+
+### 1.5 properties-panel.tsx (334 → ~80 lines)
+
+**Current Issues:**
+- Multiple components in one file
+- Embedded debounce logic
+- Type-specific switch statement
+
+**New Structure:**
+```
+apps/web/src/components/survey-builder/properties-panel/
+  index.tsx                   # Router component (~80 lines)
+  question-properties-panel.tsx # Question editing (~100 lines)
+  type-specific-editor.tsx    # Type switch (~80 lines)
+  empty-properties-panel.tsx  # Empty state (~40 lines)
+  hooks/
+    use-debounced-save.ts     # Debounced mutation (~40 lines)
+```
+
+**Hook to Extract:**
+- `useDebouncedSave(questionId)` - handles debounced save with mutation
+
+---
+
+## Phase 2: Builder Components (200-300 lines)
+
+### 2.1 builder-canvas.tsx (324 → ~120 lines)
+
+**Issues:** IIFE in JSX, mixed tab views
+
+**Structure:**
+```
+apps/web/src/components/survey-builder/builder-canvas/
+  index.tsx                   # Build canvas (~120 lines)
+  preview-canvas.tsx          # Preview tab (~100 lines)
+  share-canvas.tsx            # Share tab (~40 lines)
+  drop-indicator.tsx          # Drag placeholder (~30 lines)
+```
+
+---
+
+### 2.2 question-card.tsx (310 → ~100 lines)
+
+**Issues:** Boolean prop proliferation (9 props), mutation in presentational component
+
+**Refactoring Approach - Composition over Boolean Props:**
+```tsx
+// Before: 9 boolean-ish props
+<QuestionCardContent
+  question={q}
+  isSelected={false}
+  hasLogic={false}
+  isOverlay={false}
+  isPlaceholder={false}
+  isDragging={false}
+  ...
+/>
+
+// After: Composition pattern
+<QuestionCard question={q}>
+  <QuestionCard.Badge />       {/* hasLogic */}
+  <QuestionCard.Actions />     {/* delete, etc */}
+</QuestionCard>
+```
+
+**Structure:**
+```
+apps/web/src/components/survey-builder/question-card/
+  index.tsx                   # QuestionCard compound (~100 lines)
+  question-card-content.tsx   # Presentational (~80 lines)
+  delete-confirm-button.tsx   # Delete with confirm (~50 lines)
+  constants.ts                # questionTypeIcons, labels
+```
+
+---
+
+### 2.3 survey-runner/context.tsx (294 → ~100 lines)
+
+**Issues:** 20+ properties in context, mixed concerns
+
+**Structure:**
+```
+apps/web/src/components/survey-runner/
+  context.tsx                 # Provider + context (~100 lines)
+  hooks/
+    use-runner-state.ts       # State management (~80 lines)
+    use-runner-actions.ts     # Navigation/submit (~80 lines)
+```
+
+---
+
+### 2.4 response-table.tsx (290 → ~100 lines)
+
+**Issues:** TanStack Table verbosity, inline columns
+
+**Structure:**
+```
+apps/web/src/components/analytics/response-table/
+  index.tsx                   # Main component (~100 lines)
+  columns.tsx                 # Column definitions (~80 lines)
+  table-filters.tsx           # Search + status filter (~60 lines)
+  table-pagination.tsx        # Pagination (~50 lines)
+```
+
+---
+
+### 2.5 question-charts.tsx (263 → ~100 lines)
+
+**Issues:** 100+ line renderChart function
+
+**Structure:**
+```
+apps/web/src/components/analytics/question-charts/
+  index.tsx                   # Main component (~100 lines)
+  chart-renderer.tsx          # renderChart logic (~100 lines)
+  utils.ts                    # calculateNPSScore, etc.
+```
+
+---
+
+### 2.6 ai-insights.tsx (237 → ~100 lines)
+
+**Issues:** Repetitive loading states and card structures
+
+**Structure:**
+```
+apps/web/src/components/analytics/ai-insights/
+  index.tsx                   # Main component (~100 lines)
+  insight-card.tsx            # Reusable card (~60 lines)
+  sentiment-bars.tsx          # Sentiment visualization (~50 lines)
+```
+
+---
+
+### 2.7 Other Builder Components
+
+| Component | Lines | Refactoring |
+|-----------|-------|-------------|
+| logic-builder/index.tsx | 228 → 100 | Extract `RuleListItem`, use AlertDialog |
+| survey-settings-dialog.tsx | 220 → 100 | Extract `SettingsForm`, consider TanStack Form |
+| builder-header.tsx | 216 → 100 | Extract `AnimatedTabButton` |
+| rating-editor.tsx | 202 → 70 | Split each editor type to own file |
+| demographics-panel.tsx | 201 → 80 | Extract `DemographicCard` |
+
+---
+
+## Phase 3: Form Components (150-200 lines)
+
+### 3.1 Web Auth Forms (sign-up-form, sign-in-form, create-organization-form)
+
+**Shared Primitive:** `FormField` combining Label, Input, and error display
+
+```tsx
+<FormField
+  name="email"
+  label="Email"
+  type="email"
+  field={field}
+/>
+```
+
+**Structure:**
+```
+apps/web/src/components/forms/
+  form-field.tsx              # Shared field primitive (~50 lines)
+  index.ts                    # Exports
+```
+
+---
+
+### 3.2 Choice Editor
+
+Extract inline `OptionItem` component, create `ToggleField` for switch patterns.
+
+---
+
+### 3.3 Embed Code Preview
+
+Extract `CodeBlock` component with copy functionality.
+
+---
+
+## Phase 4: Native App Components
+
+### 4.1 Sign In / Sign Up Duplication
+
+**Issue:** Identical `getErrorMessage` helper in both files
+
+**Solution:**
+```
+apps/native/utils/
+  form-errors.ts              # Shared getErrorMessage helper
+```
+
+**Potential:** Create shared `AuthForm` component for both screens.
+
+---
+
+### 4.2 Todos Screen
+
+**Structure:**
+```
+apps/native/components/todos/
+  index.tsx                   # Main screen (~80 lines)
+  add-todo-form.tsx           # Input + button (~50 lines)
+  todo-item.tsx               # Checkbox + delete (~50 lines)
+  hooks/
+    use-todos-mutations.ts    # All mutations (~60 lines)
+```
+
+---
+
+## Implementation Order
+
+### Week 1: Critical Primitives
+1. Create `QuestionField` primitive
+2. Create `AnimatedTabButton` primitive
+3. Create `InsightCard` primitive
+4. Refactor `question-renderer.tsx` (highest impact)
+
+### Week 2: Builder Core
+5. Refactor `survey-builder/index.tsx` (extract context + hooks)
+6. Refactor `question-card.tsx` (composition pattern)
+7. Refactor `properties-panel.tsx`
+8. Refactor `builder-canvas.tsx`
+
+### Week 3: Logic & Settings
+9. Refactor `logic-rule-form.tsx`
+10. Refactor `logic-builder/index.tsx`
+11. Refactor `question-palette.tsx`
+12. Refactor `builder-header.tsx`
+
+### Week 4: Analytics & Runner
+13. Refactor `survey-runner/context.tsx`
+14. Refactor `question-charts.tsx`
+15. Refactor `ai-insights.tsx`
+16. Refactor `demographics-panel.tsx`
+17. Refactor `response-table.tsx`
+
+### Week 5: Forms & Native
+18. Create `FormField` primitive
+19. Refactor auth forms (sign-up, sign-in, create-org)
+20. Refactor `rating-editor.tsx`
+21. Refactor `choice-editor.tsx`
+22. Refactor native components (sign-up, sign-in, todos)
+
+---
+
+## Backward Compatibility Strategy
+
+All refactored components maintain backward compatibility through barrel exports:
+
+```tsx
+// Before: All in one file
+// After: Re-export from sub-modules
+
+// survey-builder/index.tsx
+export { SurveyBuilder } from "./survey-builder";
+export { useSurveyBuilder } from "./context";
+export { BuilderCanvas } from "./builder-canvas";
+export { BuilderHeader } from "./builder-header";
+// etc.
+```
+
+Existing imports continue to work:
+```tsx
+import { SurveyBuilder, useSurveyBuilder } from "@/components/survey-builder";
+```
+
+---
+
+## Verification Plan
+
+### Per-Component Verification
+1. **Type check:** `pnpm check-types` passes
+2. **Lint:** `pnpm check` passes
+3. **Manual test:** Component renders correctly
+4. **Interaction test:** All user interactions work
+
+### Integration Verification
+1. Survey builder: Create, reorder, edit, delete questions
+2. Survey runner: Answer all question types, submit survey
+3. Analytics: View all charts, export responses
+4. Native: Sign in/up, todos CRUD
+
+---
+
+## Files to Create/Modify
+
+### New Directories
+- `apps/web/src/components/survey-runner/questions/`
+- `apps/web/src/components/survey-builder/hooks/`
+- `apps/web/src/components/survey-builder/question-palette/`
+- `apps/web/src/components/survey-builder/properties-panel/`
+- `apps/web/src/components/survey-builder/question-card/`
+- `apps/web/src/components/survey-builder/builder-canvas/`
+- `apps/web/src/components/analytics/response-table/`
+- `apps/web/src/components/analytics/question-charts/`
+- `apps/web/src/components/analytics/ai-insights/`
+- `apps/web/src/components/forms/`
+- `apps/native/utils/`
+
+### New Primitive Files
+1. `survey-runner/questions/question-field.tsx`
+2. `survey-builder/primitives/tab-button.tsx`
+3. `survey-builder/primitives/toggle-field.tsx`
+4. `survey-builder/primitives/delete-confirm-button.tsx`
+5. `analytics/primitives/insight-card.tsx`
+6. `analytics/primitives/demographic-card.tsx`
+7. `forms/form-field.tsx`
+8. `native/utils/form-errors.ts`
+
+---
+
+## Design Principles Applied
+
+From Vercel Composition Patterns:
+- **Avoid boolean prop proliferation** - Use composition instead
+- **Use compound components** - Shared context for complex UI
+- **Decouple state from UI** - Provider is only place knowing state implementation
+- **Lift state into providers** - Allow sibling access without prop drilling
+- **Create explicit variants** - Each variant self-documenting
+
+From React Best Practices:
+- **Extract memoized components** - For expensive renders
+- **Use functional setState** - For stable callbacks
+- **Memoize derived state** - During render, not effects
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.claude/projects/-Users-orksys-Projects-orksys-survey/98d352c2-055e-47e4-a234-deaa7d4dd2bf.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+<teammate-message teammate_id="logic-refactorer" color="orange" summary="Refactored logic-rule-form.tsx complete">
+I've completed Task #6: Refactored logic-rule-form.tsx into modular components.
+
+**New structure:**
+- `types.ts` - Form types (LogicRuleFormProps, LogicRuleOperator, LogicRuleAction)
+- `constants.ts` - Operator/action labels and helper functions (needsConditionValue, needsTargetQuestion)
+- `form-fields.tsx` - Extracted field components (OperatorSelect, ConditionValueField, ActionSelect, TargetQuestionSelect)
+- `logic-rule-form.tsx` - Main form (now ~245 lines, down from 379)
+
+The refactored form maintains backward compatibility and follows the existing TanStack Form patterns.
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="logic-refactorer" color="orange">
+{"type":"idle_notification","from":"logic-refactorer","timestamp":"2026-02-18T16:31:54.307Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="primitives-creator" color="purple" summary="Shared primitives created successfully">
+Created all shared primitives for refactoring:
+
+1. **QuestionField** (`apps/web/src/components/survey-runner/questions/question-field.tsx`)
+   - Standardized question wrapper with label, description, required indicator, error display
+   - Props: question, error, children, className
+
+2. **AnimatedTabButton** (`apps/web/src/components/survey-builder/primitives/tab-button.tsx`)
+   - Tab with Framer Motion animated indicator
+   - Props: active, icon, onClick, children, layoutId, className
+
+3. **InsightCard** (`apps/web/src/components/analytics/primitives/insight-card.tsx`)
+   - Card with built-in loading state for AI insights
+   - Props: title, description, isLoading, icon, children, loadingHeight, className
+
+4. **ToggleField** (`apps/web/src/components/survey-builder/primitives/toggle-field.tsx`)
+   - Switch + label + description pattern
+   - Props: checked, onCheckedChange, label, description, className
+
+5. **DeleteConfirmButton** (`apps/web/src/components/survey-builder/primitives/delete-confirm-button.tsx`)
+   - Two-state delete button with confirmation
+   - Props: onDelete, isDeleting, className
+
+6. **FormField** (`apps/web/src/components/forms/form-field.tsx`)
+   - Shared field primitive combining Label, Input, and error display
+   - Props: id, label, type, value, onChange, placeholder, error, required, disabled, className, etc.
+
+All primitives include index.ts barrel exports and follow the existing code style (Biome, Tailwind, shadcn/ui components).
+</teammate-message>
+
+<teammate-message teammate_id="primitives-creator" color="purple">
+{"type":"idle_notification","from":"primitives-creator","timestamp":"2026-02-18T16:32:34.745Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="primitives-creator" color="purple">
+{"type":"idle_notification","from":"primitives-creator","timestamp":"2026-02-18T16:32:44.983Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="palette-refactorer" color="yellow">
+{"type":"idle_notification","from":"palette-refactorer","timestamp":"2026-02-18T16:33:25.614Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="palette-refactorer" color="yellow">
+{"type":"idle_notification","from":"palette-refactorer","timestamp":"2026-02-18T16:33:36.246Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:34:32.975Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:34:43.128Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:34:50.559Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:34:56.598Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:35:03.306Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:35:11.346Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:35:19.131Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="palette-refactorer" color="yellow">
+{"type":"idle_notification","from":"palette-refactorer","timestamp":"2026-02-18T16:35:23.725Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:35:25.487Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"idle_notification","from":"builder-refactorer","timestamp":"2026-02-18T16:35:57.334Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="properties-refactorer" color="green">
+{"type":"idle_notification","from":"properties-refactorer","timestamp":"2026-02-18T16:36:26.828Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="properties-refactorer" color="green">
+{"type":"idle_notification","from":"properties-refactorer","timestamp":"2026-02-18T16:36:39.427Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="misc-refactorer" color="blue">
+{"type":"idle_notification","from":"misc-refactorer","timestamp":"2026-02-18T16:37:53.044Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="misc-refactorer" color="blue">
+{"type":"idle_notification","from":"misc-refactorer","timestamp":"2026-02-18T16:38:05.786Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"misc-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"properties-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="misc-refactorer" color="blue">
+{"type":"shutdown_approved","requestId":"shutdown-1771432691028@misc-refactorer","from":"misc-refactorer","timestamp":"2026-02-18T16:38:19.728Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="properties-refactorer" color="green">
+{"type":"shutdown_approved","requestId":"shutdown-1771432691026@properties-refactorer","from":"properties-refactorer","timestamp":"2026-02-18T16:38:19.872Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="canvas-card-refactorer" color="pink">
+{"type":"idle_notification","from":"canvas-card-refactorer","timestamp":"2026-02-18T16:38:43.784Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="canvas-card-refactorer" color="pink">
+{"type":"idle_notification","from":"canvas-card-refactorer","timestamp":"2026-02-18T16:38:56.230Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="canvas-card-refactorer" color="pink" summary="Task #7 refactoring complete">
+Task #7 (Refactor builder-canvas and question-card) is complete.
+
+**Builder Canvas (324 → 4 files):**
+- `index.tsx` - Main build canvas
+- `preview-canvas.tsx` - Preview tab
+- `share-canvas.tsx` - Share tab
+- `drop-indicator.tsx` - Drag placeholder
+
+**Question Card (310 → 3 files):**
+- `index.tsx` - Compound component with `QuestionCard.Badge` and `QuestionCard.Actions`
+- `question-card-content.tsx` - Presentational component
+- `constants.ts` - Type icons and labels
+
+Both components now use the `DeleteConfirmButton` primitive, eliminate the IIFE in JSX, and follow the composition pattern. Biome linting passes with no errors.
+</teammate-message>
+
+<teammate-message teammate_id="canvas-card-refactorer" color="pink">
+{"type":"idle_notification","from":"canvas-card-refactorer","timestamp":"2026-02-18T16:40:46.750Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan">
+{"type":"idle_notification","from":"forms-native-refactorer","timestamp":"2026-02-18T16:40:53.329Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="question-renderer-refactorer" color="blue">
+{"type":"idle_notification","from":"question-renderer-refactorer","timestamp":"2026-02-18T16:40:54.761Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="type-fixer-4" color="purple">
+{"type":"idle_notification","from":"type-fixer-4","timestamp":"2026-02-18T16:41:05.497Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-refactorer" color="orange" summary="All refactoring tasks completed">
+All refactoring tasks have been completed successfully:
+
+**My completed tasks:**
+- Task #6: Refactored logic-rule-form.tsx (379 lines) into types.ts, constants.ts, form-fields.tsx
+- Task #20: Created drag-overlay-renderer.tsx component
+- Task #2: Refactored question-renderer.tsx (600 lines) into modular question components
+- Task #10: Refactored form components and native app (todos screen refactored, OptionItem extracted from choice-editor)
+
+**All tasks completed:**
+- Task #1: Create shared primitives for refactoring
+- Task #2: Refactor question-renderer.tsx (600 lines)
+- Task #3: Refactor survey-builder/index.tsx (452 lines)
+- Task #4: Refactor properties-panel.tsx (334 lines)
+- Task #5: Refactor question-palette.tsx (363 lines)
+- Task #6: Refactor logic-rule-form.tsx (379 lines)
+- Task #7: Refactor builder-canvas and question-card
+- Task #8: Refactor analytics components
+- Task #9: Refactor survey-runner context and other builder components
+- Task #10: Refactor form components and native app
+- Task #16: Create types.ts file for DragItem and context types
+- Task #17: Create context.tsx with SurveyBuilderContext provider
+- Task #18: Create useQuestionMutations hook
+- Task #19: Create useDragHandlers hook
+- Task #20: Create drag-overlay-renderer.tsx component
+- Task #21: Refactor main index.tsx to use extracted modules
+
+The codebase has been successfully refactored into modular, maintainable components following best practices.
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-4" color="purple">
+{"type":"idle_notification","from":"type-fixer-4","timestamp":"2026-02-18T16:41:11.045Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan">
+{"type":"idle_notification","from":"forms-native-refactorer","timestamp":"2026-02-18T16:41:11.561Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"canvas-card-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="logic-refactorer" color="orange">
+{"type":"idle_notification","from":"logic-refactorer","timestamp":"2026-02-18T16:41:16.631Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="canvas-card-refactorer" color="pink">
+{"type":"shutdown_approved","requestId":"shutdown-1771432869473@canvas-card-refactorer","from":"canvas-card-refactorer","timestamp":"2026-02-18T16:41:15.555Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="question-renderer-refactorer" color="blue">
+{"type":"idle_notification","from":"question-renderer-refactorer","timestamp":"2026-02-18T16:41:17.256Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan" summary="Task #10 complete summary">
+## Task #10 Progress Update
+
+### Completed Components:
+
+**Web Forms (✅ Done)**
+- `apps/web/src/components/forms/form-field.tsx` - Enhanced with onBlur, hint, labelClassName props
+- `apps/web/src/components/sign-up-form.tsx` - Refactored to use FormField
+- `apps/web/src/components/sign-in-form.tsx` - Refactored to use FormField  
+- `apps/web/src/components/onboarding/create-organization-form.tsx` - Refactored to use FormField
+- `apps/web/src/components/distribution/code-block.tsx` - New CodeBlock component extracted
+- `apps/web/src/components/distribution/embed-code-preview.tsx` - Now uses CodeBlock
+
+**Native Utils (✅ Done)**
+- `apps/native/utils/form-errors.ts` - Created shared getErrorMessage helper
+- `apps/native/components/sign-up.tsx` - Updated to use shared utility
+- `apps/native/components/sign-in.tsx` - Updated to use shared utility
+
+**Native Todos Components (✅ Done)**
+- `apps/native/components/todos/index.tsx` - Already exists
+- `apps/native/components/todos/add-todo-form.tsx` - Already exists (fixed Button.variant issue)
+- `apps/native/components/todos/todo-item.tsx` - Already exists (fixed Button.variant issue)
+- `apps/native/components/todos/hooks/use-todos-mutations.ts` - Already exists
+
+The todos components were already created and properly structured. I just fixed some incorrect component usage (Button.variant → View) to match the proper HeroUI Native patterns.
+
+**Task #10 Status: Complete** ✅
+</teammate-message>
+
+<teammate-message teammate_id="question-renderer-refactorer" color="blue">
+{"type":"idle_notification","from":"question-renderer-refactorer","timestamp":"2026-02-18T16:41:32.709Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-refactorer" color="orange">
+{"type":"idle_notification","from":"logic-refactorer","timestamp":"2026-02-18T16:41:45.110Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan">
+{"type":"idle_notification","from":"forms-native-refactorer","timestamp":"2026-02-18T16:41:54.521Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan" summary="Task #10 complete - ready for type checks">
+## Task #10 Status Update - COMPLETE ✅
+
+### All Parts Completed:
+
+**Web Auth Forms (✅ 100%)**
+- ✅ `apps/web/src/components/sign-up-form.tsx` - Refactored to use FormField primitive
+- ✅ `apps/web/src/components/sign-in-form.tsx` - Refactored to use FormField primitive
+- ✅ `apps/web/src/components/onboarding/create-organization-form.tsx` - Refactored to use FormField primitive
+
+**Other Web Forms (✅ 100%)**
+- ✅ `apps/web/src/components/distribution/code-block.tsx` - New CodeBlock component created
+- ✅ `apps/web/src/components/distribution/embed-code-preview.tsx` - Now uses CodeBlock component
+- ✅ `apps/web/src/components/survey-builder/question-editors/choice-editor.tsx` - OptionItem already extracted (lines 124-156)
+
+**Native Utils (✅ 100%)**
+- ✅ `apps/native/utils/form-errors.ts` - Created shared getErrorMessage helper
+- ✅ `apps/native/components/sign-up.tsx` - Updated to use shared utility
+- ✅ `apps/native/components/sign-in.tsx` - Updated to use shared utility
+
+**Native Todos Screen (✅ 100%)**
+- ✅ `apps/native/components/todos/index.tsx` - Main screen (exists, 2.9KB)
+- ✅ `apps/native/components/todos/add-todo-form.tsx` - Input + button (exists, 1.3KB)
+- ✅ `apps/native/components/todos/todo-item.tsx` - Checkbox + delete (exists, 1.3KB)
+- ✅ `apps/native/components/todos/hooks/use-todos-mutations.ts` - All mutations (exists, 679B)
+
+**Nothing remains. Task #10 is complete and ready for type checks.**
+</teammate-message>
+
+<teammate-message teammate_id="logic-refactorer" color="orange">
+{"type":"idle_notification","from":"logic-refactorer","timestamp":"2026-02-18T16:42:05.588Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan">
+{"type":"idle_notification","from":"forms-native-refactorer","timestamp":"2026-02-18T16:42:10.752Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan" summary="Task #10 complete">
+## Task #10 Status: COMPLETE ✅
+
+### Summary: All required refactoring is done.
+
+**Web Auth Forms (✅ Complete)**
+- `apps/web/src/components/sign-up-form.tsx` → Using FormField primitive
+- `apps/web/src/components/sign-in-form.tsx` → Using FormField primitive  
+- `apps/web/src/components/onboarding/create-organization-form.tsx` → Using FormField primitive
+
+**Other Web Forms (✅ Complete)**
+- `apps/web/src/components/distribution/code-block.tsx` → New component created
+- `apps/web/src/components/distribution/embed-code-preview.tsx` → Using CodeBlock
+- `apps/web/src/components/survey-builder/question-editors/choice-editor.tsx` → OptionItem already extracted
+
+**Native Utils (✅ Complete)**
+- `apps/native/utils/form-errors.ts` → Shared getErrorMessage created
+- `apps/native/components/sign-up.tsx` → Using shared utility
+- `apps/native/components/sign-in.tsx` → Using shared utility
+
+**Native Todos Screen (✅ Complete)**
+- `apps/native/components/todos/index.tsx` (2.9KB) ✓
+- `apps/native/components/todos/add-todo-form.tsx` (1.3KB) ✓
+- `apps/native/components/todos/todo-item.tsx` (1.3KB) ✓
+- `apps/native/components/todos/hooks/use-todos-mutations.ts` (679B) ✓
+
+**Nothing remains. Task #10 is finished.**
+</teammate-message>
+
+<teammate-message teammate_id="analytics-refactorer" color="red">
+{"type":"idle_notification","from":"analytics-refactorer","timestamp":"2026-02-18T16:42:27.844Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan">
+{"type":"idle_notification","from":"forms-native-refactorer","timestamp":"2026-02-18T16:42:30.306Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="analytics-refactorer" color="red">
+{"type":"idle_notification","from":"analytics-refactorer","timestamp":"2026-02-18T16:42:40.978Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-1" color="pink" summary="Fixed circular imports and type errors in analytics components">
+## Summary
+
+Fixed all TypeScript errors in the analytics components:
+
+### 1. Fixed Icon Type Issues (insight-card.tsx)
+
+The `InsightCard` component expects `LucideIcon` type (a React component from lucide-react), but the code was passing functions that return JSX elements. Fixed by importing and using actual Lucide React components:
+
+- `MessageSquare` for TextSummaryInsightCard (line 22)
+- `Smile` for SentimentInsightCard (line 68)  
+- `Hash` for KeywordsInsightCard (line 99)
+
+### 2. Fixed WordCloud Type Issues
+
+The `WordCloud` and `KeywordList` components require keywords with a `weight` property (0-1 range), but the data only had `{ word, count }`. Fixed by mapping the keywords array to calculate normalized weights:
+
+```typescript
+keywords={data.keywords.map((k) => ({
+  ...k,
+  weight: k.count / Math.max(...data.keywords.map((kw) => kw.count)),
+}))}
+```
+
+Applied to both `WordCloud` (line 104-110) and `KeywordList` (line 113-119).
+
+### 3. Fixed Circular Import Issues
+
+The circular imports occurred because barrel exports (`index.ts`) were exporting components with the same names as the directory, causing TypeScript to see circular definitions when other files imported from these directories.
+
+Fixed by updating imports in:
+- `/apps/web/src/components/analytics/index.tsx` - Now imports directly from `./ai-insights/main`, `./question-charts/main`, `./response-table/main`
+- `/apps/web/src/components/analytics/analytics-tabs.tsx` - Same direct imports to avoid going through the barrel
+
+### Files Modified
+
+1. `/apps/web/src/components/analytics/ai-insights/insight-card.tsx` - Fixed icon props and weight calculation
+2. `/apps/web/src/components/analytics/index.tsx` - Fixed circular imports
+3. `/apps/web/src/components/analytics/analytics-tabs.tsx` - Fixed circular imports
+
+All TypeScript errors related to analytics components have been resolved.
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-1" color="pink">
+{"type":"idle_notification","from":"type-fixer-1","timestamp":"2026-02-18T16:43:07.608Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-1" color="pink" summary="Analytics type errors fixed - task complete">
+## Update: Analytics Type Errors - COMPLETED ✓
+
+I have successfully fixed all the TypeScript errors you reported:
+
+### Issues Resolved
+
+1. **Circular imports in barrel exports** - Fixed by updating import paths to avoid going through the problematic barrel files
+2. **Icon type errors** - Fixed by using proper Lucide React components instead of inline SVG functions
+3. **WordCloud type errors** - Fixed by adding the missing `weight` property to keyword data
+
+### Files Modified
+
+1. `/apps/web/src/components/analytics/ai-insights/insight-card.tsx`
+   - Replaced inline SVG functions with `MessageSquare`, `Smile`, and `Hash` from lucide-react
+   - Added weight calculation for WordCloud and KeywordList components
+
+2. `/apps/web/src/components/analytics/index.tsx`
+   - Changed imports from `./ai-insights` to `./ai-insights/main`
+   - Changed imports from `./question-charts` to `./question-charts/main`
+   - Changed imports from `./response-table` to `./response-table/main`
+
+3. `/apps/web/src/components/analytics/analytics-tabs.tsx`
+   - Same import path changes as above to avoid circular dependencies
+
+### Verification
+
+Ran TypeScript type checking and confirmed no errors in the analytics components:
+- No more circular definition errors for AIInsights, QuestionCharts, or ResponseTable
+- No more `$$typeof` property missing errors for icon types
+- No more `weight` property missing errors for word cloud data
+
+The task is complete and ready for review.
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-1" color="pink">
+{"type":"idle_notification","from":"type-fixer-1","timestamp":"2026-02-18T16:43:18.965Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-2" color="orange">
+{"type":"idle_notification","from":"type-fixer-2","timestamp":"2026-02-18T16:43:37.981Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-2" color="orange">
+{"type":"idle_notification","from":"type-fixer-2","timestamp":"2026-02-18T16:43:42.626Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-3" color="yellow">
+{"type":"idle_notification","from":"type-fixer-3","timestamp":"2026-02-18T16:44:10.986Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-3" color="yellow" summary="All logic-builder and question-card TypeScript errors fixed">
+All TypeScript errors in logic-builder, question-card, and form-fields have been successfully fixed.
+
+**Fixed issues:**
+
+1. **logic-builder/form-fields.tsx** - Fixed type incompatibility with `sourceOptions` and added explicit type annotation for `option` parameter
+
+2. **logic-builder/index.tsx** - Replaced non-existent `alert-dialog` with existing `Dialog` component and fixed `conditionValue` type mismatch by converting from `unknown` to `string | null`
+
+3. **question-card/question-card-content.tsx** - Added missing `onDelete` and `isDeleting` props to `QuestionCardContentProps`
+
+4. **question-card/index.tsx** - Refactored from compound component pattern to separate exports (`QuestionCardBadge`, `QuestionCardActions`) to resolve TypeScript typing limitations
+
+All files now pass `pnpm tsc --noEmit` with no errors.
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-3" color="yellow">
+{"type":"idle_notification","from":"type-fixer-3","timestamp":"2026-02-18T16:44:18.695Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"type-fixer-3 has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"type-fixer-1 has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"type-fixer-4 has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"logic-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"forms-native-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"analytics-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"builder-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"palette-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-3" color="yellow">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071773@type-fixer-3","from":"type-fixer-3","timestamp":"2026-02-18T16:44:35.298Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-1" color="pink">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071769@type-fixer-1","from":"type-fixer-1","timestamp":"2026-02-18T16:44:36.372Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-4" color="purple">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071774@type-fixer-4","from":"type-fixer-4","timestamp":"2026-02-18T16:44:41.691Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-refactorer" color="orange">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071777@logic-refactorer","from":"logic-refactorer","timestamp":"2026-02-18T16:44:41.722Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="forms-native-refactorer" color="cyan">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071779@forms-native-refactorer","from":"forms-native-refactorer","timestamp":"2026-02-18T16:44:41.758Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="analytics-refactorer" color="red">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071778@analytics-refactorer","from":"analytics-refactorer","timestamp":"2026-02-18T16:44:41.759Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="builder-refactorer" color="green">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071775@builder-refactorer","from":"builder-refactorer","timestamp":"2026-02-18T16:44:41.788Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="palette-refactorer" color="yellow">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071776@palette-refactorer","from":"palette-refactorer","timestamp":"2026-02-18T16:44:41.790Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"primitives-creator has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-2" color="orange">
+{"type":"idle_notification","from":"type-fixer-2","timestamp":"2026-02-18T16:44:42.828Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="primitives-creator" color="purple">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071774@primitives-creator","from":"primitives-creator","timestamp":"2026-02-18T16:44:42.052Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"question-renderer-refactorer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="question-renderer-refactorer" color="blue">
+{"type":"shutdown_approved","requestId":"shutdown-1771433071777@question-renderer-refactorer","from":"question-renderer-refactorer","timestamp":"2026-02-18T16:44:51.012Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="type-fixer-2" color="orange">
+{"type":"idle_notification","from":"type-fixer-2","timestamp":"2026-02-18T16:45:32.601Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="type-fixer-2" color="orange">
+{"type":"idle_notification","from":"type-fixer-2","timestamp":"2026-02-18T16:46:36.166Z","idleReason":"available"}
+</teammate-message>
+
+---
+
+<teammate-message teammate_id="type-fixer-2" color="orange">
+{"type":"idle_notification","from":"type-fixer-2","timestamp":"2026-02-18T16:48:08.236Z","idleReason":"available"}
+</teammate-message>

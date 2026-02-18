@@ -1,11 +1,12 @@
 {
   "cli_version": "0.4.4",
   "checkpoint_id": "780169b37921",
+  "session_id": "36dd5e84-acae-4db7-af97-17ea0761b231",
   "strategy": "manual-commit",
+  "created_at": "2026-02-18T17:36:36.878408Z",
   "branch": "main",
-  "checkpoints_count": 15,
+  "checkpoints_count": 13,
   "files_touched": [
-    "CLAUDE.md",
     "PHASE3.md",
     "SURVEY_SYSTEM.md",
     "apps/native/components/todos/add-todo-form.tsx",
@@ -93,34 +94,21 @@
     "apps/web/src/components/survey-runner/questions/textarea-question.tsx",
     "apps/web/src/components/survey-runner/questions/types.ts"
   ],
-  "sessions": [
-    {
-      "metadata": "/78/0169b37921/0/metadata.json",
-      "transcript": "/78/0169b37921/0/full.jsonl",
-      "context": "/78/0169b37921/0/context.md",
-      "content_hash": "/78/0169b37921/0/content_hash.txt",
-      "prompt": "/78/0169b37921/0/prompt.txt"
-    },
-    {
-      "metadata": "/78/0169b37921/1/metadata.json",
-      "transcript": "/78/0169b37921/1/full.jsonl",
-      "context": "/78/0169b37921/1/context.md",
-      "content_hash": "/78/0169b37921/1/content_hash.txt",
-      "prompt": "/78/0169b37921/1/prompt.txt"
-    },
-    {
-      "metadata": "/78/0169b37921/2/metadata.json",
-      "transcript": "/78/0169b37921/2/full.jsonl",
-      "context": "/78/0169b37921/2/context.md",
-      "content_hash": "/78/0169b37921/2/content_hash.txt",
-      "prompt": "/78/0169b37921/2/prompt.txt"
-    }
-  ],
+  "agent": "Claude Code",
   "token_usage": {
-    "input_tokens": 320357,
+    "input_tokens": 130404,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 5424448,
-    "output_tokens": 29832,
-    "api_call_count": 103
+    "cache_read_tokens": 4353216,
+    "output_tokens": 18856,
+    "api_call_count": 80
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T17:36:36.724873Z",
+    "agent_lines": 0,
+    "human_added": 0,
+    "human_modified": 3822,
+    "human_removed": 2807,
+    "total_committed": 3822,
+    "agent_percentage": 0
   }
 }
