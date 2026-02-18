@@ -66,3 +66,58 @@ Base UI: MenuGroupRootContext is missing. Menu group parts must be used within <
 
 great work, commit and push all changes made
 
+### Prompt 6
+
+I would like to plan comprehensive refactoring of all React components (that are NOT of shadcn OR NOT the page.tsx, error.tsx or layout.tsx) that are not properly utilzing shadcn theme system. Use vercel composition skill, react and next skills. Think deeply about what needs to be change, it should result in purely visual update and components properly working with dark mode as with light mode.
+
+Requirements:
+use the skills available, use mcp for docs and websearch, be very diligent instead of b...
+
+### Prompt 7
+
+[Request interrupted by user]
+
+### Prompt 8
+
+I would like to plan comprehensive refactoring of all React components (that are NOT of shadcn OR NOT the page.tsx, error.tsx or layout.tsx) that are not properly utilzing shadcn theme system. Use vercel composition skill, react and next skills. Think deeply about what needs to be change, it should result in purely visual update and components properly working with dark mode as with light mode.
+
+Requirements:
+use the skills available, use mcp for docs and websearch, be very diligent instead of b...
+
+### Prompt 9
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-composition-patterns
+
+# React Composition Patterns
+
+Composition patterns for building flexible, maintainable React components. Avoid
+boolean prop proliferation by using compound components, lifting state, and
+composing internals. These patterns make codebases easier for both humans and AI
+agents to work with as they scale.
+
+## When to Apply
+
+Reference these guidelines when:
+
+- Refactoring components with many boolean props
+- Buil...
+
+### Prompt 10
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-react-best-practices
+
+# Vercel React Best Practices
+
+Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 57 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
+
+## When to Apply
+
+Reference these guidelines when:
+- Writing new React components or Next.js pages
+- Implementing data fetching (client or server-side)
+- Reviewing...
+
+### Prompt 11
+
+[Request interrupted by user for tool use]
+
