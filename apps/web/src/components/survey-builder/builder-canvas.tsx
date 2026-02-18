@@ -7,16 +7,16 @@ import {
 } from "@dnd-kit/sortable";
 import type { Question } from "@orksys-survey/db";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardList, Plus } from "lucide-react";
-import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { orpc } from "@/utils/orpc";
 import { useSurveyBuilder } from "./index";
-import { QuestionCard, questionTypeLabels } from "./question-card";
+import { QuestionCard, QuestionCardContent } from "./question-card";
+import { createMockQuestion } from "./utils";
 
 // Drag item types (matching index.tsx)
 interface PaletteDragItem {
@@ -30,44 +30,6 @@ interface QuestionDragItem {
 }
 
 type DragItem = PaletteDragItem | QuestionDragItem;
-
-// Drop indicator component with animated glow and question type
-interface DropIndicatorProps {
-	questionType?: Question["type"];
-}
-
-function DropIndicator({ questionType }: DropIndicatorProps) {
-	return (
-		<motion.div
-			initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-			animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
-			exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-			transition={{ type: "spring", stiffness: 400, damping: 30 }}
-			className="overflow-hidden pointer-events-none"
-		>
-			<div className="relative flex min-h-[52px] items-center gap-2 rounded-xl border border-violet-500 bg-violet-50 p-3">
-				{/* Animated glow */}
-				<motion.div
-					className="absolute inset-0 rounded-xl border border-violet-400"
-					animate={{ opacity: [0.3, 0.7, 0.3] }}
-					transition={{
-						duration: 1.5,
-						repeat: Number.POSITIVE_INFINITY,
-						ease: "easeInOut",
-					}}
-				/>
-				<div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100">
-					<Plus className="h-4 w-4 text-violet-600" />
-				</div>
-				<span className="relative font-medium text-sm text-violet-700">
-					{questionType
-						? `Drop to add ${questionTypeLabels[questionType] || "question"}`
-						: "Drop to add question here"}
-				</span>
-			</div>
-		</motion.div>
-	);
-}
 
 interface BuilderCanvasProps {
 	questions: Question[];
@@ -188,7 +150,7 @@ export function BuilderCanvas({
 			}`}
 		>
 			<div className="mx-auto w-full max-w-2xl space-y-3">
-				<AnimatePresence mode="popLayout">
+				<AnimatePresence mode="popLayout" initial={false}>
 					{safeQuestions.length === 0 ? (
 						<motion.div
 							key="empty-state"
@@ -222,90 +184,113 @@ export function BuilderCanvas({
 						</motion.div>
 					) : (
 						<>
-							<LayoutGroup>
-								<SortableContext
-									items={safeQuestions.map((q) => q.id)}
-									strategy={verticalListSortingStrategy}
-								>
-									{(() => {
-										// Calculate drop position based on overId
-										const rawDropIndex = overId
-											? safeQuestions.findIndex((q) => q.id === overId)
-											: -1;
-										const dropIndex =
-											rawDropIndex === -1 ? safeQuestions.length : rawDropIndex;
+							<SortableContext
+								items={safeQuestions.map((q) => q.id)}
+								strategy={verticalListSortingStrategy}
+							>
+								{(() => {
+									// Calculate drop position based on overId
+									const rawDropIndex = overId
+										? safeQuestions.findIndex((q) => q.id === overId)
+										: -1;
+									const dropIndex =
+										rawDropIndex === -1 ? safeQuestions.length : rawDropIndex;
 
-										// Get the question type being dragged
-										const isDraggingPalette = activeDragItem?.type === "palette";
-										const draggedQuestionType = isDraggingPalette
-											? activeDragItem.questionType
-											: undefined;
+									// Get the question type being dragged
+									const isDraggingPalette = activeDragItem?.type === "palette";
+									const draggedQuestionType = isDraggingPalette
+										? activeDragItem.questionType
+										: undefined;
 
-										// Build items array with drop indicator at correct position
-										const items: React.ReactNode[] = [];
+									// Build items array with drop indicator at correct position
+									const items: React.ReactNode[] = [];
 
-										safeQuestions.forEach((question, index) => {
-											// Add drop indicator before this question if dragging over it
-											if (isDraggingPalette && index === dropIndex) {
-												items.push(
-													<DropIndicator
-														key="drop-indicator"
-														questionType={draggedQuestionType}
-													/>,
-												);
-											}
-
-											// Add the question card
-											const isDragging =
-												activeDragItem?.type === "question" &&
-												activeDragItem.id === question.id;
+									safeQuestions.forEach((question, index) => {
+										// Add drop indicator before this question if dragging over it
+										if (
+											isDraggingPalette &&
+											index === dropIndex &&
+											draggedQuestionType
+										) {
+											const mockQuestion =
+												createMockQuestion(draggedQuestionType);
 											items.push(
 												<motion.div
-													key={question.id}
-													layout={!isDragging}
-													initial={{ opacity: 0, y: 20, scale: 0.95 }}
-													animate={{
-														opacity: 1,
-														y: 0,
-														scale: 1,
-													}}
-													exit={{
-														opacity: 0,
-														scale: 0.95,
-														transition: { duration: 0.15 },
-													}}
-													transition={{
-														type: "spring",
-														stiffness: 400,
-														damping: 30,
-														mass: 0.8,
-													}}
+													key="drop-indicator"
+													initial={{ opacity: 0, height: 0 }}
+													animate={{ opacity: 1, height: "auto" }}
+													exit={{ opacity: 0, height: 0 }}
 												>
-													<QuestionCard
-														question={question}
-														isSelected={selectedQuestionId === question.id}
-														onSelect={() => setSelectedQuestionId(question.id)}
-														questions={safeQuestions}
-														onQuestionsChange={onQuestionsChange}
+													<QuestionCardContent
+														question={mockQuestion}
+														isPlaceholder
 													/>
 												</motion.div>,
 											);
-										});
-
-										// Add indicator at end if hovering at last position or over canvas
-										if (isDraggingPalette && dropIndex >= safeQuestions.length) {
-											items.push(
-												<DropIndicator
-													key="drop-indicator-end"
-													questionType={draggedQuestionType}
-												/>,
-											);
 										}
 
-										return items;
-									})()}
-								</SortableContext>
-							</LayoutGroup>
+										// Add the question card
+										const isOptimistic = question.id.startsWith("temp-");
+
+										items.push(
+											<motion.div
+												key={question.id}
+												layout={!activeDragItem ? "position" : false}
+												initial={
+													isOptimistic
+														? { opacity: 0, y: 20, scale: 0.95 }
+														: false
+												}
+												animate={{ opacity: 1, y: 0, scale: 1 }}
+												exit={{
+													opacity: 0,
+													scale: 0.95,
+													transition: { duration: 0.15 },
+												}}
+												transition={{
+													type: "spring",
+													stiffness: 400,
+													damping: 30,
+													mass: 0.8,
+												}}
+											>
+												<QuestionCard
+													question={question}
+													isSelected={selectedQuestionId === question.id}
+													onSelect={() => setSelectedQuestionId(question.id)}
+													questions={safeQuestions}
+													onQuestionsChange={onQuestionsChange}
+												/>
+											</motion.div>,
+										);
+									});
+
+									// Add indicator at end if hovering at last position or over canvas
+									if (
+										isDraggingPalette &&
+										dropIndex >= safeQuestions.length &&
+										draggedQuestionType
+									) {
+										const mockQuestion =
+											createMockQuestion(draggedQuestionType);
+										items.push(
+											<motion.div
+												key="drop-indicator-end"
+												initial={{ opacity: 0, height: 0 }}
+												animate={{ opacity: 1, height: "auto" }}
+												exit={{ opacity: 0, height: 0 }}
+											>
+												<QuestionCardContent
+													question={mockQuestion}
+													isPlaceholder
+												/>
+											</motion.div>,
+										);
+									}
+
+									return items;
+								})()}
+							</SortableContext>
 
 							<motion.div
 								initial={{ opacity: 0 }}

@@ -16,15 +16,13 @@ import {
 	useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { Question, Survey } from "@orksys-survey/db";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, PanelLeftClose, PanelRightClose } from "lucide-react";
+import { PanelLeftClose, PanelRightClose } from "lucide-react";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
@@ -32,38 +30,9 @@ import { client, orpc } from "@/utils/orpc";
 import { BuilderCanvas } from "./builder-canvas";
 import { BuilderHeader } from "./builder-header";
 import { PropertiesPanel } from "./properties-panel";
+import { QuestionCardContent, questionTypeLabels } from "./question-card";
 import { QuestionPalette } from "./question-palette";
-
-// Question type configs for drag overlay
-const questionTypeIcons: Record<string, React.ElementType> = {
-	text: ClipboardList,
-	textarea: ClipboardList,
-	multiple_choice: ClipboardList,
-	checkbox: ClipboardList,
-	dropdown: ClipboardList,
-	rating: ClipboardList,
-	nps: ClipboardList,
-	linear_scale: ClipboardList,
-	date: ClipboardList,
-	email: ClipboardList,
-	phone: ClipboardList,
-	file_upload: ClipboardList,
-};
-
-const questionTypeLabels: Record<string, string> = {
-	text: "Short Text",
-	textarea: "Long Text",
-	multiple_choice: "Multiple Choice",
-	checkbox: "Checkboxes",
-	dropdown: "Dropdown",
-	rating: "Rating",
-	nps: "NPS",
-	linear_scale: "Linear Scale",
-	date: "Date",
-	email: "Email",
-	phone: "Phone",
-	file_upload: "File Upload",
-};
+import { createMockQuestion } from "./utils";
 
 // Builder context for sharing state across components
 interface SurveyBuilderContextValue {
@@ -201,13 +170,16 @@ export function SurveyBuilder({
 
 	const handleDragEnd = (event: DragEndEvent) => {
 		const { active, over } = event;
-		setActiveDragItem(null);
 		setOverId(null);
 
-		if (!over) return;
+		if (!over) {
+			setActiveDragItem(null);
+			return;
+		}
 
 		// Handle cancel drop
 		if (over.id === "palette-cancel-zone") {
+			setActiveDragItem(null);
 			return;
 		}
 
@@ -219,6 +191,22 @@ export function SurveyBuilder({
 			const overIndex = questions.findIndex((q) => q.id === over.id);
 			const insertIndex = overIndex === -1 ? questions.length : overIndex;
 
+			// Optimistic update
+			const tempId = `temp-${crypto.randomUUID()}`;
+			const mockQuestion = createMockQuestion(questionType);
+			const optimisticQuestion = { ...mockQuestion, id: tempId };
+
+			const optimisticQuestions = [
+				...questions.slice(0, insertIndex).map((q, i) => ({ ...q, order: i })),
+				{ ...optimisticQuestion, order: insertIndex },
+				...questions
+					.slice(insertIndex)
+					.map((q, i) => ({ ...q, order: insertIndex + 1 + i })),
+			];
+
+			setQuestions(optimisticQuestions);
+			setSelectedQuestionId(tempId);
+
 			// Create question and reorder
 			client.question
 				.create({
@@ -228,8 +216,22 @@ export function SurveyBuilder({
 					order: insertIndex,
 				})
 				.then((newQuestion) => {
-					// Build the new array with correct order
-					const reorderedQuestions = [
+					// Replace optimistic question with real one
+					setQuestions((currentQuestions) => {
+						const updatedQuestions = currentQuestions.map((q) =>
+							q.id === tempId ? newQuestion : q,
+						);
+						return updatedQuestions;
+					});
+
+					setSelectedQuestionId((currentId) =>
+						currentId === tempId ? newQuestion.id : currentId,
+					);
+
+					queryClient.invalidateQueries({ queryKey: ["question"] });
+
+					// Reorder all questions on backend to ensure consistency
+					const finalQuestions = [
 						...questions
 							.slice(0, insertIndex)
 							.map((q, i) => ({ ...q, order: i })),
@@ -239,13 +241,8 @@ export function SurveyBuilder({
 							.map((q, i) => ({ ...q, order: insertIndex + 1 + i })),
 					];
 
-					setQuestions(reorderedQuestions);
-					setSelectedQuestionId(newQuestion.id);
-					queryClient.invalidateQueries({ queryKey: ["question"] });
-
-					// Reorder all questions on backend
 					reorderMutation.mutate({
-						questions: reorderedQuestions.map((q) => ({
+						questions: finalQuestions.map((q) => ({
 							id: q.id,
 							order: q.order,
 						})),
@@ -254,9 +251,13 @@ export function SurveyBuilder({
 					toast.success("Question added");
 				})
 				.catch((error: Error) => {
+					// Revert on error
+					setQuestions(questions);
+					if (selectedQuestionId === tempId) setSelectedQuestionId(null);
 					toast.error(error.message || "Failed to create question");
 				});
 
+			setActiveDragItem(null);
 			return;
 		}
 
@@ -267,10 +268,13 @@ export function SurveyBuilder({
 
 			if (oldIndex !== -1 && newIndex !== -1) {
 				const newQuestions = arrayMove(questions, oldIndex, newIndex).map(
-					(q, index) => ({
-						...q,
-						order: index,
-					}),
+					(q, index) => {
+						// Only create new object if order actually changed
+						if (q.order === index) {
+							return q; // Preserve reference
+						}
+						return { ...q, order: index };
+					},
 				);
 
 				setQuestions(newQuestions);
@@ -283,6 +287,8 @@ export function SurveyBuilder({
 				});
 			}
 		}
+
+		setActiveDragItem(null); // Always called last
 	};
 
 	const contextValue: SurveyBuilderContextValue = {
@@ -301,33 +307,20 @@ export function SurveyBuilder({
 
 	const safeQuestions = questions || [];
 
-	// Custom drop animation that fades out smoothly
-	const dropAnimation: typeof defaultDropAnimation = {
-		...defaultDropAnimation,
-		duration: 200,
-		keyframes: ({ transform }) => [
-			{ opacity: 1, transform: CSS.Transform.toString(transform.initial) },
-			{
-				opacity: 0,
-				transform: CSS.Transform.toString(transform.initial),
-			},
-		],
-	};
-
 	// Render drag overlay
 	const renderDragOverlay = () => {
 		if (!activeDragItem) return null;
 
 		if (activeDragItem.type === "palette") {
-			const Icon =
-				questionTypeIcons[activeDragItem.questionType] || ClipboardList;
+			const mockQuestion = createMockQuestion(activeDragItem.questionType);
 			return (
-				<div className="flex w-[calc(100vw-3rem)] max-w-[624px] cursor-grabbing items-center gap-2 rounded-xl bg-violet-50 p-3 shadow-xl ring-2 ring-violet-500">
-					<Icon className="h-5 w-5 shrink-0 text-violet-500" />
-					<span className="font-medium text-neutral-900 text-sm">
-						{questionTypeLabels[activeDragItem.questionType] ||
-							activeDragItem.questionType}
-					</span>
+				<div className="w-[calc(100vw-3rem)] max-w-2xl">
+					<QuestionCardContent
+						question={mockQuestion}
+						isSelected={false}
+						hasLogic={false}
+						isOverlay={true}
+					/>
 				</div>
 			);
 		}
@@ -337,15 +330,14 @@ export function SurveyBuilder({
 			(q) => q.id === activeDragItem.id,
 		);
 		if (activeQuestion) {
-			const Icon = questionTypeIcons[activeQuestion.type] || ClipboardList;
 			return (
-				<div className="flex w-[calc(100vw-3rem)] max-w-[624px] cursor-grabbing items-center gap-2 rounded-xl bg-white p-3 shadow-xl ring-2 ring-violet-500">
-					<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-violet-100">
-						<Icon className="h-4 w-4 text-violet-600" />
-					</div>
-					<span className="font-medium text-neutral-900 text-sm">
-						{activeQuestion.title}
-					</span>
+				<div className="w-[calc(100vw-3rem)] max-w-2xl">
+					<QuestionCardContent
+						question={activeQuestion}
+						isSelected={selectedQuestionId === activeQuestion.id}
+						hasLogic={false}
+						isOverlay={true}
+					/>
 				</div>
 			);
 		}
@@ -438,7 +430,7 @@ export function SurveyBuilder({
 					</div>
 				</div>
 
-				<DragOverlay dropAnimation={dropAnimation}>
+				<DragOverlay dropAnimation={defaultDropAnimation}>
 					{renderDragOverlay()}
 				</DragOverlay>
 			</DndContext>
