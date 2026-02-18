@@ -1,0 +1,522 @@
+Implement the following plan:
+
+# Phase 3: Respondent Experience Implementation Plan
+
+## Context
+
+This plan implements Phase 3 of the survey platform: the public-facing survey runner and distribution system. The goal is to enable anonymous respondents to take surveys through a beautiful, accessible interface while providing creators with tools to distribute their surveys.
+
+**Key Design Decisions:**
+- Follow the existing `SurveyBuilder` context-based compound component pattern
+- Reuse existing public API endpoints (`getSurveyForRunner`, `submit`)
+- Support both "one-at-a-time" and "all-at-once" display modes
+- Implement client-side logic evaluation for conditional branching
+- Use lightweight fingerprinting for duplicate prevention
+
+---
+
+## Implementation Tasks
+
+### 1. Public Route Setup
+
+**File:** `apps/web/src/middleware.ts`
+
+```typescript
+// Add "/s" to publicRoutes array
+const publicRoutes = ["/", "/login", "/onboarding", "/success", "/s"];
+```
+
+### 2. Survey Runner Page Structure
+
+**New Files:**
+
+```
+apps/web/src/app/s/
+├── [slug]/
+│   ├── layout.tsx      # Minimal layout (no header/auth UI)
+│   ├── page.tsx        # Main runner page - loads survey, renders SurveyRunner
+│   └── complete/
+│       └── page.tsx    # Thank you page (customizable via SurveySettings)
+```
+
+**Route Behavior:**
+- `/s/[slug]` - Renders the survey runner for published surveys
+- `/s/[slug]?embed=1` - Embed mode (removes padding, tighter UI)
+- `/s/[slug]/complete` - Post-submission thank you page
+
+### 3. Survey Runner Component Architecture
+
+**Pattern:** Context-based compound components (mirrors `SurveyBuilder`)
+
+**New Files:**
+
+```
+apps/web/src/components/survey-runner/
+├── index.tsx                    # SurveyRunner + Context Provider
+├── runner-canvas.tsx            # Question display area
+├── runner-header.tsx            # Survey title + progress
+├── runner-navigation.tsx        # Back/Next/Submit buttons
+├── runner-progress.tsx          # Progress bar component
+├── runner-complete.tsx          # Thank you screen
+├── question-renderer/
+│   ├── index.tsx                # QuestionRenderer - dispatches by type
+│   ├── text-question.tsx
+│   ├── textarea-question.tsx
+│   ├── choice-question.tsx      # RadioGroup for multiple_choice
+│   ├── checkbox-question.tsx    # Checkbox group
+│   ├── dropdown-question.tsx    # Select component
+│   ├── rating-question.tsx      # Star rating
+│   ├── nps-question.tsx         # 0-10 NPS scale
+│   ├── linear-scale-question.tsx # Slider
+│   ├── date-question.tsx
+│   ├── email-question.tsx
+│   ├── phone-question.tsx
+│   └── file-upload-question.tsx
+├── hooks/
+│   ├── use-survey-runner.ts     # Context consumer hook
+│   ├── use-logic-evaluator.ts   # Logic rule evaluation
+│   └── use-fingerprint.ts       # Browser fingerprinting
+└── utils/
+    ├── logic-engine.ts          # Condition/action evaluation
+    └── validation.ts            # Question validation helpers
+```
+
+**Context Interface:**
+
+```typescript
+interface SurveyRunnerContextValue {
+  // Survey data
+  survey: Survey;
+  questions: Question[];
+  settings: SurveySettings;
+
+  // Response state
+  answers: Map<string, AnswerValue>;
+  currentQuestionIndex: number;
+  visibleQuestionIds: Set<string>;
+
+  // Navigation
+  canGoBack: boolean;
+  canGoNext: boolean;
+  isComplete: boolean;
+  isSubmitting: boolean;
+
+  // Actions
+  setAnswer: (questionId: string, value: AnswerValue) => void;
+  goNext: () => void;
+  goBack: () => void;
+  submit: () => Promise<void>;
+
+  // Metadata
+  fingerprint: string | null;
+}
+```
+
+### 4. Question Components
+
+Each question component follows this interface:
+
+```typescript
+interface QuestionProps {
+  question: Question;
+  value: AnswerValue | undefined;
+  onChange: (value: AnswerValue) => void;
+  onError: (error: string | null) => void;
+  disabled?: boolean;
+  autoFocus?: boolean;
+}
+```
+
+**Question Type → UI Component Mapping:**
+
+| Type | Component | shadcn/ui Primitives |
+|------|-----------|---------------------|
+| text | TextQuestion | Input |
+| textarea | TextareaQuestion | Textarea |
+| multiple_choice | ChoiceQuestion | RadioGroup |
+| checkbox | CheckboxQuestion | Checkbox (group) |
+| dropdown | DropdownQuestion | Select |
+| rating | RatingQuestion | Custom (stars) |
+| nps | NpsQuestion | Custom (0-10 scale) |
+| linear_scale | LinearScaleQuestion | Slider |
+| date | DateQuestion | Input (type=date) |
+| email | EmailQuestion | Input (type=email) |
+| phone | PhoneQuestion | Input (type=tel) |
+| file_upload | FileUploadQuestion | Custom dropzone |
+
+### 5. Logic Evaluation Engine
+
+**File:** `apps/web/src/components/survey-runner/utils/logic-engine.ts`
+
+Evaluate `LogicRule` records at runtime based on current answers:
+
+**Operators to implement:**
+- `equals`, `not_equals`
+- `contains`
+- `greater_than`, `less_than`
+- `is_empty`, `is_not_empty`
+
+**Actions to implement:**
+- `jump_to` - Navigate to specific question
+- `skip` - Skip next question
+- `show` / `hide` - Toggle question visibility
+- `end_survey` - Early termination
+
+### 6. API Enhancement
+
+**File:** `packages/api/src/routers/response.ts`
+
+Extend `getSurveyForRunner` to include logic rules:
+
+```typescript
+getSurveyForRunner: publicProcedure
+  .input(z.object({ slug: z.string() }))
+  .handler(async ({ input }) => {
+    // ... existing survey/questions query
+
+    // Add: Get logic rules
+    const logicRules = await db
+      .select()
+      .from(logicRule)
+      .where(eq(logicRule.surveyId, surveyResult[0].id));
+
+    return {
+      survey: surveyResult[0],
+      questions,
+      logicRules,  // NEW
+    };
+  }),
+```
+
+### 7. Distribution Components
+
+**New Files:**
+
+```
+apps/web/src/components/distribution/
+├── distribution-panel.tsx       # Main distribution UI
+├── qr-code-generator.tsx        # QR code display + download
+├── copyable-field.tsx           # Copy-to-clipboard input
+└── embed-code-preview.tsx       # Code snippet display
+```
+
+**Distribution Panel Features:**
+1. Public URL with copy button
+2. QR code generator (downloadable PNG)
+3. Embed code snippets:
+   - Iframe embed
+   - Popup/modal embed
+   - JavaScript widget (optional, Phase 2)
+
+**Dependencies:**
+- `qrcode` package for QR generation
+
+### 8. Fingerprint Implementation
+
+**File:** `apps/web/src/components/survey-runner/hooks/use-fingerprint.ts`
+
+Lightweight browser fingerprinting using:
+- `navigator.userAgent`
+- `navigator.language`
+- `screen.width` × `screen.height`
+- `new Date().getTimezoneOffset()`
+- Canvas fingerprint (minimal)
+
+Hash with SHA-256 via `crypto.subtle.digest()`.
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `apps/web/src/middleware.ts` | Add `/s` to publicRoutes |
+| `packages/api/src/routers/response.ts` | Add logicRules to getSurveyForRunner |
+
+## Files to Create
+
+| File | Description |
+|------|-------------|
+| `apps/web/src/app/s/[slug]/layout.tsx` | Minimal public layout |
+| `apps/web/src/app/s/[slug]/page.tsx` | Survey runner page |
+| `apps/web/src/app/s/[slug]/complete/page.tsx` | Thank you page |
+| `apps/web/src/components/survey-runner/*` | All runner components |
+| `apps/web/src/components/distribution/*` | Distribution panel components |
+
+---
+
+## Verification
+
+1. **Survey Runner:**
+   - Navigate to `/s/[slug]` for a published survey
+   - Verify all 12 question types render correctly
+   - Test required field validation
+   - Submit a complete response
+   - Verify response appears in database
+
+2. **Logic Engine:**
+   - Create survey with conditional rules
+   - Verify questions show/hide based on answers
+   - Test jump_to navigation
+   - Verify end_survey action terminates survey
+
+3. **Distribution:**
+   - Copy public URL, verify it opens survey
+   - Generate QR code, verify it encodes correct URL
+   - Test embed code in a test HTML page
+
+4. **Anonymous Tracking:**
+   - Submit survey, verify fingerprint stored
+   - Attempt duplicate submission, verify blocked
+
+---
+
+## Dependencies to Add
+
+```bash
+pnpm add qrcode --filter @orksys-survey/web
+pnpm add @types/qrcode --filter @orksys-survey/web --dev
+```
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+<teammate-message teammate_id="api-developer" color="purple">
+{"type":"idle_notification","from":"api-developer","timestamp":"2026-02-18T11:02:26.453Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="distribution-dev" color="green">
+{"type":"idle_notification","from":"distribution-dev","timestamp":"2026-02-18T11:03:31.978Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="distribution-dev" color="green">
+{"type":"idle_notification","from":"distribution-dev","timestamp":"2026-02-18T11:03:40.977Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="utils-developer" color="blue" summary="Fingerprint hook and validation utils implemented">
+I've implemented the fingerprint hook and validation utilities for the survey runner:
+
+**Files created:**
+1. `/Users/orksys/Projects/orksys-survey/apps/web/src/components/survey-runner/hooks/use-fingerprint.ts`
+   - `useFingerprint()` hook that generates a stable browser fingerprint
+   - Uses navigator.userAgent, navigator.language, screen resolution, and timezone offset
+   - Hashes with SHA-256 via crypto.subtle.digest() with a DJB2 fallback
+   - Returns null on server-side for SSR compatibility
+
+2. `/Users/orksys/Projects/orksys-survey/apps/web/src/components/survey-runner/utils/validation.ts`
+   - `validateAnswer(question, value)` function for question validation
+   - Handles required field checking
+   - Type-specific validation for all question types:
+     - Email format validation
+     - Phone number format validation (international support)
+     - Text/textarea with minLength/maxLength constraints
+     - Single choice (multiple_choice, dropdown) with option validation
+     - Multiple choice (checkbox) with array validation
+     - Numeric range validation (rating, nps, linear_scale) with min/max
+     - Date validation
+     - File upload validation (maxFiles, maxFileSize, acceptedFileTypes)
+
+3. Barrel exports in `hooks/index.ts`, `utils/index.ts`, and `survey-runner/index.ts`
+
+The implementation follows the codebase patterns (Biome linting, TypeScript strict types) and integrates with the existing Question schema from `@orksys-survey/db`.
+</teammate-message>
+
+<teammate-message teammate_id="utils-developer" color="blue">
+{"type":"idle_notification","from":"utils-developer","timestamp":"2026-02-18T11:04:56.148Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-engineer" color="yellow">
+{"type":"idle_notification","from":"logic-engineer","timestamp":"2026-02-18T11:08:15.074Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="runner-core-dev" color="pink">
+{"type":"idle_notification","from":"runner-core-dev","timestamp":"2026-02-18T11:15:58.905Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="runner-core-dev" color="pink">
+{"type":"idle_notification","from":"runner-core-dev","timestamp":"2026-02-18T11:16:18.472Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="pages-developer" color="orange">
+{"type":"idle_notification","from":"pages-developer","timestamp":"2026-02-18T11:19:48.881Z","idleReason":"available"}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"distribution-dev has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"api-developer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"utils-developer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"runner-core-dev has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"logic-engineer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="system">
+{"type":"teammate_terminated","message":"pages-developer has shut down."}
+</teammate-message>
+
+<teammate-message teammate_id="distribution-dev" color="green">
+{"type":"shutdown_approved","requestId":"shutdown-1771414011717@distribution-dev","from":"distribution-dev","timestamp":"2026-02-18T11:27:10.146Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="api-developer" color="purple">
+{"type":"shutdown_approved","requestId":"shutdown-1771414011721@api-developer","from":"api-developer","timestamp":"2026-02-18T11:27:10.151Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="utils-developer" color="blue">
+{"type":"shutdown_approved","requestId":"shutdown-1771414011722@utils-developer","from":"utils-developer","timestamp":"2026-02-18T11:27:10.154Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="runner-core-dev" color="pink">
+{"type":"shutdown_approved","requestId":"shutdown-1771414011725@runner-core-dev","from":"runner-core-dev","timestamp":"2026-02-18T11:27:10.158Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="logic-engineer" color="yellow">
+{"type":"shutdown_approved","requestId":"shutdown-1771414011720@logic-engineer","from":"logic-engineer","timestamp":"2026-02-18T11:27:10.298Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+<teammate-message teammate_id="pages-developer" color="orange">
+{"type":"shutdown_approved","requestId":"shutdown-1771414011724@pages-developer","from":"pages-developer","timestamp":"2026-02-18T11:27:10.648Z","paneId":"in-process","backendType":"in-process"}
+</teammate-message>
+
+---
+
+## Error Type
+Build Error
+
+## Error Message
+Export SurveyRunner doesn't exist in target module
+
+## Build Output
+./apps/web/src/app/s/[slug]/page.tsx:8:1
+Export SurveyRunner doesn't exist in target module
+   6 | import { Suspense, use } from "react";
+   7 |
+>  8 | import { SurveyRunner } from "@/components/survey-runner";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   9 | import { orpc } from "@/utils/orpc";
+  10 |
+  11 | function SurveyRunnerContent({
+
+The export SurveyRunner was not found in module [project]/apps/web/src/components/survey-runner/index.ts [app-client] (ecmascript).
+Did you mean to import SurveyRunnerProvider?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./apps/web/src/app/s/[slug]/page.tsx [Client Component Browser]
+    ./apps/web/src/app/s/[slug]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./apps/web/src/app/s/[slug]/page.tsx [Client Component SSR]
+    ./apps/web/src/app/s/[slug]/page.tsx [Server Component]
+
+Next.js version: 16.1.6 (Turbopack)
+
+
+fix this please
+
+---
+
+read @../../PHASE3.md and plan your next moves, use skills available (vercel composition, next and react best practices skills) and mcps for docs like zread, websearch via websearch-prime etc. Plan it very carefuly. Think deeply.
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-composition-patterns
+
+# React Composition Patterns
+
+Composition patterns for building flexible, maintainable React components. Avoid
+boolean prop proliferation by using compound components, lifting state, and
+composing internals. These patterns make codebases easier for both humans and AI
+agents to work with as they scale.
+
+## When to Apply
+
+Reference these guidelines when:
+
+- Refactoring components with many boolean props
+- Building reusable component libraries
+- Designing flexible component APIs
+- Reviewing component architecture
+- Working with compound components or context providers
+
+## Rule Categories by Priority
+
+| Priority | Category                | Impact | Prefix          |
+| -------- | ----------------------- | ------ | --------------- |
+| 1        | Component Architecture  | HIGH   | `architecture-` |
+| 2        | State Management        | MEDIUM | `state-`        |
+| 3        | Implementation Patterns | MEDIUM | `patterns-`     |
+| 4        | React 19 APIs           | MEDIUM | `react19-`      |
+
+## Quick Reference
+
+### 1. Component Architecture (HIGH)
+
+- `architecture-avoid-boolean-props` - Don't add boolean props to customize
+  behavior; use composition
+- `architecture-compound-components` - Structure complex components with shared
+  context
+
+### 2. State Management (MEDIUM)
+
+- `state-decouple-implementation` - Provider is the only place that knows how
+  state is managed
+- `state-context-interface` - Define generic interface with state, actions, meta
+  for dependency injection
+- `state-lift-state` - Move state into provider components for sibling access
+
+### 3. Implementation Patterns (MEDIUM)
+
+- `patterns-explicit-variants` - Create explicit variant components instead of
+  boolean modes
+- `patterns-children-over-render-props` - Use children for composition instead
+  of renderX props
+
+### 4. React 19 APIs (MEDIUM)
+
+> **⚠️ React 19+ only.** Skip this section if using React 18 or earlier.
+
+- `react19-no-forwardref` - Don't use `forwardRef`; use `use()` instead of `useContext()`
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/architecture-avoid-boolean-props.md
+rules/state-context-interface.md
+```
+
+Each rule file contains:
+
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+
+ARGUMENTS: Review the composition patterns for adding a new "Share" tab to the SurveyBuilder component, and patterns for conditional rendering in the RunnerCanvas based on display mode.
+
+---
+
+[Request interrupted by user for tool use]

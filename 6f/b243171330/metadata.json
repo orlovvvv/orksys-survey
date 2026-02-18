@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "6fb243171330",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "apps/web/src/app/s/[slug]/complete/page.tsx",
+    "apps/web/src/app/s/[slug]/layout.tsx",
+    "apps/web/src/app/s/[slug]/page.tsx",
+    "apps/web/src/components/distribution/copyable-field.tsx",
+    "apps/web/src/components/distribution/distribution-panel.tsx",
+    "apps/web/src/components/distribution/embed-code-preview.tsx",
+    "apps/web/src/components/distribution/index.ts",
+    "apps/web/src/components/distribution/qr-code-generator.tsx",
+    "apps/web/src/components/survey-runner/context.tsx",
+    "apps/web/src/components/survey-runner/hooks/index.ts",
+    "apps/web/src/components/survey-runner/hooks/use-fingerprint.ts",
+    "apps/web/src/components/survey-runner/hooks/use-logic-evaluator.ts",
+    "apps/web/src/components/survey-runner/hooks/use-survey-runner.ts",
+    "apps/web/src/components/survey-runner/index.ts",
+    "apps/web/src/components/survey-runner/index.tsx",
+    "apps/web/src/components/survey-runner/question-renderer.tsx",
+    "apps/web/src/components/survey-runner/runner-canvas.tsx",
+    "apps/web/src/components/survey-runner/runner-complete.tsx",
+    "apps/web/src/components/survey-runner/runner-header.tsx",
+    "apps/web/src/components/survey-runner/runner-navigation.tsx",
+    "apps/web/src/components/survey-runner/runner-progress.tsx",
+    "apps/web/src/components/survey-runner/survey-runner.tsx",
+    "apps/web/src/components/survey-runner/utils/index.ts",
+    "apps/web/src/components/survey-runner/utils/logic-engine.ts",
+    "apps/web/src/components/survey-runner/utils/validation.ts",
+    "apps/web/src/components/ui/progress.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6f/b243171330/0/metadata.json",
+      "transcript": "/6f/b243171330/0/full.jsonl",
+      "context": "/6f/b243171330/0/context.md",
+      "content_hash": "/6f/b243171330/0/content_hash.txt",
+      "prompt": "/6f/b243171330/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 605124,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 8839168,
+    "output_tokens": 31465,
+    "api_call_count": 117
+  }
+}
