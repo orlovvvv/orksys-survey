@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -93,20 +94,22 @@ export default function OrganizationSwitcher() {
 				<ChevronsUpDown className="h-4 w-4 opacity-50" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-56 bg-card">
-				<DropdownMenuLabel>Organizations</DropdownMenuLabel>
-				<DropdownMenuSeparator />
-				{organizations.map((org: Org) => (
-					<DropdownMenuItem
-						key={org.id}
-						onClick={() => handleSwitchOrganization(org.id)}
-						className="justify-between"
-					>
-						<span className="truncate">{org.name}</span>
-						{org.id === session.session.activeOrganizationId && (
-							<Check className="h-4 w-4" />
-						)}
-					</DropdownMenuItem>
-				))}
+				<DropdownMenuGroup>
+					<DropdownMenuLabel>Organizations</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					{organizations.map((org: Org) => (
+						<DropdownMenuItem
+							key={org.id}
+							onClick={() => handleSwitchOrganization(org.id)}
+							className="justify-between"
+						>
+							<span className="truncate">{org.name}</span>
+							{org.id === session.session.activeOrganizationId && (
+								<Check className="h-4 w-4" />
+							)}
+						</DropdownMenuItem>
+					))}
+				</DropdownMenuGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

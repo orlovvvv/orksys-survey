@@ -1,20 +1,18 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import {
 	ArrowLeft,
 	BarChart3,
 	Eye,
-	Hammer,
 	Loader2,
 	MoreHorizontal,
 	Send,
 	Settings,
-	Share2,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,9 +23,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { orpc } from "@/utils/orpc";
-
-import { useSurveyBuilder } from "./index";
-import { SurveySettingsDialog } from "./survey-settings-dialog";
+import { useSurveyBuilder } from "../context";
+import { SurveySettingsDialog } from "../survey-settings-dialog";
+import { BuilderTabs } from "./builder-tabs";
 
 const statusColors: Record<string, string> = {
 	draft: "bg-neutral-100 text-neutral-600",
@@ -67,6 +65,10 @@ export function BuilderHeader({
 		}
 	};
 
+	const handleTabChange = (tab: "build" | "preview" | "share") => {
+		setActiveTab(tab);
+	};
+
 	return (
 		<header className="z-20 flex shrink-0 items-center justify-between border-neutral-100 border-b bg-white px-6 py-3">
 			<div className="flex items-center gap-4">
@@ -86,74 +88,11 @@ export function BuilderHeader({
 				</div>
 			</div>
 
-			{/* Tab Navigation with animated indicator */}
-			<div className="flex gap-1 rounded-lg bg-neutral-100 p-1">
-				<button
-					type="button"
-					onClick={() => setActiveTab("build")}
-					className={`relative flex items-center gap-2 rounded-md px-4 py-1.5 font-sans font-semibold text-xs transition-colors ${
-						activeTab === "build"
-							? "text-neutral-900"
-							: "text-neutral-500 hover:text-neutral-900"
-					}`}
-				>
-					{activeTab === "build" && (
-						<motion.div
-							layoutId="activeTab"
-							className="absolute inset-0 rounded-md bg-white shadow-sm"
-							transition={{ type: "spring", stiffness: 500, damping: 30 }}
-						/>
-					)}
-					<span className="relative z-10 flex items-center gap-2">
-						<Hammer className="h-3.5 w-3.5" />
-						Build
-					</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setActiveTab("preview")}
-					className={`relative flex items-center gap-2 rounded-md px-4 py-1.5 font-sans font-semibold text-xs transition-colors ${
-						activeTab === "preview"
-							? "text-neutral-900"
-							: "text-neutral-500 hover:text-neutral-900"
-					}`}
-				>
-					{activeTab === "preview" && (
-						<motion.div
-							layoutId="activeTab"
-							className="absolute inset-0 rounded-md bg-white shadow-sm"
-							transition={{ type: "spring", stiffness: 500, damping: 30 }}
-						/>
-					)}
-					<span className="relative z-10 flex items-center gap-2">
-						<Eye className="h-3.5 w-3.5" />
-						Preview
-					</span>
-				</button>
-				{survey.status === "published" && (
-					<button
-						type="button"
-						onClick={() => setActiveTab("share")}
-						className={`relative flex items-center gap-2 rounded-md px-4 py-1.5 font-sans font-semibold text-xs transition-colors ${
-							activeTab === "share"
-								? "text-neutral-900"
-								: "text-neutral-500 hover:text-neutral-900"
-						}`}
-					>
-						{activeTab === "share" && (
-							<motion.div
-								layoutId="activeTab"
-								className="absolute inset-0 rounded-md bg-white shadow-sm"
-								transition={{ type: "spring", stiffness: 500, damping: 30 }}
-							/>
-						)}
-						<span className="relative z-10 flex items-center gap-2">
-							<Share2 className="h-3.5 w-3.5" />
-							Share
-						</span>
-					</button>
-				)}
-			</div>
+			<BuilderTabs
+				activeTab={activeTab}
+				setActiveTab={handleTabChange}
+				showShareTab={survey.status === "published"}
+			/>
 
 			<div className="flex items-center gap-3">
 				{rightActions}
