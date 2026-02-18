@@ -1,0 +1,314 @@
+Implement the following plan:
+
+# Fix Survey Builder Re-animation Issue (Bottom-to-Top Drag)
+
+## Context
+
+When dragging an item from bottom to top in the survey builder, items that shift down get **re-animated** after the drag ends - even though dnd-kit already moved them visually during the drag. This does NOT happen when dragging top to bottom.
+
+## Root Cause Analysis
+
+### The Problem: Three Competing Animation Systems
+
+There are **three interacting animation systems** causing conflicts:
+
+1. **dnd-kit's `useSortable` transition** - Applied via CSS in `question-card.tsx`
+2. **Framer Motion's `layout="position"`** - On outer `motion.div` in `builder-canvas.tsx`
+3. **`LayoutGroup`** - Coordinates layout animations across all children
+
+### Key Issue: `animateLayoutChanges` Returns True on `wasDragging`
+
+```typescript
+// question-card.tsx lines 228-236
+const animateLayoutChanges: AnimateLayoutChanges = (args) => {
+    const { isSorting, wasDragging } = args;
+    if (isSorting || wasDragging) {
+        return defaultAnimateLayoutChanges(args); // <-- Returns true, applies dnd-kit transition
+    }
+    return false;
+};
+```
+
+When `wasDragging` is true (after drag ends), dnd-kit applies its own CSS transition on top of Framer Motion's layout animation, causing the re-animation flash.
+
+### Why Bottom-to-Top is Worse
+
+- **Bottom-to-top**: More siblings shift positions. dnd-kit's transform showed them shifted DOWN during drag. When transform is removed and both animation systems fire, items "jump" then animate.
+- **Top-to-bottom**: Fewer position changes, direction matches natural DOM reordering, less noticeable.
+
+### Timing Issue with `justReordered`
+
+Current order in `handleDragEnd`:
+1. `setActiveDragItem(null)` - triggers render
+2. `setJustReordered(true)` - happens after
+
+This creates a race condition where `layoutEnabled` might briefly be `true`.
+
+---
+
+## Solution: Disable dnd-kit Layout Animations + Fix Timing
+
+### Step 1: Simplify `animateLayoutChanges` in `question-card.tsx`
+
+**File:** `apps/web/src/components/survey-builder/question-card.tsx`
+
+**Current (lines 228-236):**
+```typescript
+const animateLayoutChanges: AnimateLayoutChanges = (args) => {
+    const { isSorting, wasDragging } = args;
+    if (isSorting || wasDragging) {
+        return defaultAnimateLayoutChanges(args);
+    }
+    return false;
+};
+```
+
+**Change to:**
+```typescript
+const animateLayoutChanges: AnimateLayoutChanges = () => {
+    return false;
+};
+```
+
+This disables dnd-kit's layout animations entirely. Position changes during drag are still handled by dnd-kit's transforms, but the post-drag animation is handled by Framer Motion (which we control via `justReordered`).
+
+### Step 2: Remove `LayoutGroup` in `builder-canvas.tsx`
+
+**File:** `apps/web/src/components/survey-builder/builder-canvas.tsx`
+
+**Current (lines 194, 327):**
+```typescript
+<LayoutGroup>
+    <SortableContext ...>
+        ...
+    </SortableContext>
+</LayoutGroup>
+```
+
+**Change to:**
+```typescript
+<SortableContext ...>
+    ...
+</SortableContext>
+```
+
+Remove the `LayoutGroup` import and wrapper. This eliminates the coordination overhead that amplifies the animation conflict.
+
+### Step 3: Fix State Update Order in `index.tsx`
+
+**File:** `apps/web/src/components/survey-builder/index.tsx`
+
+**Current `handleDragEnd` (lines 177-294):**
+```typescript
+const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragItem(null);  // <-- Called first
+    setOverId(null);
+    // ...
+    setJustReordered(true);   // <-- Called later
+```
+
+**Change to:**
+```typescript
+const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setOverId(null);
+
+    if (!over) {
+        setActiveDragItem(null);
+        return;
+    }
+
+    // Handle cancel drop
+    if (over.id === "palette-cancel-zone") {
+        setActiveDragItem(null);
+        return;
+    }
+
+    // Handle palette drop (from question type palette)
+    if (active.data.current?.questionType) {
+        // ... palette drop logic ...
+        setActiveDragItem(null);
+        return;
+    }
+
+    // Handle reordering
+    if (active.id !== over.id && over.id !== "canvas") {
+        const oldIndex = questions.findIndex((q) => q.id === active.id);
+        const newIndex = questions.findIndex((q) => q.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            setJustReordered(true);  // <-- Set BEFORE setActiveDragItem
+
+            const newQuestions = arrayMove(questions, oldIndex, newIndex).map(
+                (q, index) => {
+                    if (q.order === index) {
+                        return q;
+                    }
+                    return { ...q, order: index };
+                },
+            );
+
+            setQuestions(newQuestions);
+
+            reorderMutation.mutate({
+                questions: newQuestions.map((q) => ({
+                    id: q.id,
+                    order: q.order,
+                })),
+            });
+        }
+    }
+
+    setActiveDragItem(null);  // <-- Always called last
+};
+```
+
+### Step 4: Add Delayed Reset for `justReordered`
+
+**File:** `apps/web/src/components/survey-builder/index.tsx`
+
+Add after the existing `useEffect` for syncing state:
+
+```typescript
+// Reset justReordered after animations complete
+useEffect(() => {
+    if (justReordered) {
+        const timer = setTimeout(() => {
+            setJustReordered(false);
+        }, 300); // Match spring animation duration
+        return () => clearTimeout(timer);
+    }
+}, [justReordered]);
+```
+
+This ensures Framer Motion layout animations stay disabled until after the reorder animation completes.
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `question-card.tsx` | Simplify `animateLayoutChanges` to always return `false` |
+| `builder-canvas.tsx` | Remove `LayoutGroup` wrapper and import |
+| `index.tsx` | Reorder state updates in `handleDragEnd`, add delayed reset for `justReordered` |
+
+---
+
+## Verification
+
+1. **Start dev server:** `pnpm dev:web`
+2. **Navigate to survey builder** and add 5-6 questions
+3. **Test bottom-to-top drag:** Drag last item to top position
+   - Expected: Items shift smoothly during drag, NO re-animation after drop
+4. **Test top-to-bottom drag:** Drag first item to bottom position
+   - Expected: Same smooth behavior
+5. **Test middle positions:** Drag item from middle to various positions
+   - Expected: Consistent smooth behavior in both directions
+6. **Test consecutive drags:** Drag multiple items in sequence
+   - Expected: Each drag works smoothly
+7. **Test palette drop:** Add new question from palette
+   - Expected: New question appears smoothly without affecting others
+
+---
+
+## Summary
+
+The fix addresses three issues:
+1. **Disables dnd-kit's layout animation** - Prevents double animation with Framer Motion
+2. **Removes LayoutGroup** - Eliminates coordination overhead
+3. **Fixes timing** - Ensures `justReordered` is set before `activeDragItem` is cleared, and resets after animation completes
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+nope it still happens, now its all more complex, hard to understand and will become difficult to maintain, can you deep search for possible cause (maybe the actual individual fade in animations are the cause (can't give you exact idea as I also am not sure). Keep looking, use vercel composition skills to see what can be done to make each component serve a single purpose as well.
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-composition-patterns
+
+# React Composition Patterns
+
+Composition patterns for building flexible, maintainable React components. Avoid
+boolean prop proliferation by using compound components, lifting state, and
+composing internals. These patterns make codebases easier for both humans and AI
+agents to work with as they scale.
+
+## When to Apply
+
+Reference these guidelines when:
+
+- Refactoring components with many boolean props
+- Building reusable component libraries
+- Designing flexible component APIs
+- Reviewing component architecture
+- Working with compound components or context providers
+
+## Rule Categories by Priority
+
+| Priority | Category                | Impact | Prefix          |
+| -------- | ----------------------- | ------ | --------------- |
+| 1        | Component Architecture  | HIGH   | `architecture-` |
+| 2        | State Management        | MEDIUM | `state-`        |
+| 3        | Implementation Patterns | MEDIUM | `patterns-`     |
+| 4        | React 19 APIs           | MEDIUM | `react19-`      |
+
+## Quick Reference
+
+### 1. Component Architecture (HIGH)
+
+- `architecture-avoid-boolean-props` - Don't add boolean props to customize
+  behavior; use composition
+- `architecture-compound-components` - Structure complex components with shared
+  context
+
+### 2. State Management (MEDIUM)
+
+- `state-decouple-implementation` - Provider is the only place that knows how
+  state is managed
+- `state-context-interface` - Define generic interface with state, actions, meta
+  for dependency injection
+- `state-lift-state` - Move state into provider components for sibling access
+
+### 3. Implementation Patterns (MEDIUM)
+
+- `patterns-explicit-variants` - Create explicit variant components instead of
+  boolean modes
+- `patterns-children-over-render-props` - Use children for composition instead
+  of renderX props
+
+### 4. React 19 APIs (MEDIUM)
+
+> **⚠️ React 19+ only.** Skip this section if using React 18 or earlier.
+
+- `react19-no-forwardref` - Don't use `forwardRef`; use `use()` instead of `useContext()`
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/architecture-avoid-boolean-props.md
+rules/state-context-interface.md
+```
+
+Each rule file contains:
+
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+---
+
+[Request interrupted by user for tool use]
