@@ -1,0 +1,317 @@
+Implement the following plan:
+
+# Account Management & User Settings
+
+## Context
+
+Implement a comprehensive account management experience allowing users to fully manage their profile, security settings, subscription, and account. This leverages Better Auth's full capabilities including email verification, password management, two-factor authentication, session management, and Polar subscription integration.
+
+---
+
+## Server-side Requirements
+
+### 1. Enable Better Auth Plugins
+
+**File:** `packages/auth/src/index.ts`
+
+```typescript
+import { emailVerification } from "better-auth/plugins";
+import { resend } from "@trigger.dev/email/resend"; // or direct Resend SDK
+
+export const auth = betterAuth({
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+  },
+  plugins: [
+    organization({...}),
+    emailVerification({
+      sendVerificationEmail: async ({ user, url }) => {
+        await resend.emails.send({
+          from: env.EMAIL_FROM,
+          to: user.email,
+          subject: "Verify your email address",
+          html: `Click <a href="${url}">here</a> to verify your email.`,
+        });
+      },
+      sendResetPassword: async ({ user, url }) => {
+        await resend.emails.send({
+          from: env.EMAIL_FROM,
+          to: user.email,
+          subject: "Reset your password",
+          html: `Click <a href="${url}">here</a> to reset your password.`,
+        });
+      },
+    }),
+    polar({...}),
+    nextCookies(),
+    expo(),
+  ],
+});
+```
+
+### 2. Update Auth Client
+
+**File:** `apps/web/src/lib/auth-client.ts`
+
+No changes needed - `emailVerification` plugin works without client-side additions.
+
+### 3. Environment Variables
+
+Add to `packages/env/src/server.ts`:
+```typescript
+RESEND_API_KEY: z.string(),
+EMAIL_FROM: z.string(), // e.g., "noreply@yourdomain.com"
+```
+
+> **Note:** 2FA is deferred to a future implementation. Focus is on profile, password, sessions, and subscription.
+
+---
+
+## File Structure
+
+```
+apps/web/src/
+├── app/(app)/settings/
+│   ├── layout.tsx                    # Settings layout with sidebar navigation
+│   ├── page.tsx                      # Redirect to /settings/profile
+│   ├── profile/
+│   │   └── page.tsx                  # Profile settings
+│   ├── security/
+│   │   └── page.tsx                  # Security settings (password + sessions)
+│   ├── subscription/
+│   │   └── page.tsx                  # Subscription & billing
+│   └── danger/
+│       └── page.tsx                  # Account deletion
+│
+├── app/(auth)/
+│   ├── verify-email/
+│   │   └── page.tsx                  # Email verification callback
+│   ├── reset-password/
+│   │   └── page.tsx                  # Password reset form
+│   └── forgot-password/
+│       └── page.tsx                  # Request password reset
+│
+└── components/account/
+    ├── index.ts
+    ├── types.ts
+    ├── settings-sidebar.tsx          # Sidebar navigation component
+    ├── profile/
+    │   ├── avatar-upload.tsx
+    │   ├── profile-form.tsx
+    │   └── email-verification-banner.tsx
+    ├── security/
+    │   ├── password-change-card.tsx
+    │   └── sessions/
+    │       ├── session-list.tsx
+    │       └── session-item.tsx
+    ├── subscription/
+    │   ├── plan-card.tsx
+    │   ├── usage-meter.tsx
+    │   └── billing-actions.tsx
+    ├── danger/
+    │   └── delete-account-dialog.tsx
+    └── hooks/
+        ├── index.ts
+        ├── use-profile-update.ts
+        ├── use-password-change.ts
+        ├── use-sessions.ts
+        └── use-subscription.ts
+```
+
+---
+
+## Page Designs
+
+### Settings Layout (Sidebar + Pages)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Account Settings                                                │
+│  Manage your profile, security, and subscription                 │
+├─────────────┬───────────────────────────────────────────────────┤
+│ Profile     │                                                    │
+│ Security    │    [Content Area - Full Page]                      │
+│ Subscription│    - Card-based sections                           │
+│ Danger Zone │    - Form fields with validation                   │
+│             │    - Action buttons with loading states            │
+└─────────────┴───────────────────────────────────────────────────┘
+```
+
+**Responsive:**
+- Desktop (>= 1024px): Fixed sidebar on left, content on right
+- Mobile (< 1024px): Horizontal line tabs at top, full-width content
+
+**Settings Sidebar Component:**
+- Use `Button` with `variant="ghost"` for nav items
+- Active state: `variant="secondary"` or highlighted border
+- Icons from lucide-react: `User`, `Shield`, `CreditCard`, `Trash2`
+
+---
+
+### Profile Tab
+
+**Components:**
+1. **AvatarUpload** - Clickable avatar with camera icon overlay, image preview
+2. **ProfileForm** - Name field, email display (read-only with change option)
+3. **EmailVerificationBanner** - Alert if email unverified with resend button
+
+**API:**
+```typescript
+await authClient.updateUser({ name, image });
+await authClient.sendVerificationEmail({ email });
+```
+
+---
+
+### Security Page
+
+**Sections:**
+
+1. **Password Change Card**
+   - Current password, new password, confirm password fields
+   - Checkbox: "Sign out of other devices"
+   - API: `authClient.changePassword({ currentPassword, newPassword, revokeOtherSessions })`
+
+2. **Active Sessions Card**
+   - List of sessions with device/browser, location (from IP), last active
+   - "Current" badge on active session
+   - Revoke button per session + "Revoke all others" button
+   - API: `authClient.session.list()`, `revoke()`, `revokeOtherSessions()`
+
+> **Future:** Two-factor authentication can be added later when needed.
+
+---
+
+### Subscription Tab
+
+**Components:**
+1. **PlanCard** - Current plan with prominent badge (Free/Pro)
+2. **UsageMeter** - Progress bars for surveys/responses limits
+3. **BillingActions** - "Upgrade to Pro" or "Manage Subscription" buttons
+
+**API:**
+```typescript
+const { data } = await authClient.customer.state();
+await authClient.checkout({ slug: "pro" });
+await authClient.customer.portal();
+```
+
+---
+
+### Danger Zone Tab
+
+**Components:**
+1. **DeleteAccountDialog** - Red destructive card
+   - Warning message
+   - Password confirmation required
+   - AlertDialog for final confirmation
+   - API: `authClient.deleteUser({ password })`
+
+---
+
+## Additional Pages
+
+### `/verify-email?token=xxx`
+- Centered card with loading → success/error states
+- On success: redirect to settings
+- On error: show resend option
+
+### `/forgot-password`
+- Email input form
+- Calls `authClient.requestPasswordReset({ email, redirectTo })`
+
+### `/reset-password?token=xxx`
+- New password + confirm password form
+- Calls `authClient.resetPassword({ newPassword, token })`
+
+---
+
+## Components to Use
+
+| Category | Components |
+|----------|------------|
+| **Layout** | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `Separator` |
+| **Navigation** | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` |
+| **Forms** | `Input`, `Label`, `Button`, `Switch`, `FormField` |
+| **User** | `Avatar`, `AvatarImage`, `AvatarFallback`, `Badge` |
+| **Overlays** | `Dialog`, `Sheet`, `AlertDialog` |
+| **Feedback** | `Alert`, `Spinner`, `Skeleton` |
+
+---
+
+## Hook Patterns
+
+Following existing pattern from `components/organization/hooks/`:
+
+```typescript
+// use-sessions.ts
+export function useSessions() {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["auth", "sessions"],
+    queryFn: async () => {
+      const response = await authClient.session.list();
+      return response.data ?? [];
+    },
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: (id: string) => authClient.session.revoke({ id }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["auth", "sessions"] }),
+  });
+
+  return {
+    sessions: query.data ?? [],
+    isLoading: query.isLoading,
+    revokeSession: revokeMutation.mutate,
+    isRevoking: revokeMutation.isPending,
+  };
+}
+```
+
+---
+
+## Implementation Order
+
+### Phase 1: Server Setup
+1. Add `emailVerification` plugin to Better Auth config
+2. Wire up Resend for sending emails
+3. Add environment variables (RESEND_API_KEY, EMAIL_FROM)
+
+### Phase 2: Settings Foundation
+1. Create settings layout with sidebar navigation
+2. Profile page: avatar upload, name form, verification banner
+3. Create `/verify-email` callback page
+
+### Phase 3: Security
+1. Password change card with form
+2. Session management UI (list, revoke)
+3. Create `/forgot-password` and `/reset-password` pages
+
+### Phase 4: Subscription
+1. Plan card with current subscription
+2. Usage meters for limits
+3. Checkout and portal buttons
+
+### Phase 5: Danger Zone
+1. Account deletion dialog
+2. Password confirmation before deletion
+
+---
+
+## Verification
+
+1. **Profile:** Update name, upload avatar, resend verification email
+2. **Password:** Change password, verify old sessions revoked if checked
+3. **Sessions:** View all sessions, revoke individual, revoke all others
+4. **Subscription:** View plan, trigger checkout, open customer portal
+5. **Delete:** Confirm deletion flow with password verification
+6. **Responsive:** Test mobile/desktop layouts
+7. **Email flows:** Test verification and password reset emails arrive
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
