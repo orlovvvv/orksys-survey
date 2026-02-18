@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "25a3ec5577d9",
+  "session_id": "98d352c2-055e-47e4-a234-deaa7d4dd2bf",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-18T15:22:33.401509Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "apps/web/src/app/(app)/surveys/page.tsx",
+    "apps/web/src/components/analytics/question-charts.tsx",
+    "apps/web/src/components/analytics/response-table.tsx",
+    "apps/web/src/components/survey-builder/builder-header.tsx",
+    "packages/api/src/routers/analytics.ts",
+    "packages/api/src/services/llm.ts"
+  ],
+  "agent": "Claude Code",
+  "transcript_identifier_at_start": "d91dffa7-47b5-415b-8bda-99441f9f5917",
+  "token_usage": {
+    "input_tokens": 219220,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12757440,
+    "output_tokens": 45423,
+    "api_call_count": 140
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-18T15:22:32.886027Z",
+    "agent_lines": 0,
+    "human_added": 3519,
+    "human_modified": 33,
+    "human_removed": 0,
+    "total_committed": 3541,
+    "agent_percentage": 0
+  },
+  "transcript_path": ".claude/projects/-Users-orksys-Projects-orksys-survey/98d352c2-055e-47e4-a234-deaa7d4dd2bf.jsonl"
+}

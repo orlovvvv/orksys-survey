@@ -1,0 +1,329 @@
+Implement the following plan:
+
+# Phase 4: Analytics & Insights Implementation Plan
+
+## Context
+
+This plan implements Phase 4 of the survey platform, adding comprehensive analytics dashboard and AI-powered insights. The current system has:
+- Survey builder and runner fully functional (Phases 1-3 complete)
+- Basic `response.getStats` endpoint returning `{ total, complete, partial }`
+- Minimal dashboard showing only API status and subscription info
+- No chart library or analytics visualization components
+
+The goal is to enable analysts to view survey results at a glance and leverage AI to find patterns in text responses.
+
+---
+
+## Implementation Overview
+
+### New Dependencies
+```bash
+pnpm add recharts --filter @orksys-survey/web    # Chart library
+pnpm add @tanstack/react-table --filter @orksys-survey/web  # Response table
+pnpm add openai --filter @orksys-survey/api     # Groq (OpenAI-compatible) client
+```
+
+### Environment Variables (for AI Insights)
+```
+GROQ_API_KEY=<your-groq-api-key>
+GROQ_MODEL=llama-3.3-70b-versatile  # or mixtral-8x7b-32768, llama-3.1-8b-instant
+```
+
+> Note: Groq uses OpenAI-compatible API. The service layer will use `openai` SDK with `baseURL: "https://api.groq.com/openai/v1"`.
+
+---
+
+## 1. Database Schema Extensions
+
+**File:** `packages/db/src/schema/analytics.ts` (NEW)
+
+Create tables for caching analytics computations and AI analysis results:
+
+- `analyticsSnapshot` - Pre-computed analytics with 5-minute TTL
+- `aiAnalysis` - LLM-generated insights with 24-hour TTL
+
+**File:** `packages/db/src/schema/survey.ts` (MODIFY)
+
+Add composite indexes for efficient aggregation queries:
+- `(surveyId, completedAt)` for time-series
+- `(surveyId, isComplete)` for completion stats
+- `(questionId, responseId)` for answer aggregations
+
+---
+
+## 2. API Layer
+
+### 2.1 Analytics Router
+
+**File:** `packages/api/src/routers/analytics.ts` (NEW)
+
+| Endpoint | Description |
+|----------|-------------|
+| `getSummary` | Overall survey stats (responses, completion rate, avg time) |
+| `getQuestionAnalytics` | Per-question distributions (choice/numeric/text) |
+| `getTrends` | Time-series data for response trends |
+| `getDemographics` | Breakdown by device, browser, country |
+| `exportResponses` | CSV/JSON export of responses |
+
+**Patterns to follow:**
+- Use `organizationProcedure` for access control
+- Use existing `verifySurveyAccess()` helper
+- Parallel queries with `Promise.all()`
+- Cache results in `analyticsSnapshot` table
+
+### 2.2 AI Insights Router
+
+**File:** `packages/api/src/routers/insights.ts` (NEW)
+
+| Endpoint | Description |
+|----------|-------------|
+| `getTextSummary` | 3-bullet AI summary of open-ended responses |
+| `getSentimentAnalysis` | Sentiment scores (positive/neutral/negative %) |
+| `getKeywords` | Extracted keyword cloud data |
+| `refreshAnalysis` | Force re-analysis (admin only) |
+
+### 2.3 Router Registration
+
+**File:** `packages/api/src/routers/index.ts` (MODIFY)
+
+```typescript
+import { analyticsRouter } from "./analytics";
+import { insightsRouter } from "./insights";
+
+export const appRouter = {
+  // ...existing
+  analytics: analyticsRouter,
+  insights: insightsRouter,
+};
+```
+
+---
+
+## 3. UI Component Architecture
+
+### 3.1 Analytics Page Route
+
+**File:** `apps/web/src/app/(app)/surveys/[surveyId]/analytics/page.tsx` (NEW)
+
+Server component entry point using Suspense for streaming:
+- `AnalyticsOverview` - Summary stats cards (streamed)
+- `AnalyticsTabs` - Tabbed interface (client component)
+
+### 3.2 Chart Components
+
+**Directory:** `apps/web/src/components/charts/` (NEW)
+
+| Component | Purpose |
+|-----------|---------|
+| `chart-provider.tsx` | Shared context for theming, formatters |
+| `bar-chart.tsx` | Horizontal/vertical bar charts |
+| `line-chart.tsx` | Time-series trends |
+| `pie-chart.tsx` | Choice distributions |
+| `nps-gauge.tsx` | NPS score visualization |
+| `word-cloud.tsx` | Keyword cloud for text analysis |
+
+**Pattern:** Compound components with `ChartProvider` wrapper, using Recharts primitives with shadcn/ui theming.
+
+### 3.3 Analytics Components
+
+**Directory:** `apps/web/src/components/analytics/` (NEW)
+
+| Component | Purpose |
+|-----------|---------|
+| `analytics-overview.tsx` | 3 summary stat cards |
+| `analytics-tabs.tsx` | Tab navigation (Charts/Responses/Insights/Demographics) |
+| `question-charts.tsx` | Per-question visualizations |
+| `response-table.tsx` | Filterable/searchable response list |
+| `ai-insights.tsx` | Summary, sentiment, keyword cloud |
+| `demographics-panel.tsx` | Device/browser/country breakdowns |
+
+### 3.4 Component Composition Pattern
+
+Follow existing patterns from `survey-builder/`:
+- Client components for interactivity (`"use client"`)
+- TanStack Query with `orpc.xxx.queryOptions()`
+- Loading states with `Skeleton` components
+- Error handling with `Sonner` toasts
+
+---
+
+## 4. AI Integration Strategy
+
+### 4.1 LLM Service Layer
+
+**File:** `packages/api/src/services/llm.ts` (NEW)
+
+- Use OpenAI SDK with Groq's compatible endpoint (`baseURL: "https://api.groq.com/openai/v1"`)
+- Structured output with Zod schemas for consistent response parsing
+- Models: `llama-3.3-70b-versatile` (recommended) or `mixtral-8x7b-32768`
+- Synchronous processing with loading states in UI
+- Error handling with retries for rate limits
+
+### 4.2 Caching Strategy
+
+| Data Type | TTL | Storage |
+|-----------|-----|---------|
+| Summary stats | 5 min | `analyticsSnapshot` table |
+| Question analytics | 10 min | `analyticsSnapshot` table |
+| AI analysis | 24 hours | `aiAnalysis` table |
+| Trends | 30 min | `analyticsSnapshot` table |
+
+### 4.3 Processing Pattern
+
+**Synchronous with UI loading states:**
+1. User opens AI Insights tab
+2. Frontend shows loading spinner
+3. API checks cache → if expired, calls Groq API
+4. Returns results (typically 1-3 seconds)
+5. Cache stored for subsequent requests
+
+For surveys with >500 text responses, consider batching the LLM calls or showing progressive results.
+
+---
+
+## 5. Critical Files to Modify/Create
+
+### New Files (10)
+1. `packages/db/src/schema/analytics.ts`
+2. `packages/api/src/routers/analytics.ts`
+3. `packages/api/src/routers/insights.ts`
+4. `packages/api/src/services/llm.ts`
+5. `apps/web/src/app/(app)/surveys/[surveyId]/analytics/page.tsx`
+6. `apps/web/src/components/charts/index.tsx` (exports)
+7. `apps/web/src/components/charts/chart-provider.tsx`
+8. `apps/web/src/components/charts/bar-chart.tsx`
+9. `apps/web/src/components/charts/line-chart.tsx`
+10. `apps/web/src/components/analytics/` (6 components)
+
+### Modified Files (6)
+1. `packages/db/src/schema/survey.ts` - Add indexes
+2. `packages/api/src/routers/index.ts` - Register new routers
+3. `packages/api/package.json` - Add `openai` dependency
+4. `packages/env/src/server.ts` - Add `GROQ_API_KEY`, `GROQ_MODEL` env vars
+5. `apps/web/package.json` - Add recharts, @tanstack/react-table
+6. `apps/web/.env.example` - Add Groq environment variable documentation
+
+---
+
+## 6. Implementation Sequence
+
+### Phase 4.1: Foundation
+1. Install Recharts and TanStack Table
+2. Create `analytics.ts` schema with indexes
+3. Run `pnpm db:push` to apply schema changes
+4. Create `analytics.ts` router with `getSummary` endpoint
+5. Create basic chart components (Bar, Line)
+
+### Phase 4.2: Dashboard UI
+1. Create analytics page route
+2. Build `AnalyticsOverview` with summary cards
+3. Build `AnalyticsTabs` navigation
+4. Build `QuestionCharts` for each question type
+5. Build `DemographicsPanel`
+
+### Phase 4.3: Response Table
+1. Add TanStack Table
+2. Build `ResponseTable` component
+3. Add filtering (status), search, pagination
+4. Add export functionality
+
+### Phase 4.4: AI Integration
+1. Add LLM environment variables to env package
+2. Create `llm.ts` service layer
+3. Create `insights.ts` router
+4. Build `AIInsights` component
+5. Build `WordCloud` component
+
+---
+
+## 7. Verification Plan
+
+1. **Unit Testing:**
+   - Test analytics aggregation queries with sample data
+   - Test LLM service with mock responses
+
+2. **Integration Testing:**
+   - Create test survey with responses
+   - Verify all chart renderers display correctly
+   - Verify response table filtering/search
+   - Verify AI insights generation
+
+3. **Manual Testing:**
+   ```bash
+   pnpm dev:web
+   # Navigate to /surveys/[surveyId]/analytics
+   # Verify summary cards load
+   # Check each tab (Charts, Responses, Insights, Demographics)
+   # Test response filtering and search
+   ```
+
+4. **Performance Testing:**
+   - Test with 1000+ responses
+   - Verify query performance with indexes
+   - Check AI analysis caching works
+
+---
+
+## 8. Design Decisions (Resolved)
+
+- **LLM Provider:** Groq API (OpenAI-compatible endpoint)
+- **Processing Mode:** Synchronous with UI loading states
+- **Chart Colors:** CSS variables (`--chart-1` through `--chart-5`) for theme consistency
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.claude/projects/-Users-orksys-Projects-orksys-survey/bb116ac3-a4d1-4cdf-aef4-eb8ef6416002.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+[Request interrupted by user]
+
+---
+
+hang on, why we drop the z.infer for a regular type? it should be kept, use zod properly and infer the types.
+
+---
+
+## Error Type
+Console Error
+
+## Error Message
+[Table] Column with id 'answers' does not exist.
+
+
+    at cell (src/components/analytics/response-table.tsx:126:25)
+    at <unknown> (src/components/analytics/response-table.tsx:235:24)
+    at Array.map (<anonymous>:null:null)
+    at <unknown> (src/components/analytics/response-table.tsx:233:34)
+    at Array.map (<anonymous>:null:null)
+    at ResponseTable (src/components/analytics/response-table.tsx:231:34)
+    at AnalyticsTabs (src/components/analytics/analytics-tabs.tsx:44:5)
+    at AnalyticsPage (src/app/(app)/surveys/[surveyId]/analytics/page.tsx:74:6)
+
+## Code Frame
+  124 |             header: q.title.length > 20 ? `${q.title.slice(0, 20)}...` : q.title,
+  125 |             cell: ({ row }: { row: { getValue: (key: string) => unknown } }) => {
+> 126 |                 const answers = row.getValue("answers") as Record<string, unknown>;
+      |                                     ^
+  127 |                 const value = answers?.[q.id];
+  128 |                 if (value === null || value === undefined) {
+  129 |                     return <span className="text-muted-foreground">—</span>;
+
+Next.js version: 16.1.6 (Turbopack)
+
+---
+
+its difficult to access analytics page for a survey, can you add an easy link to it within the entires present on the surveys page as well as the menu option next to Survey Settings?
+
+---
+
+[Request interrupted by user]
+
+---
+
+use the Link, do not use <a>
+
+---
+
+commit this and push

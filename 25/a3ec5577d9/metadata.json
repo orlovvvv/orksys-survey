@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "25a3ec5577d9",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "apps/web/src/app/(app)/surveys/page.tsx",
+    "apps/web/src/components/analytics/question-charts.tsx",
+    "apps/web/src/components/analytics/response-table.tsx",
+    "apps/web/src/components/survey-builder/builder-header.tsx",
+    "packages/api/src/routers/analytics.ts",
+    "packages/api/src/services/llm.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/25/a3ec5577d9/0/metadata.json",
+      "transcript": "/25/a3ec5577d9/0/full.jsonl",
+      "context": "/25/a3ec5577d9/0/context.md",
+      "content_hash": "/25/a3ec5577d9/0/content_hash.txt",
+      "prompt": "/25/a3ec5577d9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 219220,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12757440,
+    "output_tokens": 45423,
+    "api_call_count": 140
+  }
+}
