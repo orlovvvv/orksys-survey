@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const publicRoutes = ["/", "/login", "/onboarding", "/success"];
+const publicRoutes = ["/", "/login", "/onboarding", "/success", "/s"];
 const apiRoutes = ["/api"];
 
 async function getSession(request: NextRequest) {

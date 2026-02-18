@@ -268,6 +268,7 @@ export interface SurveySettings {
 	collectMetadata?: boolean;
 	thankYouMessage?: string;
 	redirectUrl?: string;
+	displayMode?: "one_at_a_time" | "list";
 	theme?: {
 		primaryColor?: string;
 		backgroundColor?: string;

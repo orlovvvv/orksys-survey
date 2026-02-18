@@ -40,13 +40,15 @@ interface SurveyBuilderContextValue {
 	questions: Question[];
 	selectedQuestionId: string | null;
 	setSelectedQuestionId: (id: string | null) => void;
-	activeTab: "build" | "preview";
-	setActiveTab: (tab: "build" | "preview") => void;
+	activeTab: "build" | "preview" | "share";
+	setActiveTab: (tab: "build" | "preview" | "share") => void;
 	onQuestionsChange: (questions: Question[]) => void;
 	paletteOpen: boolean;
 	setPaletteOpen: (open: boolean) => void;
 	propertiesOpen: boolean;
 	setPropertiesOpen: (open: boolean) => void;
+	settingsOpen: boolean;
+	setSettingsOpen: (open: boolean) => void;
 }
 
 const SurveyBuilderContext = createContext<SurveyBuilderContextValue | null>(
@@ -90,12 +92,15 @@ export function SurveyBuilder({
 	const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
 		null,
 	);
-	const [activeTab, setActiveTab] = useState<"build" | "preview">("build");
+	const [activeTab, setActiveTab] = useState<"build" | "preview" | "share">(
+		"build",
+	);
 	const [questions, setQuestions] = useState(initialQuestions);
 	const [activeDragItem, setActiveDragItem] = useState<DragItem | null>(null);
 	const [overId, setOverId] = useState<string | null>(null);
 	const [paletteOpen, setPaletteOpen] = useState(false);
 	const [propertiesOpen, setPropertiesOpen] = useState(false);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	// Responsive breakpoints
 	const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -303,6 +308,8 @@ export function SurveyBuilder({
 		setPaletteOpen,
 		propertiesOpen,
 		setPropertiesOpen,
+		settingsOpen,
+		setSettingsOpen,
 	};
 
 	const safeQuestions = questions || [];

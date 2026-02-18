@@ -10,7 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardList, Plus } from "lucide-react";
 import { toast } from "sonner";
-
+import { DistributionPanel } from "@/components/distribution/distribution-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { orpc } from "@/utils/orpc";
@@ -78,6 +78,14 @@ export function BuilderCanvas({
 			order: safeQuestions.length,
 		});
 	};
+
+	if (activeTab === "share") {
+		return (
+			<div className="flex-1 overflow-y-auto p-6">
+				<DistributionPanel slug={survey.slug} />
+			</div>
+		);
+	}
 
 	if (activeTab === "preview") {
 		return (

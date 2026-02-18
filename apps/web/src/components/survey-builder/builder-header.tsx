@@ -10,6 +10,7 @@ import {
 	MoreHorizontal,
 	Send,
 	Settings,
+	Share2,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import {
 import { orpc } from "@/utils/orpc";
 
 import { useSurveyBuilder } from "./index";
+import { SurveySettingsDialog } from "./survey-settings-dialog";
 
 const statusColors: Record<string, string> = {
 	draft: "bg-neutral-100 text-neutral-600",
@@ -42,7 +44,8 @@ export function BuilderHeader({
 	leftActions,
 	rightActions,
 }: BuilderHeaderProps) {
-	const { survey, activeTab, setActiveTab } = useSurveyBuilder();
+	const { survey, activeTab, setActiveTab, settingsOpen, setSettingsOpen } =
+		useSurveyBuilder();
 	const queryClient = useQueryClient();
 
 	const publishMutation = useMutation(
@@ -126,6 +129,29 @@ export function BuilderHeader({
 						Preview
 					</span>
 				</button>
+				{survey.status === "published" && (
+					<button
+						type="button"
+						onClick={() => setActiveTab("share")}
+						className={`relative flex items-center gap-2 rounded-md px-4 py-1.5 font-sans font-semibold text-xs transition-colors ${
+							activeTab === "share"
+								? "text-neutral-900"
+								: "text-neutral-500 hover:text-neutral-900"
+						}`}
+					>
+						{activeTab === "share" && (
+							<motion.div
+								layoutId="activeTab"
+								className="absolute inset-0 rounded-md bg-white shadow-sm"
+								transition={{ type: "spring", stiffness: 500, damping: 30 }}
+							/>
+						)}
+						<span className="relative z-10 flex items-center gap-2">
+							<Share2 className="h-3.5 w-3.5" />
+							Share
+						</span>
+					</button>
+				)}
 			</div>
 
 			<div className="flex items-center gap-3">
@@ -135,7 +161,7 @@ export function BuilderHeader({
 						<MoreHorizontal className="h-4 w-4" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						<DropdownMenuItem>
+						<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
 							<Settings className="mr-2 h-4 w-4" />
 							Survey Settings
 						</DropdownMenuItem>
@@ -168,6 +194,11 @@ export function BuilderHeader({
 					</Button>
 				)}
 			</div>
+
+			<SurveySettingsDialog
+				open={settingsOpen}
+				onOpenChange={setSettingsOpen}
+			/>
 		</header>
 	);
 }

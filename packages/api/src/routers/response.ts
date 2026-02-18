@@ -1,6 +1,7 @@
 import { db } from "@orksys-survey/db";
 import {
 	answer,
+	logicRule,
 	question,
 	response,
 	survey,
@@ -89,16 +90,23 @@ export const responseRouter = {
 				throw new Error("Survey not found or not published");
 			}
 
-			// Get questions for the survey
-			const questions = await db
-				.select()
-				.from(question)
-				.where(eq(question.surveyId, surveyResult[0].id))
-				.orderBy(question.order);
+			// Get questions and logic rules for the survey in parallel
+			const [questions, logicRules] = await Promise.all([
+				db
+					.select()
+					.from(question)
+					.where(eq(question.surveyId, surveyResult[0].id))
+					.orderBy(question.order),
+				db
+					.select()
+					.from(logicRule)
+					.where(eq(logicRule.surveyId, surveyResult[0].id)),
+			]);
 
 			return {
 				survey: surveyResult[0],
 				questions,
+				logicRules,
 			};
 		}),
 
@@ -119,8 +127,11 @@ export const responseRouter = {
 				throw new Error("Survey not found or not published");
 			}
 
-			// Check for duplicate fingerprint if provided
-			if (input.fingerprint) {
+			// Check for duplicate fingerprint if provided and multiple responses NOT allowed
+			if (
+				input.fingerprint &&
+				!surveyResult[0].settings?.allowMultipleResponses
+			) {
 				const existingResponse = await db
 					.select()
 					.from(response)

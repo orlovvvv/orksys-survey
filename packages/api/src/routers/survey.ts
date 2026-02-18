@@ -29,6 +29,7 @@ const surveyCreateSchema = z.object({
 			collectMetadata: z.boolean().optional(),
 			thankYouMessage: z.string().optional(),
 			redirectUrl: z.string().url().optional(),
+			displayMode: z.enum(["one_at_a_time", "list"]).optional(),
 			theme: z
 				.object({
 					primaryColor: z.string().optional(),
