@@ -1,0 +1,398 @@
+Implement the following plan:
+
+# Landing Page Theme Overhaul - shadcn Theming System
+
+## Context
+
+The landing page currently uses ~70+ hardcoded violet color classes (`violet-500`, `violet-600`, etc.) instead of shadcn's semantic theme variables. This creates maintenance issues and prevents easy theme switching. The goal is to convert all landing page components to use proper shadcn theming.
+
+---
+
+## Current State Analysis
+
+### Theme Configuration
+- **Location:** `apps/web/src/index.css`
+- **Color Space:** OKLCH
+- **Primary Color:** `oklch(0.55 0.22 293)` (violet)
+- **Base:** zinc (neutral grays)
+
+### Files Requiring Changes
+
+| File | Hardcoded Colors | Priority |
+|------|------------------|----------|
+| `survey-mockup.tsx` | ~25 instances | High |
+| `bento-features.tsx` | ~12 instances | High |
+| `core-features.tsx` | ~15 instances + mixed colors | High |
+| `hero-section.tsx` | ~10 instances | High |
+| `navigation.tsx` | ~5 instances | Medium |
+| `pricing.tsx` | ~12 instances | Medium |
+| `cta-section.tsx` | ~5 instances | Medium |
+| `footer.tsx` | ~3 instances | Low |
+| `testimonials.tsx` | ~3 instances | Low |
+| `social-proof.tsx` | 1 inline style | Low |
+
+---
+
+## Color Mapping Strategy
+
+### Primary Violet Colors → Semantic Variables
+
+| Hardcoded | Semantic Replacement | Usage |
+|-----------|---------------------|-------|
+| `violet-500` | `primary` | Icons, text accents, borders |
+| `violet-600` | `primary` (hover) | Button backgrounds, emphasis |
+| `violet-700` | `primary` (active) | Active states |
+| `violet-500/10` | `primary/10` | Subtle backgrounds |
+| `violet-500/20` | `primary/20` | Borders, hover states |
+| `violet-50` | `primary/5` or custom var | Light backgrounds |
+| `violet-100` | `primary/10` | Light borders |
+| `#8b5cf6` | `primary` (via CSS) | SVG fills/strokes |
+
+### Neutral Colors → Consolidate to zinc
+
+| Current | Replace With |
+|---------|-------------|
+| `neutral-*` | `zinc-*` |
+| `gray-*` | `zinc-*` |
+
+### Mixed Semantic Colors (core-features.tsx)
+
+**Decision:** Use primary color only for all feature icons (consistent branding).
+
+Replace:
+- `text-blue-600`, `bg-blue-50` → `text-primary`, `bg-primary/10`
+- `text-emerald-600`, `bg-emerald-50` → `text-primary`, `bg-primary/10`
+- `text-purple-600`, `bg-purple-50` → `text-primary`, `bg-primary/10`
+- `text-pink-600`, `bg-pink-50` → `text-primary`, `bg-primary/10`
+- `text-orange-600`, `bg-orange-50` → `text-primary`, `bg-primary/10`
+- `text-green-600`, `bg-green-50` → `text-primary`, `bg-primary/10`
+- `text-red-600`, `bg-red-50` → `text-primary`, `bg-primary/10`
+
+---
+
+## Implementation Plan
+
+### Phase 1: Update CSS Variables (if needed)
+
+**File:** `apps/web/src/index.css`
+
+1. Add utility classes for common patterns:
+   ```css
+   .text-gradient {
+     background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+     -webkit-background-clip: text;
+     background-clip: text;
+     color: transparent;
+   }
+
+   .bg-gradient-primary {
+     background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+   }
+   ```
+
+2. Update mesh-gradient to use CSS variables
+
+### Phase 2: Component Updates (by file)
+
+#### 2.1 `hero-section.tsx`
+- Replace gradient text with `text-gradient` class
+- Replace `violet-500` focus states with `primary`
+- Replace button gradient with `bg-primary`
+
+#### 2.2 `navigation.tsx`
+- Replace icon color `text-violet-500` → `text-primary`
+- Replace button styles with `Button` component variant
+
+#### 2.3 `bento-features.tsx`
+- Replace all `violet-500` → `primary`
+- Replace `#8b5cf6` SVG stroke with `stroke-primary` (may need CSS class)
+- Replace opacity variants (`/10`, `/20`) with `primary/10`, `primary/20`
+
+#### 2.4 `core-features.tsx`
+- Same violet replacements
+- Decide on semantic colors for feature icons
+- Replace chart gradients
+
+#### 2.5 `survey-mockup.tsx` (largest change)
+- Replace all violet instances
+- Update toggle, progress bar, buttons
+- Update focus states
+
+#### 2.6 `pricing.tsx`
+- Replace check icon colors
+- Replace highlighted border
+- Replace button styles
+
+#### 2.7 `cta-section.tsx`
+- Replace badge colors
+- Replace icon colors
+
+#### 2.8 `footer.tsx`
+- Replace logo background
+- Replace button styles
+
+#### 2.9 `testimonials.tsx`
+- Replace star colors
+- Replace gradient card
+
+#### 2.10 `social-proof.tsx`
+- Replace inline style with CSS class
+
+---
+
+## Verification
+
+1. **Visual Check:** Compare before/after screenshots
+2. **Build:** `pnpm turbo build --filter=web`
+3. **Dev Server:** `pnpm dev:web` - verify landing page renders correctly
+4. **Search for regressions:**
+   ```bash
+   grep -r "violet-" apps/web/src/components/landing/
+   grep -r "#8b5cf6" apps/web/src/components/landing/
+   ```
+
+---
+
+## Summary
+
+Convert ~70+ hardcoded violet color instances to shadcn semantic theme variables:
+- `violet-500` → `primary`
+- `violet-600` → `primary` (for hover/active)
+- Opacity variants → `primary/N`
+- Hex codes → CSS variables
+- Consolidate `neutral-*` → `zinc-*`
+
+This enables:
+- Easy theme switching
+- Consistent colors across the app
+- Better maintainability
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+I would like you to use vercel composition skill, nextjs best practices skill, frontend design skill and work on:
+- removing too many wrappers around each component on the landing page
+- ensure paddings and sizing for each section is consitent and accurate
+- ensure responsivenes for tablet and mobile screens is in place with proper conditioning via tailwindcss
+
+Ensure landing page is built by sections that are composed blocks (can use provider pattern if needed - check what skill suggests) and avoid wrappers that could interfere with proper positioning, sizing and padding/margins
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-composition-patterns
+
+# React Composition Patterns
+
+Composition patterns for building flexible, maintainable React components. Avoid
+boolean prop proliferation by using compound components, lifting state, and
+composing internals. These patterns make codebases easier for both humans and AI
+agents to work with as they scale.
+
+## When to Apply
+
+Reference these guidelines when:
+
+- Refactoring components with many boolean props
+- Building reusable component libraries
+- Designing flexible component APIs
+- Reviewing component architecture
+- Working with compound components or context providers
+
+## Rule Categories by Priority
+
+| Priority | Category                | Impact | Prefix          |
+| -------- | ----------------------- | ------ | --------------- |
+| 1        | Component Architecture  | HIGH   | `architecture-` |
+| 2        | State Management        | MEDIUM | `state-`        |
+| 3        | Implementation Patterns | MEDIUM | `patterns-`     |
+| 4        | React 19 APIs           | MEDIUM | `react19-`      |
+
+## Quick Reference
+
+### 1. Component Architecture (HIGH)
+
+- `architecture-avoid-boolean-props` - Don't add boolean props to customize
+  behavior; use composition
+- `architecture-compound-components` - Structure complex components with shared
+  context
+
+### 2. State Management (MEDIUM)
+
+- `state-decouple-implementation` - Provider is the only place that knows how
+  state is managed
+- `state-context-interface` - Define generic interface with state, actions, meta
+  for dependency injection
+- `state-lift-state` - Move state into provider components for sibling access
+
+### 3. Implementation Patterns (MEDIUM)
+
+- `patterns-explicit-variants` - Create explicit variant components instead of
+  boolean modes
+- `patterns-children-over-render-props` - Use children for composition instead
+  of renderX props
+
+### 4. React 19 APIs (MEDIUM)
+
+> **⚠️ React 19+ only.** Skip this section if using React 18 or earlier.
+
+- `react19-no-forwardref` - Don't use `forwardRef`; use `use()` instead of `useContext()`
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/architecture-avoid-boolean-props.md
+rules/state-context-interface.md
+```
+
+Each rule file contains:
+
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+---
+
+Base directory for this skill: /Users/orksys/.claude/skills/vercel-react-best-practices
+
+# Vercel React Best Practices
+
+Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 57 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
+
+## When to Apply
+
+Reference these guidelines when:
+- Writing new React components or Next.js pages
+- Implementing data fetching (client or server-side)
+- Reviewing code for performance issues
+- Refactoring existing React/Next.js code
+- Optimizing bundle size or load times
+
+## Rule Categories by Priority
+
+| Priority | Category | Impact | Prefix |
+|----------|----------|--------|--------|
+| 1 | Eliminating Waterfalls | CRITICAL | `async-` |
+| 2 | Bundle Size Optimization | CRITICAL | `bundle-` |
+| 3 | Server-Side Performance | HIGH | `server-` |
+| 4 | Client-Side Data Fetching | MEDIUM-HIGH | `client-` |
+| 5 | Re-render Optimization | MEDIUM | `rerender-` |
+| 6 | Rendering Performance | MEDIUM | `rendering-` |
+| 7 | JavaScript Performance | LOW-MEDIUM | `js-` |
+| 8 | Advanced Patterns | LOW | `advanced-` |
+
+## Quick Reference
+
+### 1. Eliminating Waterfalls (CRITICAL)
+
+- `async-defer-await` - Move await into branches where actually used
+- `async-parallel` - Use Promise.all() for independent operations
+- `async-dependencies` - Use better-all for partial dependencies
+- `async-api-routes` - Start promises early, await late in API routes
+- `async-suspense-boundaries` - Use Suspense to stream content
+
+### 2. Bundle Size Optimization (CRITICAL)
+
+- `bundle-barrel-imports` - Import directly, avoid barrel files
+- `bundle-dynamic-imports` - Use next/dynamic for heavy components
+- `bundle-defer-third-party` - Load analytics/logging after hydration
+- `bundle-conditional` - Load modules only when feature is activated
+- `bundle-preload` - Preload on hover/focus for perceived speed
+
+### 3. Server-Side Performance (HIGH)
+
+- `server-auth-actions` - Authenticate server actions like API routes
+- `server-cache-react` - Use React.cache() for per-request deduplication
+- `server-cache-lru` - Use LRU cache for cross-request caching
+- `server-dedup-props` - Avoid duplicate serialization in RSC props
+- `server-serialization` - Minimize data passed to client components
+- `server-parallel-fetching` - Restructure components to parallelize fetches
+- `server-after-nonblocking` - Use after() for non-blocking operations
+
+### 4. Client-Side Data Fetching (MEDIUM-HIGH)
+
+- `client-swr-dedup` - Use SWR for automatic request deduplication
+- `client-event-listeners` - Deduplicate global event listeners
+- `client-passive-event-listeners` - Use passive listeners for scroll
+- `client-localstorage-schema` - Version and minimize localStorage data
+
+### 5. Re-render Optimization (MEDIUM)
+
+- `rerender-defer-reads` - Don't subscribe to state only used in callbacks
+- `rerender-memo` - Extract expensive work into memoized components
+- `rerender-memo-with-default-value` - Hoist default non-primitive props
+- `rerender-dependencies` - Use primitive dependencies in effects
+- `rerender-derived-state` - Subscribe to derived booleans, not raw values
+- `rerender-derived-state-no-effect` - Derive state during render, not effects
+- `rerender-functional-setstate` - Use functional setState for stable callbacks
+- `rerender-lazy-state-init` - Pass function to useState for expensive values
+- `rerender-simple-expression-in-memo` - Avoid memo for simple primitives
+- `rerender-move-effect-to-event` - Put interaction logic in event handlers
+- `rerender-transitions` - Use startTransition for non-urgent updates
+- `rerender-use-ref-transient-values` - Use refs for transient frequent values
+
+### 6. Rendering Performance (MEDIUM)
+
+- `rendering-animate-svg-wrapper` - Animate div wrapper, not SVG element
+- `rendering-content-visibility` - Use content-visibility for long lists
+- `rendering-hoist-jsx` - Extract static JSX outside components
+- `rendering-svg-precision` - Reduce SVG coordinate precision
+- `rendering-hydration-no-flicker` - Use inline script for client-only data
+- `rendering-hydration-suppress-warning` - Suppress expected mismatches
+- `rendering-activity` - Use Activity component for show/hide
+- `rendering-conditional-render` - Use ternary, not && for conditionals
+- `rendering-usetransition-loading` - Prefer useTransition for loading state
+
+### 7. JavaScript Performance (LOW-MEDIUM)
+
+- `js-batch-dom-css` - Group CSS changes via classes or cssText
+- `js-index-maps` - Build Map for repeated lookups
+- `js-cache-property-access` - Cache object properties in loops
+- `js-cache-function-results` - Cache function results in module-level Map
+- `js-cache-storage` - Cache localStorage/sessionStorage reads
+- `js-combine-iterations` - Combine multiple filter/map into one loop
+- `js-length-check-first` - Check array length before expensive comparison
+- `js-early-exit` - Return early from functions
+- `js-hoist-regexp` - Hoist RegExp creation outside loops
+- `js-min-max-loop` - Use loop for min/max instead of sort
+- `js-set-map-lookups` - Use Set/Map for O(1) lookups
+- `js-tosorted-immutable` - Use toSorted() for immutability
+
+### 8. Advanced Patterns (LOW)
+
+- `advanced-event-handler-refs` - Store event handlers in refs
+- `advanced-init-once` - Initialize app once per app load
+- `advanced-use-latest` - useLatest for stable callback refs
+
+## How to Use
+
+Read individual rule files for detailed explanations and code examples:
+
+```
+rules/async-parallel.md
+rules/bundle-barrel-imports.md
+```
+
+Each rule file contains:
+- Brief explanation of why it matters
+- Incorrect code example with explanation
+- Correct code example with explanation
+- Additional context and references
+
+## Full Compiled Document
+
+For the complete guide with all rules expanded: `AGENTS.md`
+
+---
+
+[Request interrupted by user for tool use]

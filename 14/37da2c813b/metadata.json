@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "1437da2c813b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "apps/web/src/components/landing/bento-features.tsx",
+    "apps/web/src/components/landing/core-features.tsx",
+    "apps/web/src/components/landing/cta-section.tsx",
+    "apps/web/src/components/landing/footer.tsx",
+    "apps/web/src/components/landing/hero-section.tsx",
+    "apps/web/src/components/landing/navigation.tsx",
+    "apps/web/src/components/landing/pricing.tsx",
+    "apps/web/src/components/landing/survey-mockup.tsx",
+    "apps/web/src/components/landing/testimonials.tsx",
+    "apps/web/src/index.css"
+  ],
+  "sessions": [
+    {
+      "metadata": "/14/37da2c813b/0/metadata.json",
+      "transcript": "/14/37da2c813b/0/full.jsonl",
+      "context": "/14/37da2c813b/0/context.md",
+      "content_hash": "/14/37da2c813b/0/content_hash.txt",
+      "prompt": "/14/37da2c813b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 94857,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4614400,
+    "output_tokens": 15681,
+    "api_call_count": 79
+  }
+}
