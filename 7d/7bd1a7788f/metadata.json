@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.4.4",
+  "checkpoint_id": "7d7bd1a7788f",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "apps/web/src/components/survey-builder/builder-canvas.tsx",
+    "apps/web/src/components/survey-builder/index.tsx",
+    "apps/web/src/components/survey-builder/question-card.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7d/7bd1a7788f/0/metadata.json",
+      "transcript": "/7d/7bd1a7788f/0/full.jsonl",
+      "context": "/7d/7bd1a7788f/0/context.md",
+      "content_hash": "/7d/7bd1a7788f/0/content_hash.txt",
+      "prompt": "/7d/7bd1a7788f/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 62527,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 709120,
+    "output_tokens": 5996,
+    "api_call_count": 17
+  }
+}

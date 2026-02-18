@@ -1,0 +1,149 @@
+Implement the following plan:
+
+# Fix Survey Builder Re-render Issue (Bottom-to-Top Drag)
+
+## Context
+
+When dragging an item from the bottom to the top of the survey builder, all items re-render. This does NOT happen when dragging from top to bottom. This is caused by:
+
+1. **New object references created for ALL questions** during reordering (`.map((q, index) => ({ ...q, order: index }))`)
+2. **Framer Motion's `layout` prop** reacting to the new object references by animating all items
+3. **Bottom-to-top creates a cascade effect** - when item moves from index 5 to 1, items 1-4 all shift down, creating more visible position changes than top-to-bottom
+
+## Root Cause Analysis
+
+### Why the Asymmetry?
+
+**Bottom-to-Top (index 5 → 1):**
+- Items 1-4 must all shift down (4 position changes)
+- With new object references + `layout={true}`, Framer Motion animates ALL 5 items
+- Creates a visible "ripple" effect
+
+**Top-to-Bottom (index 1 → 5):**
+- Items 2-5 shift up (4 position changes)
+- Framer Motion's layout animation is less visually jarring because items move "into place" rather than "out of the way"
+
+The real issue: **we're creating new object references for unchanged questions**.
+
+## Solution: Preserve Object References
+
+Only update the `order` property on questions that actually need reordering, and preserve object references for unaffected questions.
+
+### Files to Modify
+
+1. `apps/web/src/components/survey-builder/index.tsx` - Fix reorder logic
+2. `apps/web/src/components/survey-builder/builder-canvas.tsx` - Memoize and optimize
+3. `apps/web/src/components/survey-builder/question-card.tsx` - Add React.memo
+
+---
+
+## Implementation Plan
+
+### Step 1: Fix Reorder Logic in `index.tsx` (~line 285-290)
+
+**Current code:**
+```typescript
+const newQuestions = arrayMove(questions, oldIndex, newIndex).map(
+  (q, index) => ({
+    ...q,
+    order: index,
+  }),
+);
+```
+
+**Problem:** Creates new object for every question.
+
+**Solution:** Only create new objects for questions whose `order` actually changed:
+
+```typescript
+const newQuestions = arrayMove(questions, oldIndex, newIndex).map(
+  (q, index) => {
+    // Only create new object if order actually changed
+    if (q.order === index) {
+      return q; // Preserve reference
+    }
+    return { ...q, order: index };
+  },
+);
+```
+
+### Step 2: Memoize QuestionCard in `question-card.tsx`
+
+Wrap the component with `React.memo` to prevent unnecessary re-renders when props haven't changed:
+
+```typescript
+export const QuestionCard = React.memo(function QuestionCard({
+  question,
+  isSelected,
+  onSelect,
+  questions,
+  onQuestionsChange,
+}: QuestionCardProps) {
+  // ... component body
+});
+```
+
+### Step 3: Optimize builder-canvas.tsx
+
+**3a. Memoize the items computation** using `useMemo` instead of IIFE:
+
+```typescript
+const renderedItems = useMemo(() => {
+  const items: React.ReactNode[] = [];
+  // ... build items
+  return items;
+}, [safeQuestions, selectedQuestionId, activeDragItem, dropped, layoutEnabled]);
+```
+
+**3b. Consider using `layout="position"` instead of `layout={true}`**
+
+`layout="position"` only animates position changes, not scale/size changes. This is more appropriate for reordering:
+
+```typescript
+<motion.div
+  key={question.id}
+  layout="position"  // Only animate position
+  // ...
+>
+```
+
+---
+
+## Verification
+
+1. **Start dev server:** `pnpm dev:web`
+2. **Navigate to survey builder** and add 5-6 questions
+3. **Test bottom-to-top drag:** Drag last item to top position
+   - Expected: Only the dragged item and shifted items animate smoothly
+   - Other items should NOT flash/re-render
+4. **Test top-to-bottom drag:** Drag first item to bottom position
+   - Expected: Same smooth behavior
+5. **Compare before/after:** Behavior should be consistent regardless of drag direction
+
+---
+
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `index.tsx` | Preserve object references in reorder logic |
+| `question-card.tsx` | Wrap with `React.memo` |
+| `builder-canvas.tsx` | Use `useMemo` for items, consider `layout="position"` |
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/orksys/.REDACTED.jsonl
+
+If this plan can be broken down into multiple independent tasks, consider using the TeamCreate tool to create a team and parallelize the work.
+
+---
+
+[Request interrupted by user]
+
+---
+
+that did not address the issue, the the issue is as stated before:
+items moved from bottom to top, cause rerender or at least reanimation of ALL items that are moved under it EVEN when the dragging effect already moved those items into the right place, main issue is that moving items from top to bottom DOES not have this issue at all and behaves correctly
+
+---
+
+[Request interrupted by user for tool use]
