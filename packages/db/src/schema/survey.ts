@@ -80,7 +80,7 @@ export const survey = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		uniqueIndex("survey_slug_idx").on(table.slug),
+		uniqueIndex("survey_org_slug_idx").on(table.organizationId, table.slug),
 		index("survey_organizationId_idx").on(table.organizationId),
 		index("survey_userId_idx").on(table.userId),
 		index("survey_status_idx").on(table.status),

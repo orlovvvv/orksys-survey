@@ -14,11 +14,11 @@ function CompanyLogo({
 }) {
 	return (
 		<div
-			className="mask-image h-8 w-24 bg-neutral-800"
+			className="mask-image h-8 w-24"
 			style={{
 				maskImage: `url('data:image/svg+xml;base64,${svgContent}')`,
 				WebkitMaskImage: `url('data:image/svg+xml;base64,${svgContent}')`,
-				backgroundColor: "black",
+				backgroundColor: "white",
 			}}
 			role="img"
 			aria-label={name}
@@ -47,11 +47,13 @@ const companyLogos: Array<{ name: string; svg: string }> = [
 
 export function SocialProof({ className }: { className?: string }) {
 	return (
-		<div className={cn("py-12 text-center", className)}>
-			<p className="font-sans font-semibold text-neutral-400 text-xs uppercase tracking-widest">
-				Trusted by product teams at
-			</p>
-			<div className="mt-8 flex flex-wrap justify-center gap-8 opacity-60 grayscale transition-all duration-500 hover:grayscale-0 md:gap-12">
+		<div
+			className={cn(
+				"rounded-[40px] bg-zinc-900 px-6 py-12 text-center",
+				className,
+			)}
+		>
+			<div className="flex flex-wrap justify-center gap-8 opacity-60 grayscale transition-all duration-500 hover:grayscale-0 md:gap-12">
 				{companyLogos.map((logo) => (
 					<CompanyLogo key={logo.name} name={logo.name} svgContent={logo.svg} />
 				))}

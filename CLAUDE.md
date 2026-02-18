@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+> **⚠️ IMPORTANT: Context Discovery**
+>
+> Before modifying files in any directory, **always check for a `CLAUDE.md` file in that directory** and read it first.
+> When asked to work on a specific directory, look for and read `CLAUDE.md` in that directory before starting.
+> These nested context files contain directory-specific conventions and patterns that override or extend this file.
+
+---
+
 ## Commands
 
 ```bash
@@ -106,3 +116,16 @@ EXPO_PUBLIC_SERVER_URL=http://localhost:3001
 - Biome for linting and formatting (tab indents, double quotes)
 - `pnpm check` auto-fixes lint issues and sorts imports
 - Tailwind class sorting enabled via Biome nursery rule
+
+## Documentation References
+
+Reference repositories for learning patterns from key dependencies (located at `~/Projects/docs-worktrees/`):
+
+| Library | Path | Purpose |
+|---------|------|---------|
+| shadcn/ui | `~/Projects/docs-worktrees/shadcn-ui/` | UI component patterns, base-ui primitives |
+| Next.js | `~/Projects/docs-worktrees/nextjs/` | App Router, RSC, data fetching patterns |
+| oRPC | `~/Projects/docs-worktrees/orpc/` | Type-safe API patterns, procedure definitions |
+| Better Auth | `~/Projects/docs-worktrees/better-auth/` | Authentication patterns, plugin configs |
+
+These are shallow clones for quick reference. Update with `git pull origin main` when needed.

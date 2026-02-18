@@ -1,5 +1,7 @@
 import type { Question } from "@orksys-survey/db";
-import { questionTypeLabels } from "./question-card";
+import { questionTypeLabels } from "./question-card/constants";
+
+export { questionTypeLabels };
 
 export function createMockQuestion(type: Question["type"]): Question {
 	return {

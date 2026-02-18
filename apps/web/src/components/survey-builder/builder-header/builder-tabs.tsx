@@ -32,7 +32,7 @@ export function BuilderTabs({
 		: tabOptions.filter((t) => t.value !== "share");
 
 	return (
-		<div className="flex gap-1 rounded-lg bg-neutral-100 p-1">
+		<div className="flex gap-1 rounded-lg bg-muted p-1">
 			{visibleTabs.map((tab) => (
 				<TabButton
 					key={tab.value}
@@ -60,14 +60,14 @@ function TabButton({ tab, isActive, onClick }: TabButtonProps) {
 			onClick={onClick}
 			className={`relative flex items-center gap-2 rounded-md px-4 py-1.5 font-sans font-semibold text-xs transition-colors ${
 				isActive
-					? "text-neutral-900"
-					: "text-neutral-500 hover:text-neutral-900"
+					? "text-foreground"
+					: "text-muted-foreground hover:text-foreground"
 			}`}
 		>
 			{isActive && (
 				<motion.div
 					layoutId="activeTab"
-					className="absolute inset-0 rounded-md bg-white shadow-sm"
+					className="absolute inset-0 rounded-md bg-card shadow-sm"
 					transition={{ type: "spring", stiffness: 500, damping: 30 }}
 				/>
 			)}

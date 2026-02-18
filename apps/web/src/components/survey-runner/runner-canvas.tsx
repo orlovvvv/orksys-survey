@@ -17,7 +17,7 @@ function OneAtATimeCanvas() {
 	if (!currentQuestion) {
 		return (
 			<div className="flex flex-1 items-center justify-center">
-				<p className="text-neutral-500">No questions available</p>
+				<p className="text-muted-foreground">No questions available</p>
 			</div>
 		);
 	}
@@ -35,7 +35,7 @@ function ListModeCanvas({ questions }: { questions: Question[] }) {
 	if (questions.length === 0) {
 		return (
 			<div className="flex flex-1 items-center justify-center">
-				<p className="text-neutral-500">No questions available</p>
+				<p className="text-muted-foreground">No questions available</p>
 			</div>
 		);
 	}

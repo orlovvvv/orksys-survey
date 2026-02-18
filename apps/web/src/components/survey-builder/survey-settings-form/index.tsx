@@ -53,9 +53,7 @@ export function SurveySettingsForm({
 					<Textarea
 						id="description"
 						value={description}
-						onChange={(e) =>
-							onChange({ description: e.target.value })
-						}
+						onChange={(e) => onChange({ description: e.target.value })}
 						rows={2}
 					/>
 				</div>
@@ -80,9 +78,7 @@ export function SurveySettingsForm({
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="one_at_a_time">
-								One at a time
-							</SelectItem>
+							<SelectItem value="one_at_a_time">One at a time</SelectItem>
 							<SelectItem value="list">All at once (list)</SelectItem>
 						</SelectContent>
 					</Select>

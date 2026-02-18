@@ -4,10 +4,7 @@ import type { DemographicItem } from "./demographic-card";
 
 interface DeviceListProps {
 	items: DemographicItem[];
-	deviceIcons: Record<
-		string,
-		React.ComponentType<{ className?: string }>
-	>;
+	deviceIcons: Record<string, React.ComponentType<{ className?: string }>>;
 }
 
 export function DeviceList({ items, deviceIcons }: DeviceListProps) {

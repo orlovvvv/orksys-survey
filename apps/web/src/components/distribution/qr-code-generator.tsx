@@ -38,8 +38,8 @@ export function QRCodeGenerator({
 						width: size,
 						margin: 2,
 						color: {
-							dark: "#000000",
-							light: "#FFFFFF",
+							dark: "hsl(var(--foreground))",
+							light: "hsl(var(--background))",
 						},
 					});
 
@@ -86,10 +86,10 @@ export function QRCodeGenerator({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col items-center gap-4">
-				<div className="flex items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+				<div className="flex items-center justify-center rounded-lg border border-border bg-muted p-4">
 					{isGenerating ? (
 						<div
-							className="animate-pulse rounded bg-neutral-200"
+							className="animate-pulse rounded bg-border"
 							style={{ width: size, height: size }}
 						/>
 					) : (

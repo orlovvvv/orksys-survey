@@ -1,13 +1,13 @@
 "use client";
 
 import type { Question } from "@orksys-survey/db";
-import { BarChart3, Download, Globe, MessageSquare, Table } from "lucide-react";
+import { BarChart3, Globe, MessageSquare, Table } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AIInsights } from "./ai-insights";
-import { DemographicsPanel } from "./demographics-panel";
-import { QuestionCharts } from "./question-charts";
-import { ResponseTable } from "./response-table";
+import { AIInsights } from "./ai-insights/main";
+import { DemographicsPanel } from "./demographics";
+import { QuestionCharts } from "./question-charts/main";
+import { ResponseTable } from "./response-table/main";
 
 interface AnalyticsTabsProps {
 	surveyId: string;

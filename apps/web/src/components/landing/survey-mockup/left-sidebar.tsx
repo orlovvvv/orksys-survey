@@ -4,9 +4,9 @@ import { QuestionTypeItem, StructureItem } from "./primitives";
 
 export function SurveyMockupLeftSidebar() {
 	return (
-		<div className="hidden h-full w-64 flex-col overflow-y-auto border-neutral-100 border-r bg-white lg:flex">
+		<div className="hidden h-full w-64 flex-col overflow-y-auto border-border border-r bg-card lg:flex">
 			<div className="p-4">
-				<h3 className="mb-4 font-bold font-sans text-[10px] text-neutral-900 uppercase tracking-widest">
+				<h3 className="mb-4 font-bold font-sans text-[10px] text-foreground uppercase tracking-widest">
 					Question Types
 				</h3>
 				<div className="space-y-2">
@@ -16,7 +16,7 @@ export function SurveyMockupLeftSidebar() {
 					<QuestionTypeItem icon={Smile} label="NPS" />
 				</div>
 
-				<h3 className="mt-8 mb-4 font-bold font-sans text-[10px] text-neutral-900 uppercase tracking-widest">
+				<h3 className="mt-8 mb-4 font-bold font-sans text-[10px] text-foreground uppercase tracking-widest">
 					Structure
 				</h3>
 				<div className="space-y-2">

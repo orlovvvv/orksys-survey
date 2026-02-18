@@ -1,6 +1,6 @@
 "use client";
 
-import { Monitor, Smartphone, Laptop } from "lucide-react";
+import { Laptop, Monitor, Smartphone } from "lucide-react";
 
 import { BarChart } from "@/components/charts/bar-chart";
 import {

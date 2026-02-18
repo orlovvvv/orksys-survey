@@ -1,6 +1,5 @@
 "use client";
 
-import type { Question } from "@orksys-survey/db";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -44,8 +43,8 @@ export function LogicRuleForm({
 			className="space-y-4"
 		>
 			{/* Source Question Info */}
-			<div className="rounded-lg bg-neutral-50 p-3">
-				<Label className="text-neutral-500 text-xs uppercase tracking-wide">
+			<div className="rounded-lg bg-muted/50 p-3">
+				<Label className="text-muted-foreground text-xs uppercase tracking-wide">
 					Source Question
 				</Label>
 				<p className="mt-1 font-medium text-sm">{sourceQuestion?.title}</p>
@@ -72,9 +71,7 @@ export function LogicRuleForm({
 							children={(field: any) => (
 								<ConditionValueField
 									value={field.state.value}
-									onValueChange={(value: string) =>
-										field.handleChange(value)
-									}
+									onValueChange={(value: string) => field.handleChange(value)}
 									sourceOptions={sourceOptions}
 								/>
 							)}
@@ -104,9 +101,7 @@ export function LogicRuleForm({
 							children={(field: any) => (
 								<TargetQuestionSelect
 									value={field.state.value}
-									onValueChange={(value: string) =>
-										field.handleChange(value)
-									}
+									onValueChange={(value: string) => field.handleChange(value)}
 									targetQuestions={targetQuestions}
 								/>
 							)}

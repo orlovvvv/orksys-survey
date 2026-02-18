@@ -17,7 +17,7 @@ export function SurveyMockup({ className }: { className?: string }) {
 	return (
 		<div
 			className={cn(
-				"relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-neutral-200/60 bg-white shadow-2xl",
+				"relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-border/60 bg-card shadow-2xl",
 				className,
 			)}
 		>

@@ -38,7 +38,7 @@ export default function SelectOrganization({
 			toast.success("Organization selected");
 			router.push("/dashboard");
 			router.refresh();
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An unexpected error occurred");
 		}
 	};

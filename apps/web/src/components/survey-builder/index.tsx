@@ -10,7 +10,7 @@ import {
 	useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import type { Question, Survey } from "@orksys-survey/db";
+import type { Question } from "@orksys-survey/db";
 import { PanelLeftClose, PanelRightClose } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -27,9 +27,10 @@ import { useDragHandlers } from "./hooks/use-drag-handlers";
 import { useQuestionMutations } from "./hooks/use-question-mutations";
 import { PropertiesPanel } from "./properties-panel";
 import { QuestionPalette } from "./question-palette";
+import type { SurveyWithOrganization } from "./types";
 
 interface SurveyBuilderProps {
-	survey: Survey;
+	survey: SurveyWithOrganization;
 	questions: Question[];
 	className?: string;
 }

@@ -28,10 +28,10 @@ import { SurveySettingsDialog } from "../survey-settings-dialog";
 import { BuilderTabs } from "./builder-tabs";
 
 const statusColors: Record<string, string> = {
-	draft: "bg-neutral-100 text-neutral-600",
-	published: "bg-green-100 text-green-700",
-	closed: "bg-orange-100 text-orange-700",
-	archived: "bg-neutral-100 text-neutral-500",
+	draft: "bg-muted text-muted-foreground",
+	published: "bg-success/10 text-success",
+	closed: "bg-warning/10 text-warning",
+	archived: "bg-muted text-muted-foreground",
 };
 
 interface BuilderHeaderProps {
@@ -70,17 +70,20 @@ export function BuilderHeader({
 	};
 
 	return (
-		<header className="z-20 flex shrink-0 items-center justify-between border-neutral-100 border-b bg-white px-6 py-3">
+		<header className="z-20 flex shrink-0 items-center justify-between border-border border-b bg-card px-6 py-3">
 			<div className="flex items-center gap-4">
 				{leftActions}
-				<Button variant="ghost" size="sm" asChild>
-					<Link href="/surveys">
-						<ArrowLeft className="mr-2 h-4 w-4" />
-						Back
-					</Link>
+				<Button
+					variant="ghost"
+					size="sm"
+					nativeButton={false}
+					render={<Link href="/surveys" />}
+				>
+					<ArrowLeft className="mr-2 h-4 w-4" />
+					Back
 				</Button>
-				<div className="flex items-center gap-2 font-sans font-semibold text-neutral-900 text-sm">
-					<span className="text-neutral-400">Surveys /</span>
+				<div className="flex items-center gap-2 font-sans font-semibold text-foreground text-sm">
+					<span className="text-muted-foreground">Surveys /</span>
 					<span>{survey.title}</span>
 					<Badge variant="secondary" className={statusColors[survey.status]}>
 						{survey.status}
@@ -117,7 +120,7 @@ export function BuilderHeader({
 							Survey Settings
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem className="text-red-600">
+						<DropdownMenuItem className="text-destructive">
 							Delete Survey
 						</DropdownMenuItem>
 					</DropdownMenuContent>
@@ -133,15 +136,19 @@ export function BuilderHeader({
 						Publish
 					</Button>
 				) : (
-					<Button variant="outline" asChild>
-						<a
-							href={`/s/${survey.slug}`}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<Eye className="mr-2 h-4 w-4" />
-							View Survey
-						</a>
+					<Button
+						variant="outline"
+						nativeButton={false}
+						render={
+							<a
+								href={`/s/${survey.slug}`}
+								target="_blank"
+								rel="noopener noreferrer"
+							/>
+						}
+					>
+						<Eye className="mr-2 h-4 w-4" />
+						View Survey
 					</Button>
 				)}
 			</div>

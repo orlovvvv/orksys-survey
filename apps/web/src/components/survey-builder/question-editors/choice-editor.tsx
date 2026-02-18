@@ -1,12 +1,12 @@
 "use client";
 
 import type { QuestionConfig } from "@orksys-survey/db";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { OptionItem } from "./option-item";
 
 interface ChoiceEditorProps {
 	config: QuestionConfig;
@@ -84,13 +84,13 @@ export function ChoiceEditor({
 				</Button>
 			</div>
 
-			<div className="space-y-3 border-neutral-100 border-t pt-4">
+			<div className="space-y-3 border-border border-t pt-4">
 				<div className="flex items-center justify-between">
 					<div className="flex flex-col">
-						<span className="font-medium text-neutral-900 text-sm">
+						<span className="font-medium text-foreground text-sm">
 							Allow "Other"
 						</span>
-						<span className="text-neutral-400 text-xs">
+						<span className="text-muted-foreground text-xs">
 							Let respondents add their own answer
 						</span>
 					</div>
@@ -103,10 +103,10 @@ export function ChoiceEditor({
 				{allowMultiple && (
 					<div className="flex items-center justify-between">
 						<div className="flex flex-col">
-							<span className="font-medium text-neutral-900 text-sm">
+							<span className="font-medium text-foreground text-sm">
 								Allow Multiple
 							</span>
-							<span className="text-neutral-400 text-xs">
+							<span className="text-muted-foreground text-xs">
 								Let respondents select multiple options
 							</span>
 						</div>
@@ -117,40 +117,6 @@ export function ChoiceEditor({
 					</div>
 				)}
 			</div>
-		</div>
-	);
-}
-
-interface OptionItemProps {
-	label: string;
-	onChangeLabel: (label: string) => void;
-	onDelete: () => void;
-	canDelete: boolean;
-}
-
-function OptionItem({
-	label,
-	onChangeLabel,
-	onDelete,
-	canDelete,
-}: OptionItemProps) {
-	return (
-		<div className="flex items-center gap-2">
-			<Input
-				value={label}
-				onChange={(e) => onChangeLabel(e.target.value)}
-				className="flex-1"
-				placeholder="Option text"
-			/>
-			<Button
-				variant="ghost"
-				size="icon"
-				className="shrink-0"
-				onClick={onDelete}
-				disabled={!canDelete}
-			>
-				<Trash2 className="h-4 w-4 text-neutral-400" />
-			</Button>
 		</div>
 	);
 }

@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
 	// Allow public routes
 	if (
 		publicRoutes.some(
-			(route) => pathname === route || pathname.startsWith(route + "/"),
+			(route) => pathname === route || pathname.startsWith(`${route}/`),
 		)
 	) {
 		// For onboarding page, check if user already has active org

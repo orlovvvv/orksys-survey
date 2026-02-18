@@ -77,7 +77,7 @@ export default function OrganizationSwitcher() {
 			}
 
 			router.refresh();
-		} catch (error) {
+		} catch (_error) {
 			toast.error("An unexpected error occurred");
 		}
 	};

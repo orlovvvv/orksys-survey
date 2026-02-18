@@ -35,7 +35,7 @@ export function CopyableField({
 	return (
 		<div className={className}>
 			{label && (
-				<label className="mb-1.5 block font-medium text-neutral-700 text-sm">
+				<label className="mb-1.5 block font-medium text-foreground text-sm">
 					{label}
 				</label>
 			)}
@@ -49,7 +49,7 @@ export function CopyableField({
 					className="shrink-0"
 				>
 					{copied ? (
-						<Check className="h-4 w-4 text-green-600" />
+						<Check className="h-4 w-4 text-success" />
 					) : (
 						<Copy className="h-4 w-4" />
 					)}

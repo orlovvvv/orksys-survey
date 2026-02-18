@@ -7,23 +7,23 @@ export function Testimonials() {
 	return (
 		<Section background="muted">
 			<div className="mb-16 text-center">
-				<h2 className="mb-4 font-bold text-4xl text-neutral-900 tracking-tight md:text-5xl">
+				<h2 className="mb-4 font-bold text-4xl text-foreground tracking-tight md:text-5xl">
 					Loved by teams worldwide
 				</h2>
-				<p className="text-lg text-neutral-600">
+				<p className="text-lg text-muted-foreground">
 					Join thousands of companies creating better surveys with Handshake
 				</p>
 			</div>
 
 			<div className="grid gap-8 md:grid-cols-3">
 				{/* Left Card */}
-				<div className="rounded-[32px] bg-white p-8 shadow-sm">
+				<div className="rounded-[32px] bg-card p-8 shadow-sm">
 					<div className="mb-6 flex gap-1">
 						{[...Array(5)].map((_, i) => (
 							<Star key={i} className="h-5 w-5 fill-primary text-primary" />
 						))}
 					</div>
-					<blockquote className="mb-6 text-lg text-neutral-700 leading-relaxed">
+					<blockquote className="mb-6 text-lg text-muted-foreground leading-relaxed">
 						"Handshake helped us pinpoint exactly where users were dropping off.
 						We increased our conversion rate by 34% in just two months."
 					</blockquote>
@@ -38,8 +38,8 @@ export function Testimonials() {
 							/>
 						</div>
 						<div>
-							<p className="font-semibold text-neutral-900">Sarah Jenkins</p>
-							<p className="text-neutral-600 text-sm">PM at TechFlow</p>
+							<p className="font-semibold text-foreground">Sarah Jenkins</p>
+							<p className="text-muted-foreground text-sm">PM at TechFlow</p>
 						</div>
 					</div>
 				</div>
@@ -74,13 +74,13 @@ export function Testimonials() {
 				</div>
 
 				{/* Right Card */}
-				<div className="rounded-[32px] bg-white p-8 shadow-sm">
+				<div className="rounded-[32px] bg-card p-8 shadow-sm">
 					<div className="mb-6 flex gap-1">
 						{[...Array(5)].map((_, i) => (
 							<Star key={i} className="h-5 w-5 fill-primary text-primary" />
 						))}
 					</div>
-					<blockquote className="mb-6 text-lg text-neutral-700 leading-relaxed">
+					<blockquote className="mb-6 text-lg text-muted-foreground leading-relaxed">
 						"The analytics dashboard gives us insights we never had before. We
 						can now track customer sentiment in real-time and respond instantly
 						to issues."
@@ -96,8 +96,10 @@ export function Testimonials() {
 							/>
 						</div>
 						<div>
-							<p className="font-semibold text-neutral-900">Elena Rodriguez</p>
-							<p className="text-neutral-600 text-sm">Head of CX at Stellar</p>
+							<p className="font-semibold text-foreground">Elena Rodriguez</p>
+							<p className="text-muted-foreground text-sm">
+								Head of CX at Stellar
+							</p>
 						</div>
 					</div>
 				</div>

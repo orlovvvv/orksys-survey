@@ -15,6 +15,9 @@ export const env = createEnv({
 		// Groq AI Integration
 		GROQ_API_KEY: z.string().min(1).optional(),
 		GROQ_MODEL: z.string().default("llama-3.3-70b-versatile"),
+		// Email (Resend)
+		RESEND_API_KEY: z.string().min(1).optional(),
+		EMAIL_FROM: z.string().default("noreply@example.com"),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

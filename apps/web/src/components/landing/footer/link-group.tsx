@@ -13,7 +13,7 @@ export function LinkGroupComponent({ group }: LinkGroupProps) {
 					<li key={link.label}>
 						<a
 							href={link.href}
-							className="text-neutral-400 transition-colors hover:text-white"
+							className="text-zinc-300 transition-colors hover:text-white"
 						>
 							{link.label}
 						</a>

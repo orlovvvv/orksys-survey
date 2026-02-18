@@ -33,7 +33,7 @@ export function SectionHeader({
 				</div>
 			)}
 
-			<div className="mb-8 h-px w-full bg-neutral-200" />
+			<div className="mb-8 h-px w-full bg-border" />
 
 			<div
 				className={cn(
@@ -43,7 +43,7 @@ export function SectionHeader({
 			>
 				<h2
 					className={cn(
-						"max-w-3xl font-display font-normal text-3xl text-neutral-900 leading-[1.05] tracking-tight md:text-4xl lg:text-5xl",
+						"max-w-3xl font-display font-normal text-3xl text-foreground leading-[1.05] tracking-tight md:text-4xl lg:text-5xl",
 						align === "center" && "mx-auto",
 					)}
 				>
@@ -56,7 +56,7 @@ export function SectionHeader({
 							align === "center" && "mx-auto lg:max-w-md",
 						)}
 					>
-						<p className="font-sans text-base text-neutral-600 leading-relaxed">
+						<p className="font-sans text-base text-muted-foreground leading-relaxed">
 							{description}
 						</p>
 					</div>

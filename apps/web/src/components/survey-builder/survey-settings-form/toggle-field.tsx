@@ -24,11 +24,7 @@ export function ToggleField({
 					<p className="text-muted-foreground text-xs">{description}</p>
 				)}
 			</div>
-			<Switch
-				id={id}
-				checked={checked ?? false}
-				onCheckedChange={onChange}
-			/>
+			<Switch id={id} checked={checked ?? false} onCheckedChange={onChange} />
 		</div>
 	);
 }

@@ -21,9 +21,9 @@ const sizeClasses: Record<SectionSize, string> = {
 
 const backgroundClasses: Record<SectionBackground, string> = {
 	transparent: "",
-	muted: "bg-neutral-50",
-	white: "bg-white",
-	dark: "bg-neutral-950",
+	muted: "bg-muted",
+	white: "bg-card",
+	dark: "bg-foreground",
 };
 
 export function Section<T extends ElementType = "section">({

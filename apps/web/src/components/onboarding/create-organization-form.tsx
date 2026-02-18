@@ -6,10 +6,8 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
-
+import { FormField } from "../forms/form-field";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
 
 export default function CreateOrganizationForm() {
 	const router = useRouter();
@@ -41,7 +39,7 @@ export default function CreateOrganizationForm() {
 				toast.success("Organization created successfully");
 				router.push("/dashboard");
 				router.refresh();
-			} catch (error) {
+			} catch (_error) {
 				toast.error("An unexpected error occurred");
 			}
 		},
@@ -77,64 +75,39 @@ export default function CreateOrganizationForm() {
 			}}
 			className="space-y-4"
 		>
-			<div>
-				<form.Field name="name">
-					{(field) => (
-						<div className="space-y-2">
-							<Label htmlFor={field.name}>Organization Name</Label>
-							<Input
-								id={field.name}
-								name={field.name}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => {
-									field.handleChange(e.target.value);
-									// Auto-generate slug if empty
-									const slugField = field.form.getFieldValue("slug");
-									if (!slugField) {
-										field.form.setFieldValue(
-											"slug",
-											generateSlug(e.target.value),
-										);
-									}
-								}}
-								placeholder="My Organization"
-							/>
-							{field.state.meta.errors.map((error) => (
-								<p key={error?.message} className="text-red-500 text-sm">
-									{error?.message}
-								</p>
-							))}
-						</div>
-					)}
-				</form.Field>
-			</div>
+			<form.Field name="name">
+				{(field) => (
+					<FormField
+						label="Organization Name"
+						value={field.state.value}
+						onChange={(value) => {
+							field.handleChange(value);
+							// Auto-generate slug if empty
+							const slugField = field.form.getFieldValue("slug");
+							if (!slugField) {
+								field.form.setFieldValue("slug", generateSlug(value));
+							}
+						}}
+						onBlur={field.handleBlur}
+						error={field.state.meta.errors[0]?.message}
+						placeholder="My Organization"
+					/>
+				)}
+			</form.Field>
 
-			<div>
-				<form.Field name="slug">
-					{(field) => (
-						<div className="space-y-2">
-							<Label htmlFor={field.name}>Slug</Label>
-							<Input
-								id={field.name}
-								name={field.name}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-								placeholder="my-organization"
-							/>
-							<p className="text-muted-foreground text-sm">
-								Used in URLs and identifiers
-							</p>
-							{field.state.meta.errors.map((error) => (
-								<p key={error?.message} className="text-red-500 text-sm">
-									{error?.message}
-								</p>
-							))}
-						</div>
-					)}
-				</form.Field>
-			</div>
+			<form.Field name="slug">
+				{(field) => (
+					<FormField
+						label="Slug"
+						value={field.state.value}
+						onChange={field.handleChange}
+						onBlur={field.handleBlur}
+						error={field.state.meta.errors[0]?.message}
+						hint="Used in URLs and identifiers"
+						placeholder="my-organization"
+					/>
+				)}
+			</form.Field>
 
 			<form.Subscribe>
 				{(state) => (

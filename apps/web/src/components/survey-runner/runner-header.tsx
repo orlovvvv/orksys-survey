@@ -10,16 +10,18 @@ export function RunnerHeader() {
 	);
 
 	return (
-		<header className="border-neutral-200 border-b bg-white px-6 py-4">
+		<header className="border-border border-b bg-card px-6 py-4">
 			<div className="mx-auto max-w-2xl">
-				<h1 className="font-semibold text-neutral-900 text-xl">
+				<h1 className="font-semibold text-foreground text-xl">
 					{survey.title}
 				</h1>
 				{survey.description && (
-					<p className="mt-1 text-neutral-600 text-sm">{survey.description}</p>
+					<p className="mt-1 text-muted-foreground text-sm">
+						{survey.description}
+					</p>
 				)}
 				{settings?.showQuestionNumbers && (
-					<p className="mt-2 text-neutral-500 text-xs">
+					<p className="mt-2 text-muted-foreground text-xs">
 						Question {currentVisibleIndex + 1} of {visibleQuestions.length}
 					</p>
 				)}

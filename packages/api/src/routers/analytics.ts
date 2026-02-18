@@ -455,7 +455,7 @@ export const analyticsRouter = {
 				if (!answersByResponse.has(a.responseId)) {
 					answersByResponse.set(a.responseId, new Map());
 				}
-				answersByResponse.get(a.responseId)!.set(a.questionId, a.value);
+				answersByResponse.get(a.responseId)?.set(a.questionId, a.value);
 			}
 
 			if (input.format === "json") {

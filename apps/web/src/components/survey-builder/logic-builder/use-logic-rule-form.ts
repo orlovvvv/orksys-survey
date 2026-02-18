@@ -4,8 +4,12 @@ import { toast } from "sonner";
 
 import { orpc } from "@/utils/orpc";
 import { needsConditionValue, needsTargetQuestion } from "./constants";
-import { logicRuleSchema, type LogicRuleFormData } from "./logic-rule-schema";
-import type { LogicRuleFormProps, LogicRuleOperator, LogicRuleAction } from "./types";
+import { type LogicRuleFormData, logicRuleSchema } from "./logic-rule-schema";
+import type {
+	LogicRuleAction,
+	LogicRuleFormProps,
+	LogicRuleOperator,
+} from "./types";
 
 export interface LogicRuleValidationResult {
 	valid: boolean;
@@ -25,7 +29,10 @@ export function useLogicRuleForm({
 	sourceQuestionId,
 	existingRule,
 	onSuccess,
-}: Pick<LogicRuleFormProps, "surveyId" | "sourceQuestionId" | "existingRule" | "onSuccess">): UseLogicRuleFormResult {
+}: Pick<
+	LogicRuleFormProps,
+	"surveyId" | "sourceQuestionId" | "existingRule" | "onSuccess"
+>): UseLogicRuleFormResult {
 	const createMutation = useMutation(
 		orpc.logicRule.create.mutationOptions({
 			onSuccess: () => {
@@ -59,13 +66,15 @@ export function useLogicRuleForm({
 
 	const form = useForm({
 		defaultValues: {
-			operator: ((existingRule?.operator as string) || "equals") as LogicRuleFormData["operator"],
+			operator: ((existingRule?.operator as string) ||
+				"equals") as LogicRuleFormData["operator"],
 			conditionValue:
 				existingRule?.conditionValue !== null &&
 				existingRule?.conditionValue !== undefined
 					? String(existingRule.conditionValue)
 					: "",
-			action: ((existingRule?.action as string) || "jump_to") as LogicRuleFormData["action"],
+			action: ((existingRule?.action as string) ||
+				"jump_to") as LogicRuleFormData["action"],
 			targetQuestionId: existingRule?.targetQuestionId || "",
 		},
 		onSubmit: async ({ value }) => {

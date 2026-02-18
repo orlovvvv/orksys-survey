@@ -7,7 +7,6 @@ import {
 	CardContent,
 	CardDescription,
 	CardHeader,
-	CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -68,21 +67,21 @@ export function AnalyticsOverview({
 			value: summary?.totalResponses ?? 0,
 			description: `${summary?.completeResponses ?? 0} complete, ${summary?.partialResponses ?? 0} partial`,
 			icon: FileText,
-			color: "text-blue-500",
+			color: "text-primary",
 		},
 		{
 			title: "Completion Rate",
 			value: `${summary?.completionRate ?? 0}%`,
 			description: "Percentage of completed surveys",
 			icon: PieChart,
-			color: "text-green-500",
+			color: "text-success",
 		},
 		{
 			title: "Avg. Completion Time",
 			value: formatDuration(summary?.averageTimeSeconds ?? null),
 			description: "Average time to complete",
 			icon: Clock,
-			color: "text-orange-500",
+			color: "text-warning",
 		},
 		{
 			title: "Response Quality",
@@ -96,10 +95,10 @@ export function AnalyticsOverview({
 			icon: Users,
 			color:
 				(summary?.completionRate ?? 0) >= 80
-					? "text-green-500"
+					? "text-success"
 					: (summary?.completionRate ?? 0) >= 50
-						? "text-yellow-500"
-						: "text-red-500",
+						? "text-warning"
+						: "text-destructive",
 		},
 	];
 

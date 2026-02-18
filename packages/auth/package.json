@@ -18,6 +18,7 @@
 		"@polar-sh/sdk": "catalog:",
 		"better-auth": "catalog:",
 		"dotenv": "catalog:",
+		"resend": "^4.5.1",
 		"zod": "catalog:"
 	},
 	"devDependencies": {

@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import { AppHeader } from "@/components/app-header";
 
 export default function AppLayout({
 	children,
@@ -7,7 +7,7 @@ export default function AppLayout({
 }>) {
 	return (
 		<div className="grid h-svh grid-rows-[auto_1fr]">
-			<Header />
+			<AppHeader />
 			{children}
 		</div>
 	);

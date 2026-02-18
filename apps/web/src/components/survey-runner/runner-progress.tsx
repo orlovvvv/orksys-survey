@@ -21,7 +21,7 @@ export function RunnerProgress() {
 	return (
 		<div className="px-6 py-3">
 			<div className="mx-auto max-w-2xl">
-				<div className="mb-1.5 flex items-center justify-between text-neutral-500 text-xs">
+				<div className="mb-1.5 flex items-center justify-between text-muted-foreground text-xs">
 					<span>Progress</span>
 					<span>{Math.round(progress)}%</span>
 				</div>

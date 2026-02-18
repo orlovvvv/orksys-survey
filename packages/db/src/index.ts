@@ -20,11 +20,10 @@ export type LogicRule = InferSelectModel<typeof logicRule>;
 export type Response = InferSelectModel<typeof response>;
 export type Answer = InferSelectModel<typeof answer>;
 
-// Export question types config
-export * from "./question-types";
-
 // Re-export drizzle-orm utilities
 export { and, eq, or } from "drizzle-orm";
+// Export question types config
+export * from "./question-types";
 // Re-export schema for direct access
 export * as schema from "./schema";
 // Re-export interfaces and enums from schema

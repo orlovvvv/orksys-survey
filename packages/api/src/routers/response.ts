@@ -1,4 +1,5 @@
 import { db } from "@orksys-survey/db";
+import { organization } from "@orksys-survey/db/schema/organization";
 import {
 	answer,
 	logicRule,
@@ -78,33 +79,53 @@ async function verifySurveyAccess(
 export const responseRouter = {
 	// PUBLIC - Get published survey for runner
 	getSurveyForRunner: publicProcedure
-		.input(z.object({ slug: z.string() }))
+		.input(z.object({ orgSlug: z.string(), surveySlug: z.string() }))
 		.handler(async ({ input }) => {
 			const surveyResult = await db
-				.select()
+				.select({
+					survey: survey,
+					organization: {
+						id: organization.id,
+						name: organization.name,
+						slug: organization.slug,
+						logo: organization.logo,
+					},
+				})
 				.from(survey)
-				.where(and(eq(survey.slug, input.slug), eq(survey.status, "published")))
+				.innerJoin(organization, eq(survey.organizationId, organization.id))
+				.where(
+					and(
+						eq(survey.slug, input.surveySlug),
+						eq(organization.slug, input.orgSlug),
+						eq(survey.status, "published"),
+					),
+				)
 				.limit(1);
 
 			if (!surveyResult[0]) {
 				throw new Error("Survey not found or not published");
 			}
 
+			const surveyData = surveyResult[0].survey;
+
 			// Get questions and logic rules for the survey in parallel
 			const [questions, logicRules] = await Promise.all([
 				db
 					.select()
 					.from(question)
-					.where(eq(question.surveyId, surveyResult[0].id))
+					.where(eq(question.surveyId, surveyData.id))
 					.orderBy(question.order),
 				db
 					.select()
 					.from(logicRule)
-					.where(eq(logicRule.surveyId, surveyResult[0].id)),
+					.where(eq(logicRule.surveyId, surveyData.id)),
 			]);
 
 			return {
-				survey: surveyResult[0],
+				survey: {
+					...surveyData,
+					organization: surveyResult[0].organization,
+				},
 				questions,
 				logicRules,
 			};

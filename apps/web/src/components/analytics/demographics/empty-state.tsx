@@ -1,7 +1,7 @@
 "use client";
 
 import { Globe } from "lucide-react";
-
+import { EmptyState } from "@/components/empty-state";
 import {
 	Card,
 	CardContent,
@@ -9,7 +9,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { EmptyState } from "@/components/empty-state";
 
 interface DemographicsEmptyStateProps {
 	title: string;

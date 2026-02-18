@@ -1,14 +1,14 @@
 import { Section } from "../ui";
 import { BrandSection } from "./brand-section";
+import { footerLinkGroups, legalLinks } from "./config";
+import { LegalSection } from "./legal-section";
 import { LinkGroupComponent } from "./link-group";
 import { NewsletterSection } from "./newsletter-section";
-import { LegalSection } from "./legal-section";
-import { footerLinkGroups, legalLinks } from "./config";
 
 export function Footer() {
 	return (
 		<Section size="default" className="!py-0 !pb-6">
-			<div className="rounded-[40px] bg-neutral-950 px-6 py-16 md:px-12 md:py-20">
+			<div className="rounded-[40px] bg-zinc-900 px-6 py-16 md:px-12 md:py-20">
 				<div className="grid gap-12 lg:grid-cols-2">
 					{/* Left Column - Brand & Newsletter */}
 					<div className="space-y-8">

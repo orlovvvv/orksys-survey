@@ -2,8 +2,23 @@
 
 import { CheckCircle2, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { Route } from "next";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+
+interface SurveyOrganization {
+	id: string;
+	name: string;
+	slug: string;
+	logo: string | null;
+}
+
+interface SurveyWithOrg {
+	slug: string;
+	settings?: { thankYouMessage?: string; redirectUrl?: string } | null;
+	organization?: SurveyOrganization;
+}
+
 import {
 	Card,
 	CardContent,
@@ -23,6 +38,9 @@ export function RunnerComplete({ message, redirectUrl }: RunnerCompleteProps) {
 	const { survey } = useSurveyRunner();
 	const router = useRouter();
 	const [countdown, setCountdown] = useState(5);
+
+	const orgSlug = (survey as SurveyWithOrg).organization?.slug;
+	const surveySlug = survey.slug;
 
 	// Use props if provided, otherwise fall back to survey settings
 	const thankYouMessage =
@@ -60,17 +78,17 @@ export function RunnerComplete({ message, redirectUrl }: RunnerCompleteProps) {
 			<div className="mx-auto w-full max-w-lg">
 				<Card>
 					<CardHeader className="text-center">
-						<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100">
-							<CheckCircle2 className="size-8 text-green-600" />
+						<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success/10">
+							<CheckCircle2 className="size-8 text-success" />
 						</div>
 						<CardTitle className="text-2xl">Survey Complete</CardTitle>
 					</CardHeader>
 
 					<CardContent className="text-center">
-						<p className="text-neutral-700">{thankYouMessage}</p>
+						<p className="text-muted-foreground">{thankYouMessage}</p>
 
 						{finalRedirectUrl && countdown > 0 && (
-							<p className="mt-4 text-neutral-500 text-sm">
+							<p className="mt-4 text-muted-foreground text-sm">
 								Redirecting in {countdown} seconds...
 							</p>
 						)}
@@ -91,7 +109,10 @@ export function RunnerComplete({ message, redirectUrl }: RunnerCompleteProps) {
 						<Button
 							variant="outline"
 							className="w-full"
-							onClick={() => router.push(`/s/${survey.slug}`)}
+							onClick={() =>
+								orgSlug && router.push(`/s/${orgSlug}/${surveySlug}` as Route)
+							}
+							disabled={!orgSlug}
 						>
 							Back to Survey
 						</Button>

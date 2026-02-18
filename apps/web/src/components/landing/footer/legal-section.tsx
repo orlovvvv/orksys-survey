@@ -6,9 +6,9 @@ interface LegalSectionProps {
 
 export function LegalSection({ links }: LegalSectionProps) {
 	return (
-		<div className="mt-12 border-neutral-800 border-t pt-8">
+		<div className="mt-12 border-zinc-700 border-t pt-8">
 			<div className="flex flex-col flex-wrap justify-between gap-4 sm:flex-row sm:items-center">
-				<p className="text-neutral-500 text-sm">
+				<p className="text-sm text-zinc-400">
 					© 2025 Handshake. All rights reserved.
 				</p>
 				<div className="flex gap-6">
@@ -16,7 +16,7 @@ export function LegalSection({ links }: LegalSectionProps) {
 						<a
 							key={link.label}
 							href={link.href}
-							className="text-neutral-500 text-sm transition-colors hover:text-neutral-400"
+							className="text-sm text-zinc-400 transition-colors hover:text-zinc-200"
 						>
 							{link.label}
 						</a>

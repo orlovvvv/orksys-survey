@@ -5,10 +5,7 @@ import { Input } from "../../ui/input";
 export function NewsletterSection() {
 	return (
 		<div className="space-y-3">
-			<label
-				htmlFor="newsletter"
-				className="font-medium text-neutral-300 text-sm"
-			>
+			<label htmlFor="newsletter" className="font-medium text-sm text-zinc-200">
 				Subscribe to our newsletter
 			</label>
 			<div className="flex gap-2">
@@ -16,7 +13,7 @@ export function NewsletterSection() {
 					id="newsletter"
 					type="email"
 					placeholder="Enter your email"
-					className="border-neutral-800 bg-neutral-900 text-white placeholder:text-neutral-500"
+					className="border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-400"
 				/>
 				<Button
 					type="submit"

@@ -8,9 +8,35 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
+import { Resend } from "resend";
 
 import { polarClient } from "./lib/payments";
 import { ac, admin, member, owner } from "./permissions";
+
+// Initialize Resend client if API key is configured
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+
+// Email sending helper (void to avoid timing attacks)
+function sendEmail({
+	to,
+	subject,
+	html,
+}: {
+	to: string;
+	subject: string;
+	html: string;
+}) {
+	if (!resend) {
+		console.warn("Email not sent: RESEND_API_KEY not configured");
+		return;
+	}
+	void resend.emails.send({
+		from: env.EMAIL_FROM,
+		to,
+		subject,
+		html,
+	});
+}
 
 // Only include Polar plugin if access token is configured and client exists
 const polarPlugin =
@@ -59,7 +85,34 @@ export const auth = betterAuth({
 	],
 	emailAndPassword: {
 		enabled: true,
+		requireEmailVerification: false,
+		// Send password reset email
+		...(resend
+			? {
+					async sendResetPassword({ user, url }) {
+						sendEmail({
+							to: user.email,
+							subject: "Reset your password",
+							html: `Click <a href="${url}">here</a> to reset your password.`,
+						});
+					},
+				}
+			: {}),
 	},
+	// Email verification configuration
+	...(resend
+		? {
+				emailVerification: {
+					async sendVerificationEmail({ user, url }) {
+						sendEmail({
+							to: user.email,
+							subject: "Verify your email address",
+							html: `Click <a href="${url}">here</a> to verify your email address.`,
+						});
+					},
+				},
+			}
+		: {}),
 	plugins: [
 		organization({
 			ac,

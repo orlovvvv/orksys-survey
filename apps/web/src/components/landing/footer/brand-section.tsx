@@ -10,7 +10,7 @@ export function BrandSection() {
 				<span className="font-bold text-white text-xl">Handshake</span>
 			</div>
 
-			<p className="max-w-md text-neutral-400">
+			<p className="max-w-md text-zinc-300">
 				Create beautiful, effective surveys in minutes. Understand your
 				customers better and make data-driven decisions.
 			</p>

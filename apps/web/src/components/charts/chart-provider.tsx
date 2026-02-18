@@ -1,21 +1,5 @@
 "use client";
 
-import type * as React from "react";
-import {
-	Bar,
-	CartesianGrid,
-	Cell,
-	Line,
-	Pie,
-	BarChart as RechartsBarChart,
-	LineChart as RechartsLineChart,
-	PieChart as RechartsPieChart,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts";
-
 import { cn } from "@/lib/utils";
 
 // Chart colors using CSS variables for theme consistency

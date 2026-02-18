@@ -1,4 +1,6 @@
 import { db } from "@orksys-survey/db";
+import { user } from "@orksys-survey/db/schema/auth";
+import { organization } from "@orksys-survey/db/schema/organization";
 import { survey } from "@orksys-survey/db/schema/survey";
 import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { z } from "zod";
@@ -88,8 +90,24 @@ export const surveyRouter = {
 
 			const [surveys, totalResult] = await Promise.all([
 				db
-					.select()
+					.select({
+						survey: survey,
+						organization: {
+							id: organization.id,
+							name: organization.name,
+							slug: organization.slug,
+							logo: organization.logo,
+						},
+						owner: {
+							id: user.id,
+							name: user.name,
+							email: user.email,
+							image: user.image,
+						},
+					})
 					.from(survey)
+					.leftJoin(organization, eq(survey.organizationId, organization.id))
+					.leftJoin(user, eq(survey.userId, user.id))
 					.where(and(...conditions))
 					.orderBy(desc(survey.createdAt))
 					.limit(limit)
@@ -101,7 +119,11 @@ export const surveyRouter = {
 			]);
 
 			return {
-				data: surveys,
+				data: surveys.map((s) => ({
+					...s.survey,
+					organization: s.organization,
+					owner: s.owner,
+				})),
 				pagination: {
 					page,
 					limit,
@@ -116,8 +138,24 @@ export const surveyRouter = {
 		.input(z.object({ id: z.string() }))
 		.handler(async ({ input, context }) => {
 			const result = await db
-				.select()
+				.select({
+					survey: survey,
+					organization: {
+						id: organization.id,
+						name: organization.name,
+						slug: organization.slug,
+						logo: organization.logo,
+					},
+					owner: {
+						id: user.id,
+						name: user.name,
+						email: user.email,
+						image: user.image,
+					},
+				})
 				.from(survey)
+				.leftJoin(organization, eq(survey.organizationId, organization.id))
+				.leftJoin(user, eq(survey.userId, user.id))
 				.where(
 					and(
 						eq(survey.id, input.id),
@@ -130,39 +168,68 @@ export const surveyRouter = {
 				throw new Error("Survey not found");
 			}
 
-			return result[0];
+			return {
+				...result[0].survey,
+				organization: result[0].organization,
+				owner: result[0].owner,
+			};
 		}),
 
 	// Get published survey by slug (public - for survey runner)
 	getBySlug: publicProcedure
-		.input(z.object({ slug: z.string() }))
+		.input(z.object({ orgSlug: z.string(), surveySlug: z.string() }))
 		.handler(async ({ input }) => {
 			const result = await db
-				.select()
+				.select({
+					survey: survey,
+					organization: {
+						id: organization.id,
+						name: organization.name,
+						slug: organization.slug,
+						logo: organization.logo,
+					},
+				})
 				.from(survey)
-				.where(and(eq(survey.slug, input.slug), eq(survey.status, "published")))
+				.innerJoin(organization, eq(survey.organizationId, organization.id))
+				.where(
+					and(
+						eq(survey.slug, input.surveySlug),
+						eq(organization.slug, input.orgSlug),
+						eq(survey.status, "published"),
+					),
+				)
 				.limit(1);
 
 			if (!result[0]) {
 				throw new Error("Survey not found");
 			}
 
-			return result[0];
+			return {
+				...result[0].survey,
+				organization: result[0].organization,
+			};
 		}),
 
 	// Create new survey
 	create: adminProcedure
 		.input(surveyCreateSchema)
 		.handler(async ({ input, context }) => {
-			// Check for duplicate slug
+			// Check for duplicate slug within the organization
 			const existing = await db
 				.select()
 				.from(survey)
-				.where(eq(survey.slug, input.slug))
+				.where(
+					and(
+						eq(survey.slug, input.slug),
+						eq(survey.organizationId, context.activeOrganization.id),
+					),
+				)
 				.limit(1);
 
 			if (existing[0]) {
-				throw new Error("A survey with this slug already exists");
+				throw new Error(
+					"A survey with this slug already exists in your organization",
+				);
 			}
 
 			const id = generateId();
@@ -205,16 +272,23 @@ export const surveyRouter = {
 				throw new Error("Survey not found");
 			}
 
-			// Check for duplicate slug if changing
+			// Check for duplicate slug if changing (within same organization)
 			if (input.data.slug && input.data.slug !== existing[0].slug) {
 				const duplicateSlug = await db
 					.select()
 					.from(survey)
-					.where(eq(survey.slug, input.data.slug))
+					.where(
+						and(
+							eq(survey.slug, input.data.slug),
+							eq(survey.organizationId, context.activeOrganization.id),
+						),
+					)
 					.limit(1);
 
 				if (duplicateSlug[0]) {
-					throw new Error("A survey with this slug already exists");
+					throw new Error(
+						"A survey with this slug already exists in your organization",
+					);
 				}
 			}
 

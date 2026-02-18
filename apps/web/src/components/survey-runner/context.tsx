@@ -6,26 +6,27 @@ import type {
 	Survey,
 	SurveySettings,
 } from "@orksys-survey/db";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import {
-	createContext,
-	useCallback,
-	useContext,
-	useMemo,
-	useState,
-} from "react";
-import { toast } from "sonner";
-import { client } from "@/utils/orpc";
-import { useFingerprint } from "./hooks/use-fingerprint";
-import { useLogicEvaluator } from "./hooks/use-logic-evaluator";
-import { validateAnswer } from "./utils/validation";
+import { createContext, useContext } from "react";
+
+interface SurveyOrganization {
+	id: string;
+	name: string;
+	slug: string;
+	logo: string | null;
+}
+
+interface SurveyWithOrg extends Omit<Survey, "organization"> {
+	organization: SurveyOrganization;
+}
+
+import { useRunnerActions } from "./hooks/use-runner-actions";
+import { useRunnerState } from "./hooks/use-runner-state";
 
 export type AnswerValue = unknown;
 
 interface SurveyRunnerContextValue {
 	// Survey data
-	survey: Survey;
+	survey: Survey | SurveyWithOrg;
 	questions: Question[];
 	settings: SurveySettings | null;
 	logicRules: LogicRule[];
@@ -73,7 +74,7 @@ export function useSurveyRunner() {
 }
 
 interface SurveyRunnerProviderProps {
-	survey: Survey;
+	survey: Survey | SurveyWithOrg;
 	questions: Question[];
 	logicRules?: LogicRule[];
 	children: React.ReactNode;
@@ -82,208 +83,54 @@ interface SurveyRunnerProviderProps {
 
 export function SurveyRunnerProvider({
 	survey,
-	questions: allQuestions,
+	questions,
 	logicRules = [],
 	children,
 	onComplete,
 }: SurveyRunnerProviderProps) {
-	const router = useRouter();
-	const fingerprint = useFingerprint();
-	const [answers, setAnswers] = useState<Map<string, AnswerValue>>(new Map());
-	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-	const [currentError, setCurrentError] = useState<string | null>(null);
-	const [isComplete, setIsComplete] = useState(false);
-
-	// Sort questions by order
-	const sortedQuestions = useMemo(
-		() => [...allQuestions].sort((a, b) => a.order - b.order),
-		[allQuestions],
-	);
-
-	// Evaluate logic to determine visibility
-	const { visibleQuestionIds } = useLogicEvaluator({
-		rules: logicRules,
-		answers,
-		questions: sortedQuestions,
-		currentQuestionId: sortedQuestions[currentQuestionIndex]?.id,
-	});
-
-	// Get visible questions
-	const visibleQuestions = useMemo(
-		() => sortedQuestions.filter((q) => visibleQuestionIds.has(q.id)),
-		[sortedQuestions, visibleQuestionIds],
-	);
-
-	// Get current visible question
-	const currentVisibleIndex = useMemo(() => {
-		const currentId = sortedQuestions[currentQuestionIndex]?.id;
-		if (!currentId) return 0;
-		return visibleQuestions.findIndex((q) => q.id === currentId);
-	}, [sortedQuestions, currentQuestionIndex, visibleQuestions]);
-
-	const currentQuestion = visibleQuestions[currentVisibleIndex];
-
-	// Navigation state
-	const canGoBack = currentVisibleIndex > 0;
-	const canGoNext = currentVisibleIndex < visibleQuestions.length - 1;
-
-	// Submit mutation
-	const submitMutation = useMutation({
-		mutationFn: async () => {
-			const answersArray = Array.from(answers.entries()).map(
-				([questionId, value]) => ({
-					questionId,
-					value,
-				}),
-			);
-
-			return client.response.submit({
-				surveyId: survey.id,
-				fingerprint: fingerprint ?? undefined,
-				answers: answersArray,
-				isComplete: true,
-				metadata: {
-					userAgent: navigator.userAgent,
-					language: navigator.language,
-					timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-				},
-			});
-		},
-		onSuccess: () => {
-			setIsComplete(true);
-			if (onComplete) {
-				onComplete();
-			} else {
-				// Navigate to complete page
-				const completeUrl = `/s/${survey.slug}/complete`;
-				const settings = survey.settings as SurveySettings | null;
-				if (settings?.thankYouMessage || settings?.redirectUrl) {
-					const params = new URLSearchParams();
-					if (settings.thankYouMessage) {
-						params.set("message", settings.thankYouMessage);
-					}
-					if (settings.redirectUrl) {
-						params.set("redirectUrl", settings.redirectUrl);
-					}
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					router.push(`${completeUrl}?${params.toString()}` as any);
-				} else {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					router.push(completeUrl as any);
-				}
-			}
-		},
-		onError: (error) => {
-			toast.error(error.message || "Failed to submit response");
-		},
+	// State management
+	const state = useRunnerState({
+		survey,
+		questions,
+		logicRules,
 	});
 
 	// Actions
-	const setAnswer = useCallback((questionId: string, value: AnswerValue) => {
-		setAnswers((prev) => {
-			const next = new Map(prev);
-			next.set(questionId, value);
-			return next;
-		});
-		setCurrentError(null);
-	}, []);
-
-	const goNext = useCallback(() => {
-		if (!currentQuestion) return;
-
-		// Validate current question
-		const answer = answers.get(currentQuestion.id);
-		const error = validateAnswer(currentQuestion, answer);
-		if (error) {
-			setCurrentError(error);
-			return;
-		}
-
-		if (canGoNext) {
-			const nextVisibleQuestion = visibleQuestions[currentVisibleIndex + 1];
-			if (nextVisibleQuestion) {
-				const nextIndex = sortedQuestions.findIndex(
-					(q) => q.id === nextVisibleQuestion.id,
-				);
-				setCurrentQuestionIndex(nextIndex);
-			}
-		}
-	}, [
-		currentQuestion,
-		answers,
-		canGoNext,
-		visibleQuestions,
-		currentVisibleIndex,
-		sortedQuestions,
-	]);
-
-	const goBack = useCallback(() => {
-		if (!canGoBack) return;
-
-		const prevVisibleQuestion = visibleQuestions[currentVisibleIndex - 1];
-		if (prevVisibleQuestion) {
-			const prevIndex = sortedQuestions.findIndex(
-				(q) => q.id === prevVisibleQuestion.id,
-			);
-			setCurrentQuestionIndex(prevIndex);
-		}
-	}, [canGoBack, visibleQuestions, currentVisibleIndex, sortedQuestions]);
-
-	const submit = useCallback(async () => {
-		if (!currentQuestion) return;
-
-		// Validate current question
-		const answer = answers.get(currentQuestion.id);
-		const error = validateAnswer(currentQuestion, answer);
-		if (error) {
-			setCurrentError(error);
-			return;
-		}
-
-		await submitMutation.mutateAsync();
-	}, [currentQuestion, answers, submitMutation]);
-
-	const clearError = useCallback(() => {
-		setCurrentError(null);
-	}, []);
-
-	const displayMode =
-		(survey.settings as SurveySettings | null)?.displayMode ?? "one_at_a_time";
-
-	const validateAllQuestions = useCallback(() => {
-		const errors = new Map<string, string>();
-		for (const question of visibleQuestions) {
-			const answer = answers.get(question.id);
-			const error = validateAnswer(question, answer);
-			if (error) {
-				errors.set(question.id, error);
-			}
-		}
-		return errors;
-	}, [visibleQuestions, answers]);
+	const actions = useRunnerActions({
+		survey,
+		visibleQuestions: state.visibleQuestions,
+		sortedQuestions: state.sortedQuestions,
+		currentQuestionIndex: state.currentQuestionIndex,
+		answers: state.answers,
+		fingerprint: state.fingerprint,
+		setAnswers: state.setAnswers,
+		setCurrentQuestionIndex: state.setCurrentQuestionIndex,
+		setIsComplete: state.setIsComplete,
+		onComplete,
+	});
 
 	const value: SurveyRunnerContextValue = {
-		survey,
-		questions: sortedQuestions,
-		settings: survey.settings as SurveySettings | null,
-		logicRules,
-		displayMode,
-		answers,
-		currentQuestionIndex,
-		visibleQuestionIds,
-		visibleQuestions,
-		canGoBack,
-		canGoNext,
-		isComplete,
-		isSubmitting: submitMutation.isPending,
-		setAnswer,
-		goNext,
-		goBack,
-		submit,
-		validateAllQuestions,
-		fingerprint,
-		currentError,
-		clearError,
+		survey: state.survey,
+		questions: state.questions,
+		settings: state.settings,
+		logicRules: state.logicRules as LogicRule[],
+		displayMode: state.displayMode,
+		answers: state.answers,
+		currentQuestionIndex: state.currentQuestionIndex,
+		visibleQuestionIds: state.visibleQuestionIds,
+		visibleQuestions: state.visibleQuestions,
+		canGoBack: state.canGoBack,
+		canGoNext: state.canGoNext,
+		isComplete: state.isComplete,
+		isSubmitting: actions.isSubmitting,
+		setAnswer: actions.setAnswer,
+		goNext: actions.goNext,
+		goBack: actions.goBack,
+		submit: actions.submit,
+		validateAllQuestions: actions.validateAllQuestions,
+		fingerprint: state.fingerprint,
+		currentError: actions.currentError,
+		clearError: actions.clearError,
 	};
 
 	return (

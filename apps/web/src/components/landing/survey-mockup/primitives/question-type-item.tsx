@@ -19,16 +19,16 @@ export function QuestionTypeItem({
 				"group flex cursor-move items-center gap-3 rounded-xl border p-3 transition-colors",
 				isActive
 					? "border-primary/20 bg-primary/5"
-					: "border-transparent bg-white hover:border-neutral-200 hover:bg-neutral-50",
+					: "border-transparent bg-card hover:border-border hover:bg-muted",
 			)}
 		>
 			<Icon
 				className={cn(
-					"h-5 w-5 text-neutral-400 transition-colors",
+					"h-5 w-5 text-muted-foreground transition-colors",
 					isActive && "group-hover:text-primary",
 				)}
 			/>
-			<span className="font-medium text-neutral-700 text-sm">{label}</span>
+			<span className="font-medium text-muted-foreground text-sm">{label}</span>
 		</div>
 	);
 }

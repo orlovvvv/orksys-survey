@@ -7,7 +7,7 @@ import { FeatureCard } from "./feature-card";
 export function CoreFeatures() {
 	return (
 		<Section>
-			<div className="relative overflow-hidden rounded-[32px] bg-white p-6 ring-1 ring-neutral-200 md:p-8">
+			<div className="relative overflow-hidden rounded-[32px] bg-card p-6 ring-1 ring-border md:p-8">
 				<SectionHeader
 					label="Platform"
 					title="Everything you need to understand your audience"

@@ -17,10 +17,10 @@ function OneAtATimeNavigation() {
 	} = useSurveyRunner();
 
 	return (
-		<div className="border-neutral-200 border-t bg-white px-6 py-4">
+		<div className="border-border border-t bg-card px-6 py-4">
 			<div className="mx-auto max-w-2xl space-y-3">
 				{currentError && (
-					<div className="rounded-lg bg-red-50 px-4 py-2 text-center text-red-600 text-sm">
+					<div className="rounded-lg bg-destructive/10 px-4 py-2 text-center text-destructive text-sm">
 						{currentError}
 					</div>
 				)}
@@ -29,17 +29,14 @@ function OneAtATimeNavigation() {
 						variant="ghost"
 						onClick={goBack}
 						disabled={!canGoBack}
-						className="text-neutral-600"
+						className="text-muted-foreground"
 					>
 						<ArrowLeft className="mr-2 h-4 w-4" />
 						Back
 					</Button>
 
 					{canGoNext ? (
-						<Button
-							onClick={goNext}
-							className="bg-neutral-900 hover:bg-neutral-800"
-						>
+						<Button onClick={goNext} className="bg-primary hover:bg-primary/90">
 							Next
 							<ArrowRight className="ml-2 h-4 w-4" />
 						</Button>
@@ -47,7 +44,7 @@ function OneAtATimeNavigation() {
 						<Button
 							onClick={submit}
 							disabled={isSubmitting}
-							className="bg-neutral-900 hover:bg-neutral-800"
+							className="bg-primary hover:bg-primary/90"
 						>
 							{isSubmitting ? (
 								<>
@@ -89,10 +86,10 @@ function ListModeNavigation() {
 		: null;
 
 	return (
-		<div className="border-neutral-200 border-t bg-white px-6 py-4">
+		<div className="border-border border-t bg-card px-6 py-4">
 			<div className="mx-auto max-w-2xl space-y-3">
 				{errorMessage && (
-					<div className="rounded-lg bg-red-50 px-4 py-2 text-center text-red-600 text-sm">
+					<div className="rounded-lg bg-destructive/10 px-4 py-2 text-center text-destructive text-sm">
 						{errorMessage}
 					</div>
 				)}
@@ -100,7 +97,7 @@ function ListModeNavigation() {
 					<Button
 						onClick={handleSubmit}
 						disabled={isSubmitting}
-						className="bg-neutral-900 hover:bg-neutral-800"
+						className="bg-primary hover:bg-primary/90"
 					>
 						{isSubmitting ? (
 							<>

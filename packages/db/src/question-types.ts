@@ -12,7 +12,10 @@ export interface QuestionTypeConfig {
 	description: string;
 }
 
-export const QUESTION_TYPE_CONFIG: Record<Question["type"], QuestionTypeConfig> = {
+export const QUESTION_TYPE_CONFIG: Record<
+	Question["type"],
+	QuestionTypeConfig
+> = {
 	text: {
 		type: "text",
 		label: "Short Text",
