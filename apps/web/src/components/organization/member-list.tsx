@@ -18,16 +18,20 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MemberActionsMenu } from "./member-actions-menu";
 import { RoleBadge } from "./role-badge";
-import type { Member } from "./types";
+import type { Member, MemberRole } from "./types";
 
 interface MemberListProps {
 	members: Member[];
 	currentUserId: string;
 	isLoading?: boolean;
 	onRemoveMember: (memberIdOrEmail: string) => void;
-	onUpdateRole: (memberId: string, role: "owner" | "admin" | "member") => void;
-	currentUserRole: "owner" | "admin" | "member";
+	onUpdateRole: (memberId: string, role: MemberRole) => void;
+	onLeaveOrganization: () => void;
+	onTransferOwnership?: (memberId: string) => void;
+	currentUserRole: MemberRole;
 	isRemovingMember?: boolean;
+	isLeaving?: boolean;
+	isTransferringOwnership?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -39,9 +43,7 @@ function getInitials(name: string): string {
 		.slice(0, 2);
 }
 
-function canCurrentUserManage(
-	currentUserRole: "owner" | "admin" | "member",
-): boolean {
+function canCurrentUserManage(currentUserRole: MemberRole): boolean {
 	return currentUserRole === "owner" || currentUserRole === "admin";
 }
 
@@ -60,15 +62,25 @@ function MobileMemberCard({
 	currentUserId,
 	currentUserRole,
 	isRemovingMember,
+	isLeaving,
+	isOnlyOwner,
 	onRemoveMember,
 	onUpdateRole,
+	onLeaveOrganization,
+	onTransferOwnership,
+	isTransferringOwnership,
 }: {
 	member: Member;
 	currentUserId: string;
-	currentUserRole: "owner" | "admin" | "member";
+	currentUserRole: MemberRole;
 	isRemovingMember?: boolean;
+	isLeaving?: boolean;
+	isOnlyOwner: boolean;
 	onRemoveMember: (memberIdOrEmail: string) => void;
-	onUpdateRole: (memberId: string, role: "owner" | "admin" | "member") => void;
+	onUpdateRole: (memberId: string, role: MemberRole) => void;
+	onLeaveOrganization: () => void;
+	onTransferOwnership?: (memberId: string) => void;
+	isTransferringOwnership?: boolean;
 }) {
 	const isOwner = member.role === "owner";
 	const isSelf = member.userId === currentUserId;
@@ -86,7 +98,14 @@ function MobileMemberCard({
 							<AvatarFallback>{getInitials(member.user.name)}</AvatarFallback>
 						</Avatar>
 						<div>
-							<p className="font-medium">{member.user.name}</p>
+							<p className="font-medium">
+								{member.user.name}
+								{isSelf && (
+									<span className="ml-1 font-normal text-muted-foreground">
+										(you)
+									</span>
+								)}
+							</p>
 							<p className="text-muted-foreground text-sm">
 								{member.user.email}
 							</p>
@@ -104,13 +123,20 @@ function MobileMemberCard({
 					<MemberActionsMenu
 						memberId={member.id}
 						memberEmail={member.user.email}
+						memberName={member.user.name}
 						currentRole={member.role}
+						currentUserRole={currentUserRole}
 						isOwner={isOwner}
 						isSelf={isSelf}
+						isOnlyOwner={isOnlyOwner}
 						canManage={canManage}
 						onRemoveMember={onRemoveMember}
 						onUpdateRole={onUpdateRole}
+						onLeaveOrganization={onLeaveOrganization}
+						onTransferOwnership={onTransferOwnership}
 						isRemoving={isRemovingMember}
+						isLeaving={isLeaving}
+						isTransferringOwnership={isTransferringOwnership}
 					/>
 				</div>
 			</CardContent>
@@ -124,11 +150,20 @@ export function MemberList({
 	isLoading = false,
 	onRemoveMember,
 	onUpdateRole,
+	onLeaveOrganization,
+	onTransferOwnership,
 	currentUserRole,
 	isRemovingMember = false,
+	isLeaving = false,
+	isTransferringOwnership = false,
 }: MemberListProps) {
 	const isMobile = useIsMobile();
 	const canManage = canCurrentUserManage(currentUserRole);
+
+	// Check if current user is the only owner
+	const ownerCount = members.filter((m) => m.role === "owner").length;
+	const currentMember = members.find((m) => m.userId === currentUserId);
+	const isOnlyOwner = currentMember?.role === "owner" && ownerCount === 1;
 
 	if (isLoading) {
 		return <LoadingSkeleton />;
@@ -154,8 +189,13 @@ export function MemberList({
 						currentUserId={currentUserId}
 						currentUserRole={currentUserRole}
 						isRemovingMember={isRemovingMember}
+						isLeaving={isLeaving}
+						isOnlyOwner={isOnlyOwner}
 						onRemoveMember={onRemoveMember}
 						onUpdateRole={onUpdateRole}
+						onLeaveOrganization={onLeaveOrganization}
+						onTransferOwnership={onTransferOwnership}
+						isTransferringOwnership={isTransferringOwnership}
 					/>
 				))}
 			</div>
@@ -170,7 +210,7 @@ export function MemberList({
 						<TableHead>Member</TableHead>
 						<TableHead>Role</TableHead>
 						<TableHead>Joined</TableHead>
-						{canManage && <TableHead className="w-[70px]">Actions</TableHead>}
+						<TableHead className="w-[70px]">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -194,7 +234,14 @@ export function MemberList({
 											</AvatarFallback>
 										</Avatar>
 										<div>
-											<p className="font-medium">{member.user.name}</p>
+											<p className="font-medium">
+												{member.user.name}
+												{isSelf && (
+													<span className="ml-1 font-normal text-muted-foreground">
+														(you)
+													</span>
+												)}
+											</p>
 											<p className="text-muted-foreground text-sm">
 												{member.user.email}
 											</p>
@@ -209,21 +256,26 @@ export function MemberList({
 										addSuffix: true,
 									})}
 								</TableCell>
-								{canManage && (
-									<TableCell>
-										<MemberActionsMenu
-											memberId={member.id}
-											memberEmail={member.user.email}
-											currentRole={member.role}
-											isOwner={isOwner}
-											isSelf={isSelf}
-											canManage={canManage}
-											onRemoveMember={onRemoveMember}
-											onUpdateRole={onUpdateRole}
-											isRemoving={isRemovingMember}
-										/>
-									</TableCell>
-								)}
+								<TableCell>
+									<MemberActionsMenu
+										memberId={member.id}
+										memberEmail={member.user.email}
+										memberName={member.user.name}
+										currentRole={member.role}
+										currentUserRole={currentUserRole}
+										isOwner={isOwner}
+										isSelf={isSelf}
+										isOnlyOwner={isOnlyOwner}
+										canManage={canManage}
+										onRemoveMember={onRemoveMember}
+										onUpdateRole={onUpdateRole}
+										onLeaveOrganization={onLeaveOrganization}
+										onTransferOwnership={onTransferOwnership}
+										isRemoving={isRemovingMember}
+										isLeaving={isLeaving}
+										isTransferringOwnership={isTransferringOwnership}
+									/>
+								</TableCell>
 							</TableRow>
 						);
 					})}

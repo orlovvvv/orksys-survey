@@ -1,11 +1,16 @@
+import { AuthLogo } from "@/components/auth";
+
 export default function AuthLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="flex min-h-svh items-center justify-center p-4">
-			<div className="w-full max-w-md">{children}</div>
+		<div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+			<div className="flex w-full max-w-sm flex-col gap-6 md:max-w-4xl">
+				<AuthLogo />
+				{children}
+			</div>
 		</div>
 	);
 }

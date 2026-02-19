@@ -1,8 +1,8 @@
 "use client";
 
 import { CheckCircle2, ExternalLink } from "lucide-react";
-import { useRouter } from "next/navigation";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 

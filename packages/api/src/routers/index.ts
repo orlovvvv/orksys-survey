@@ -8,6 +8,7 @@ import { questionRouter } from "./question";
 import { responseRouter } from "./response";
 import { surveyRouter } from "./survey";
 import { todoRouter } from "./todo";
+import { usageRouter } from "./usage";
 
 export const appRouter = {
 	healthCheck: publicProcedure.handler(() => {
@@ -26,6 +27,7 @@ export const appRouter = {
 	response: responseRouter,
 	analytics: analyticsRouter,
 	insights: insightsRouter,
+	usage: usageRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

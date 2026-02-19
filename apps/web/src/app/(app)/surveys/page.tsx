@@ -1,75 +1,95 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	Archive,
-	BarChart3,
-	Calendar,
-	ClipboardList,
-	Edit,
-	Loader2,
-	MoreHorizontal,
-	Plus,
-	Search,
-	Trash2,
-} from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrentOrganization } from "@/hooks/use-current-organization";
+import { useSurveysFilters } from "@/hooks/use-surveys-filters";
 import { orpc } from "@/utils/orpc";
+import {
+	type Status,
+	SurveysEmpty,
+	SurveysHeader,
+	SurveysPagination,
+	SurveysSelectionBar,
+	SurveysStats,
+	SurveysTable,
+	SurveysTableToolbar,
+} from "./components";
 
-const statusColors = {
-	draft: "bg-muted text-muted-foreground",
-	published:
-		"bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-	closed:
-		"bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-	archived: "bg-muted text-muted-foreground",
-};
+const ITEMS_PER_PAGE_OPTIONS = [10, 20, 30, 40, 50] as const;
+const STORAGE_KEY = "surveys-items-per-page";
 
-export default function SurveysPage() {
-	const [search, setSearch] = useState("");
-	const [statusFilter, setStatusFilter] = useState<
-		"draft" | "published" | "closed" | "archived" | undefined
-	>(undefined);
-	const [page, setPage] = useState(1);
+function getStoredItemsPerPage(): number {
+	if (typeof window === "undefined") return 10;
+	try {
+		const stored = localStorage.getItem(STORAGE_KEY);
+		if (
+			stored &&
+			ITEMS_PER_PAGE_OPTIONS.includes(
+				Number.parseInt(stored, 10) as (typeof ITEMS_PER_PAGE_OPTIONS)[number],
+			)
+		) {
+			return Number.parseInt(stored, 10);
+		}
+	} catch {
+		// Ignore storage errors
+	}
+	return 10;
+}
 
+function SurveysPageContent() {
+	const router = useRouter();
 	const queryClient = useQueryClient();
+	const currentOrg = useCurrentOrganization();
+	const storedPerPage = useMemo(() => getStoredItemsPerPage(), []);
 
+	const { filters, setFilters, hasFilters } = useSurveysFilters({
+		defaultPerPage: storedPerPage,
+	});
+
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+	// Persist items per page to localStorage
+	useEffect(() => {
+		try {
+			localStorage.setItem(STORAGE_KEY, String(filters.perPage));
+		} catch {
+			// Ignore storage errors
+		}
+	}, [filters.perPage]);
+
+	// Fetch surveys with URL-based filters
 	const surveys = useQuery(
 		orpc.survey.list.queryOptions({
 			input: {
-				page,
-				limit: 10,
-				search: search || undefined,
-				status: statusFilter,
+				page: filters.page,
+				limit: filters.perPage,
+				search: filters.search || undefined,
+				status: filters.status,
 			},
 		}),
 	);
 
+	// Fetch total stats (not affected by filters)
+	const statsQuery = useQuery(orpc.survey.stats.queryOptions({}));
+
+	// Clear selection when filters change (not on page change)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally trigger when filters change
+	useEffect(() => {
+		setSelectedIds(new Set());
+	}, [filters.search, filters.status]);
+
+	// Delete mutation
 	const deleteMutation = useMutation(
 		orpc.survey.delete.mutationOptions({
 			onSuccess: () => {
 				toast.success("Survey deleted");
-				queryClient.invalidateQueries({ queryKey: ["survey", "list"] });
+				queryClient.invalidateQueries({ queryKey: [["survey"]] });
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to delete survey");
@@ -77,11 +97,12 @@ export default function SurveysPage() {
 		}),
 	);
 
+	// Change status mutation
 	const changeStatusMutation = useMutation(
 		orpc.survey.changeStatus.mutationOptions({
 			onSuccess: () => {
 				toast.success("Survey status updated");
-				queryClient.invalidateQueries({ queryKey: ["survey", "list"] });
+				queryClient.invalidateQueries({ queryKey: [["survey"]] });
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to update status");
@@ -89,243 +110,180 @@ export default function SurveysPage() {
 		}),
 	);
 
-	const handleDelete = (id: string) => {
-		if (confirm("Are you sure you want to delete this survey?")) {
-			deleteMutation.mutate({ id });
-		}
-	};
+	// Bulk delete mutation
+	const bulkDeleteMutation = useMutation(
+		orpc.survey.bulkDelete.mutationOptions({
+			onSuccess: (data) => {
+				toast.success(
+					`${data.deletedCount} survey${data.deletedCount !== 1 ? "s" : ""} deleted`,
+				);
+				setSelectedIds(new Set());
+				queryClient.invalidateQueries({ queryKey: [["survey"]] });
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to delete surveys");
+			},
+		}),
+	);
 
-	const handleStatusChange = (
-		id: string,
-		status: "draft" | "published" | "closed" | "archived",
-	) => {
-		changeStatusMutation.mutate({ id, status });
-	};
+	// Bulk change status mutation
+	const bulkStatusMutation = useMutation(
+		orpc.survey.bulkChangeStatus.mutationOptions({
+			onSuccess: (data) => {
+				toast.success(
+					`${data.updatedCount} survey${data.updatedCount !== 1 ? "s" : ""} updated`,
+				);
+				setSelectedIds(new Set());
+				queryClient.invalidateQueries({ queryKey: [["survey"]] });
+			},
+			onError: (error) => {
+				toast.error(error.message || "Failed to update status");
+			},
+		}),
+	);
+
+	const handleDelete = useCallback(
+		(id: string) => {
+			if (confirm("Are you sure you want to delete this survey?")) {
+				deleteMutation.mutate({ id });
+			}
+		},
+		[deleteMutation],
+	);
+
+	const handleStatusChange = useCallback(
+		(id: string, status: Status) => {
+			changeStatusMutation.mutate({ id, status });
+		},
+		[changeStatusMutation],
+	);
+
+	const handleBulkDelete = useCallback(() => {
+		bulkDeleteMutation.mutate({ ids: Array.from(selectedIds) });
+	}, [bulkDeleteMutation, selectedIds]);
+
+	const handleBulkStatusChange = useCallback(
+		(status: Status) => {
+			bulkStatusMutation.mutate({ ids: Array.from(selectedIds), status });
+		},
+		[bulkStatusMutation, selectedIds],
+	);
+
+	const handleCreateClick = useCallback(() => {
+		router.push("/surveys/new");
+	}, [router]);
+
+	const handlePageChange = useCallback(
+		(page: number) => {
+			setFilters({ page });
+		},
+		[setFilters],
+	);
+
+	const handleItemsPerPageChange = useCallback(
+		(items: number) => {
+			setFilters({ perPage: items, page: 1 });
+		},
+		[setFilters],
+	);
+
+	const showEmpty = !surveys.isLoading && surveys.data?.data.length === 0;
+	const hasSelection = selectedIds.size > 0;
+	const isBulkLoading =
+		bulkDeleteMutation.isPending || bulkStatusMutation.isPending;
 
 	return (
-		<div className="mx-auto w-full max-w-6xl p-6">
-			<div className="mb-8 flex items-center justify-between">
-				<div>
-					<h1 className="font-bold text-2xl text-foreground">Surveys</h1>
-					<p className="text-muted-foreground">
-						Create and manage your surveys
-					</p>
-				</div>
-				<Button nativeButton={false} render={<Link href="/surveys/new" />}>
-					<Plus className="mr-2 h-4 w-4" />
-					Create Survey
-				</Button>
-			</div>
+		<div className="flex justify-center">
+			<div className="w-full max-w-screen-2xl space-y-6 p-4 md:p-6">
+				<SurveysHeader
+					organizationName={currentOrg?.name}
+					surveyCount={statsQuery.data?.total ?? 0}
+					canCreate
+					onCreateClick={handleCreateClick}
+				/>
 
-			{/* Filters */}
-			<div className="mb-6 flex flex-wrap items-center gap-4">
-				<div className="relative min-w-[200px] flex-1">
-					<Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search surveys..."
-						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-							setPage(1);
-						}}
-						className="pl-10"
+				<SurveysStats
+					stats={
+						statsQuery.data ?? {
+							total: 0,
+							draft: 0,
+							published: 0,
+							closed: 0,
+							archived: 0,
+						}
+					}
+					isLoading={statsQuery.isLoading}
+				/>
+
+				<SurveysTableToolbar />
+
+				{showEmpty ? (
+					<SurveysEmpty
+						organizationName={currentOrg?.name}
+						onCreateClick={handleCreateClick}
+						hasFilters={hasFilters}
 					/>
-				</div>
-				<div className="flex gap-2">
-					{(["draft", "published", "closed", "archived"] as const).map(
-						(status) => (
-							<Button
-								key={status}
-								variant={statusFilter === status ? "default" : "outline"}
-								size="sm"
-								onClick={() => {
-									setStatusFilter(statusFilter === status ? undefined : status);
-									setPage(1);
-								}}
-							>
-								{status.charAt(0).toUpperCase() + status.slice(1)}
-							</Button>
-						),
-					)}
-				</div>
+				) : (
+					<SurveysTable
+						surveys={surveys.data?.data ?? []}
+						isLoading={surveys.isLoading}
+						onDelete={handleDelete}
+						onStatusChange={handleStatusChange}
+						selectedIds={selectedIds}
+						onSelectionChange={setSelectedIds}
+					/>
+				)}
+
+				{surveys.data && surveys.data.pagination.totalPages > 1 && (
+					<SurveysPagination
+						currentPage={filters.page}
+						totalPages={surveys.data.pagination.totalPages}
+						onPageChange={handlePageChange}
+						totalItems={surveys.data.pagination.total}
+						itemsPerPage={filters.perPage}
+						onItemsPerPageChange={handleItemsPerPageChange}
+						isLoading={surveys.isLoading}
+						selectedCount={selectedIds.size}
+					/>
+				)}
 			</div>
 
-			{/* Survey List */}
-			{surveys.isLoading ? (
-				<div className="flex justify-center py-12">
-					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-				</div>
-			) : surveys.data?.data.length === 0 ? (
-				<Card className="border-dashed">
-					<CardContent className="flex flex-col items-center justify-center py-16">
-						<ClipboardList className="mb-4 h-12 w-12 text-muted-foreground/50" />
-						<CardTitle className="mb-2">No surveys yet</CardTitle>
-						<CardDescription className="mb-4 text-center">
-							Create your first survey to start collecting responses
-						</CardDescription>
-						<Button nativeButton={false} render={<Link href="/surveys/new" />}>
-							<Plus className="mr-2 h-4 w-4" />
-							Create Survey
-						</Button>
-					</CardContent>
-				</Card>
-			) : (
-				<div className="space-y-4">
-					{surveys.data?.data.map((survey) => (
-						<Card
-							key={survey.id}
-							className="transition-colors hover:border-border/80"
-						>
-							<CardHeader className="pb-3">
-								<div className="flex items-start justify-between">
-									<div className="flex-1">
-										<div className="flex flex-wrap items-center gap-2">
-											<Link
-												href={`/surveys/${survey.id}`}
-												className="font-semibold text-lg hover:text-primary"
-											>
-												{survey.title}
-											</Link>
-											<Badge
-												variant="secondary"
-												className={statusColors[survey.status]}
-											>
-												{survey.status}
-											</Badge>
-											{survey.organization && (
-												<Badge variant="outline" className="gap-1">
-													{survey.organization.name}
-												</Badge>
-											)}
-										</div>
-										{survey.description && (
-											<CardDescription className="mt-1">
-												{survey.description}
-											</CardDescription>
-										)}
-									</div>
-									<DropdownMenu>
-										<DropdownMenuTrigger
-											render={<Button variant="ghost" size="icon" />}
-										>
-											<MoreHorizontal className="h-4 w-4" />
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem>
-												<Link
-													href={`/surveys/${survey.id}`}
-													className="flex items-center"
-												>
-													<Edit className="mr-2 h-4 w-4" />
-													Edit
-												</Link>
-											</DropdownMenuItem>
-											<DropdownMenuItem>
-												<Link
-													href={{
-														pathname: `/surveys/${survey.id}/analytics`,
-													}}
-													className="flex items-center"
-												>
-													<BarChart3 className="mr-2 h-4 w-4" />
-													Analytics
-												</Link>
-											</DropdownMenuItem>
-											{survey.status === "draft" && (
-												<DropdownMenuItem
-													onClick={() =>
-														handleStatusChange(survey.id, "published")
-													}
-												>
-													<ClipboardList className="mr-2 h-4 w-4" />
-													Publish
-												</DropdownMenuItem>
-											)}
-											{survey.status === "published" && (
-												<DropdownMenuItem
-													onClick={() =>
-														handleStatusChange(survey.id, "closed")
-													}
-												>
-													<Archive className="mr-2 h-4 w-4" />
-													Close
-												</DropdownMenuItem>
-											)}
-											<DropdownMenuSeparator />
-											<DropdownMenuItem
-												variant="destructive"
-												onClick={() => handleDelete(survey.id)}
-											>
-												<Trash2 className="mr-2 h-4 w-4" />
-												Delete
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</div>
-							</CardHeader>
-							<CardContent>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-6 text-muted-foreground text-sm">
-										<div className="flex items-center gap-1">
-											<Calendar className="h-4 w-4" />
-											{new Date(survey.createdAt).toLocaleDateString()}
-										</div>
-										<div className="flex items-center gap-1">
-											<ClipboardList className="h-4 w-4" />/{survey.slug}
-										</div>
-									</div>
-									{survey.owner && (
-										<div className="flex items-center gap-2">
-											<span className="text-muted-foreground text-xs">
-												Created by
-											</span>
-											<Avatar size="sm">
-												<AvatarImage
-													src={survey.owner.image || undefined}
-													alt={survey.owner.name}
-												/>
-												<AvatarFallback>
-													{survey.owner.name
-														.split(" ")
-														.map((n) => n[0])
-														.join("")
-														.toUpperCase()
-														.slice(0, 2)}
-												</AvatarFallback>
-											</Avatar>
-										</div>
-									)}
-								</div>
-							</CardContent>
-						</Card>
+			<AnimatePresence>
+				{hasSelection && (
+					<SurveysSelectionBar
+						selectedCount={selectedIds.size}
+						onClear={() => setSelectedIds(new Set())}
+						onBulkDelete={handleBulkDelete}
+						onBulkStatusChange={handleBulkStatusChange}
+						isLoading={isBulkLoading}
+					/>
+				)}
+			</AnimatePresence>
+		</div>
+	);
+}
+
+function SurveysPageSkeleton() {
+	return (
+		<div className="flex justify-center">
+			<div className="w-full max-w-screen-2xl space-y-6 p-4 md:p-6">
+				<div className="h-8 w-48 animate-pulse rounded bg-muted" />
+				<div className="flex gap-3">
+					{[1, 2, 3, 4].map((i) => (
+						<Skeleton key={i} className="h-10 w-24" />
 					))}
 				</div>
-			)}
-
-			{/* Pagination */}
-			{surveys.data && surveys.data.pagination.totalPages > 1 && (
-				<div className="mt-6 flex justify-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={page === 1}
-						onClick={() => setPage(page - 1)}
-					>
-						Previous
-					</Button>
-					<span className="flex items-center px-4 text-sm">
-						Page {page} of {surveys.data.pagination.totalPages}
-					</span>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={page >= surveys.data.pagination.totalPages}
-						onClick={() => setPage(page + 1)}
-					>
-						Next
-					</Button>
-				</div>
-			)}
+				<div className="h-10 w-full max-w-md animate-pulse rounded bg-muted" />
+				<div className="h-64 w-full animate-pulse rounded bg-muted" />
+			</div>
 		</div>
+	);
+}
+
+export default function SurveysPage() {
+	return (
+		<Suspense fallback={<SurveysPageSkeleton />}>
+			<SurveysPageContent />
+		</Suspense>
 	);
 }

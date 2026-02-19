@@ -1,16 +1,29 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { CreditCard, Loader2 } from "lucide-react";
 
 import {
 	BillingActions,
+	InvoiceList,
 	PlanCard,
 	UsageMeter,
+	useCustomerPortal,
+	useOrders,
 	useSubscription,
+	useUsageStats,
 } from "@/components/account";
+import {
+	Card,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 
 export default function SubscriptionSettingsPage() {
-	const { data, isLoading, isPro } = useSubscription();
+	const { isLoading, isPro } = useSubscription();
+	const { data: usageStats } = useUsageStats(isPro);
+	const { orders, isLoading: isOrdersLoading } = useOrders({ limit: 5 });
+	const portalMutation = useCustomerPortal();
 
 	// Loading state
 	if (isLoading) {
@@ -30,10 +43,19 @@ export default function SubscriptionSettingsPage() {
 		<div className="space-y-6">
 			{/* Page Header */}
 			<div>
-				<h2 className="font-semibold text-lg">Subscription</h2>
-				<p className="text-muted-foreground text-sm">
-					Manage your subscription and billing
-				</p>
+				<div className="flex items-center gap-3">
+					<div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+						<CreditCard className="h-5 w-5 text-primary" />
+					</div>
+					<div>
+						<h1 className="font-bold text-2xl text-foreground">
+							Billing & Subscription
+						</h1>
+						<p className="text-muted-foreground text-sm">
+							Manage your subscription and billing
+						</p>
+					</div>
+				</div>
 			</div>
 
 			{/* Subscription Details Grid */}
@@ -44,24 +66,34 @@ export default function SubscriptionSettingsPage() {
 				{/* Usage Meter */}
 				<UsageMeter
 					isPro={isPro}
-					surveysUsed={0}
-					surveysLimit={3}
-					responsesUsed={0}
-					responsesLimit={100}
+					surveysUsed={usageStats?.surveysCount ?? 0}
+					surveysLimit={usageStats?.surveysLimit ?? 3}
+					responsesUsed={usageStats?.responsesThisMonth ?? 0}
+					responsesLimit={usageStats?.responsesLimit ?? 100}
 				/>
 			</div>
 
 			{/* Billing Actions */}
 			<BillingActions isPro={isPro} />
 
-			{/* Additional Info */}
-			<div className="rounded-lg border border-dashed p-6">
-				<h3 className="font-medium text-sm">Need help?</h3>
-				<p className="text-muted-foreground text-sm">
-					Contact our support team for help with your subscription or billing
-					questions.
-				</p>
-			</div>
+			{/* Invoice History */}
+			<InvoiceList
+				orders={orders}
+				isLoading={isOrdersLoading}
+				onOpenPortal={() => portalMutation.mutate()}
+				isPortalLoading={portalMutation.isPending}
+			/>
+
+			{/* Help Card */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">Need help?</CardTitle>
+					<CardDescription>
+						Contact our support team for help with your subscription or billing
+						questions.
+					</CardDescription>
+				</CardHeader>
+			</Card>
 		</div>
 	);
 }

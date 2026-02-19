@@ -1,21 +1,29 @@
 "use client";
 
-import { Building2, Loader2, Plus } from "lucide-react";
 import * as React from "react";
+
 import {
-	InvitationList,
-	InviteMemberDialog,
-	MemberList,
+	DangerTab,
+	InvitationsTab,
 	type MemberRole,
+	MembersTab,
+	NoOrganizationState,
+	OrganizationHeader,
+	OrganizationSettingsLoading,
 	useCancelInvitation,
+	useDeleteOrganization,
 	useInvitations,
+	useLeaveOrganization,
 	useOrganizationMembers,
+	useReceivedInvitations,
 	useRemoveMember,
+	useRespondToInvitation,
+	useSettingsPermissions,
+	useTransferOwnership,
 	useUpdateMemberRole,
 } from "@/components/organization";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { authClient } from "@/lib/auth-client";
 
 export default function OrganizationSettingsPage() {
@@ -30,28 +38,37 @@ export default function OrganizationSettingsPage() {
 		isLoading: isLoadingInvitations,
 		refetch: refetchInvitations,
 	} = useInvitations();
+	const {
+		receivedInvitations,
+		isLoading: isLoadingReceived,
+		refetch: refetchReceived,
+	} = useReceivedInvitations();
 
 	const removeMemberMutation = useRemoveMember();
 	const updateRoleMutation = useUpdateMemberRole();
 	const cancelInvitationMutation = useCancelInvitation();
+	const { acceptInvitation, rejectInvitation } = useRespondToInvitation();
+	const leaveOrganizationMutation = useLeaveOrganization();
+	const deleteOrganizationMutation = useDeleteOrganization();
+	const transferOwnershipMutation = useTransferOwnership({
+		onSuccess: () => refetchMembers(),
+	});
 
 	const [cancelingId, setCancelingId] = React.useState<string | null>(null);
+	const [respondingId, setRespondingId] = React.useState<string | null>(null);
 
-	// Get current user's ID
 	const currentUserId = sessionQuery.data?.user?.id ?? "";
-	const hasActiveOrganization =
-		!!sessionQuery.data?.session?.activeOrganizationId;
+	const activeOrganizationId =
+		sessionQuery.data?.session?.activeOrganizationId ?? "";
+	const hasActiveOrganization = !!activeOrganizationId;
+	const currentOrganization = useCurrentOrganization();
+	const orgName = currentOrganization?.name ?? "Organization";
 
-	// Find current user's role from members list
-	const currentUserRole: MemberRole = React.useMemo(() => {
-		const member = members.find((m) => m.userId === currentUserId);
-		return member?.role ?? "member";
-	}, [members, currentUserId]);
+	const { canManage, currentUserRole } = useSettingsPermissions(
+		members,
+		currentUserId,
+	);
 
-	// Check if current user can manage members/invitations
-	const canManage = currentUserRole === "owner" || currentUserRole === "admin";
-
-	// Handle remove member
 	const handleRemoveMember = (memberIdOrEmail: string) => {
 		removeMemberMutation.mutate(
 			{ memberIdOrEmail },
@@ -63,11 +80,7 @@ export default function OrganizationSettingsPage() {
 		);
 	};
 
-	// Handle update role
-	const handleUpdateRole = (
-		memberId: string,
-		role: "owner" | "admin" | "member",
-	) => {
+	const handleUpdateRole = (memberId: string, role: MemberRole) => {
 		updateRoleMutation.mutate(
 			{ memberId, role },
 			{
@@ -78,7 +91,6 @@ export default function OrganizationSettingsPage() {
 		);
 	};
 
-	// Handle cancel invitation
 	const handleCancelInvitation = async (invitationId: string) => {
 		setCancelingId(invitationId);
 		try {
@@ -89,133 +101,136 @@ export default function OrganizationSettingsPage() {
 		}
 	};
 
-	// Loading state
-	if (sessionQuery.isPending) {
-		return (
-			<div className="flex min-h-[50vh] items-center justify-center">
-				<div className="text-center">
-					<Spinner className="mx-auto mb-4 h-8 w-8" />
-					<p className="text-muted-foreground text-sm">
-						Loading organization...
-					</p>
-				</div>
-			</div>
+	const handleAcceptInvitation = (invitationId: string) => {
+		setRespondingId(invitationId);
+		acceptInvitation.mutate(
+			{ invitationId },
+			{
+				onSuccess: () => {
+					refetchReceived();
+				},
+				onSettled: () => {
+					setRespondingId(null);
+				},
+			},
 		);
+	};
+
+	const handleDeclineInvitation = (invitationId: string) => {
+		setRespondingId(invitationId);
+		rejectInvitation.mutate(
+			{ invitationId },
+			{
+				onSuccess: () => {
+					refetchReceived();
+				},
+				onSettled: () => {
+					setRespondingId(null);
+				},
+			},
+		);
+	};
+
+	const handleInviteSuccess = () => {
+		refetchMembers();
+		refetchInvitations();
+	};
+
+	const handleLeaveOrganization = () => {
+		if (activeOrganizationId) {
+			leaveOrganizationMutation.mutate({
+				organizationId: activeOrganizationId,
+			});
+		}
+	};
+
+	const handleDeleteOrganization = () => {
+		if (activeOrganizationId) {
+			deleteOrganizationMutation.mutate({
+				organizationId: activeOrganizationId,
+			});
+		}
+	};
+
+	const handleTransferOwnership = (newOwnerMemberId: string) => {
+		const currentMember = members.find((m) => m.userId === currentUserId);
+		if (!currentMember) return;
+
+		transferOwnershipMutation.mutate({
+			newOwnerMemberId,
+			previousOwnerMemberId: currentMember.id,
+			previousOwnerNewRole: "admin",
+		});
+	};
+
+	if (sessionQuery.isPending) {
+		return <OrganizationSettingsLoading />;
 	}
 
-	// No active organization
 	if (!hasActiveOrganization) {
-		return (
-			<div className="flex min-h-[50vh] items-center justify-center">
-				<div className="text-center">
-					<Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-					<h2 className="mb-2 font-semibold text-lg">No Organization Found</h2>
-					<p className="mb-6 text-muted-foreground text-sm">
-						You need to be part of an organization to access settings.
-					</p>
-				</div>
-			</div>
-		);
+		return <NoOrganizationState />;
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-6xl p-6">
-			{/* Page Header */}
-			<div className="mb-8">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="font-bold text-2xl text-foreground">
-							Organization Settings
-						</h1>
-						<p className="text-muted-foreground">
-							Manage members and invitations for your organization
-						</p>
-					</div>
-				</div>
-			</div>
+		<div className="space-y-6">
+			<OrganizationHeader name={orgName} memberCount={members.length} />
 
-			{/* Tabs */}
 			<Tabs defaultValue="members">
 				<TabsList variant="line" className="mb-6">
 					<TabsTrigger value="members">Members</TabsTrigger>
 					<TabsTrigger value="invitations">Invitations</TabsTrigger>
+					{currentUserRole === "owner" && (
+						<TabsTrigger value="danger" className="text-destructive">
+							Danger
+						</TabsTrigger>
+					)}
 				</TabsList>
 
-				{/* Members Tab */}
-				<TabsContent value="members" className="space-y-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<h2 className="font-semibold text-lg">Team Members</h2>
-							<p className="text-muted-foreground text-sm">
-								Manage access and permissions for your team
-							</p>
-						</div>
-						{canManage && (
-							<InviteMemberDialog
-								trigger={
-									<Button>
-										<Plus className="mr-2 h-4 w-4" />
-										Invite Member
-									</Button>
-								}
-								onSuccess={() => {
-									refetchMembers();
-									refetchInvitations();
-								}}
-							/>
-						)}
-					</div>
-
-					<MemberList
+				<TabsContent value="members">
+					<MembersTab
 						members={members}
 						currentUserId={currentUserId}
+						currentUserRole={currentUserRole}
+						canManage={canManage}
 						isLoading={isLoadingMembers}
+						isRemovingMember={removeMemberMutation.isPending}
+						isLeaving={leaveOrganizationMutation.isPending}
+						isTransferringOwnership={transferOwnershipMutation.isPending}
+						onInviteSuccess={handleInviteSuccess}
 						onRemoveMember={handleRemoveMember}
 						onUpdateRole={handleUpdateRole}
-						currentUserRole={currentUserRole}
-						isRemovingMember={removeMemberMutation.isPending}
+						onLeaveOrganization={handleLeaveOrganization}
+						onTransferOwnership={handleTransferOwnership}
 					/>
 				</TabsContent>
 
-				{/* Invitations Tab */}
-				<TabsContent value="invitations" className="space-y-6">
-					<div className="flex items-center justify-between">
-						<div>
-							<h2 className="font-semibold text-lg">Pending Invitations</h2>
-							<p className="text-muted-foreground text-sm">
-								{canManage
-									? "Manage and cancel pending invitations"
-									: "View pending invitations to your organization"}
-							</p>
-						</div>
-						{canManage && (
-							<InviteMemberDialog
-								trigger={
-									<Button>
-										<Plus className="mr-2 h-4 w-4" />
-										Invite Member
-									</Button>
-								}
-								onSuccess={() => {
-									refetchMembers();
-									refetchInvitations();
-								}}
-							/>
-						)}
-					</div>
-
-					{isLoadingInvitations ? (
-						<div className="flex justify-center py-12">
-							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-						</div>
-					) : (
-						<InvitationList
-							invitations={invitations}
-							onCancelInvitation={handleCancelInvitation}
-							isCanceling={cancelingId}
-						/>
-					)}
+				<TabsContent value="invitations">
+					<InvitationsTab
+						invitations={invitations}
+						canManage={canManage}
+						isLoading={isLoadingInvitations}
+						isCanceling={cancelingId}
+						onInviteSuccess={handleInviteSuccess}
+						onCancelInvitation={handleCancelInvitation}
+						receivedInvitations={receivedInvitations}
+						isLoadingReceived={isLoadingReceived}
+						respondingId={respondingId}
+						onAcceptInvitation={handleAcceptInvitation}
+						onDeclineInvitation={handleDeclineInvitation}
+					/>
 				</TabsContent>
+
+				{currentUserRole === "owner" && (
+					<TabsContent value="danger">
+						<DangerTab
+							organizationId={activeOrganizationId}
+							organizationName={orgName}
+							memberCount={members.length}
+							isDeleting={deleteOrganizationMutation.isPending}
+							onDelete={handleDeleteOrganization}
+						/>
+					</TabsContent>
+				)}
 			</Tabs>
 		</div>
 	);

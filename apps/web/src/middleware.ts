@@ -1,7 +1,13 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const publicRoutes = ["/", "/login", "/onboarding", "/success", "/s"];
+const publicRoutes = ["/", "/success", "/s"];
+const authRoutes = [
+	"/login",
+	"/forgot-password",
+	"/reset-password",
+	"/verify-email",
+];
 const apiRoutes = ["/api"];
 
 async function getSession(request: NextRequest) {
@@ -24,30 +30,48 @@ async function getSession(request: NextRequest) {
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
-	// Allow public routes
+	// Allow API routes
+	if (apiRoutes.some((route) => pathname.startsWith(route))) {
+		return NextResponse.next();
+	}
+
+	// Allow public routes (no auth check needed)
 	if (
 		publicRoutes.some(
 			(route) => pathname === route || pathname.startsWith(`${route}/`),
 		)
 	) {
-		// For onboarding page, check if user already has active org
-		if (pathname === "/onboarding") {
-			const session = await getSession(request);
-
-			if (!session?.user) {
-				return NextResponse.redirect(new URL("/login", request.url));
-			}
-
-			if (session.session.activeOrganizationId) {
-				return NextResponse.redirect(new URL("/dashboard", request.url));
-			}
-		}
-
 		return NextResponse.next();
 	}
 
-	// Allow API routes
-	if (apiRoutes.some((route) => pathname.startsWith(route))) {
+	// Auth routes - redirect authenticated users to dashboard
+	if (authRoutes.some((route) => pathname === route)) {
+		const session = await getSession(request);
+
+		if (session?.user) {
+			// User is authenticated, redirect to dashboard or onboarding
+			if (session.session.activeOrganizationId) {
+				return NextResponse.redirect(new URL("/dashboard", request.url));
+			}
+			return NextResponse.redirect(new URL("/onboarding", request.url));
+		}
+
+		// User is not authenticated, allow access to auth pages
+		return NextResponse.next();
+	}
+
+	// Onboarding - requires authentication
+	if (pathname === "/onboarding") {
+		const session = await getSession(request);
+
+		if (!session?.user) {
+			return NextResponse.redirect(new URL("/login", request.url));
+		}
+
+		if (session.session.activeOrganizationId) {
+			return NextResponse.redirect(new URL("/dashboard", request.url));
+		}
+
 		return NextResponse.next();
 	}
 

@@ -9,14 +9,19 @@ import type { Invitation, MemberRole } from "../types";
 
 /**
  * Fetches the list of invitations for the current organization.
+ * Query key includes org ID to ensure proper reactivity when switching organizations.
  */
 export function useInvitations() {
+	const { data: session } = authClient.useSession();
+	const orgId = session?.session?.activeOrganizationId;
+
 	const query = useQuery({
-		queryKey: ["organization", "invitations"],
+		queryKey: ["organization", orgId, "invitations"],
 		queryFn: async () => {
 			const response = await authClient.organization.listInvitations();
 			return (response.data ?? []) as Invitation[];
 		},
+		enabled: !!orgId,
 	});
 
 	return {
@@ -29,9 +34,12 @@ export function useInvitations() {
 
 /**
  * Mutation to invite a new member to the organization.
+ * Invalidates org-scoped query key to ensure proper cache updates.
  */
 export function useInviteMember() {
 	const queryClient = useQueryClient();
+	const { data: session } = authClient.useSession();
+	const orgId = session?.session?.activeOrganizationId;
 
 	return useMutation({
 		mutationFn: async ({
@@ -41,15 +49,21 @@ export function useInviteMember() {
 			email: string;
 			role: MemberRole;
 		}) => {
-			await authClient.organization.inviteMember({
+			const result = await authClient.organization.inviteMember({
 				email,
 				role,
 			});
+			if (result.error) {
+				throw new Error(result.error.message || "Failed to send invitation");
+			}
+			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["organization", "invitations"],
-			});
+			if (orgId) {
+				queryClient.invalidateQueries({
+					queryKey: ["organization", orgId, "invitations"],
+				});
+			}
 			toast.success("Invitation sent successfully");
 		},
 		onError: (error: Error) => {
@@ -60,20 +74,29 @@ export function useInviteMember() {
 
 /**
  * Mutation to cancel a pending invitation.
+ * Invalidates org-scoped query key to ensure proper cache updates.
  */
 export function useCancelInvitation() {
 	const queryClient = useQueryClient();
+	const { data: session } = authClient.useSession();
+	const orgId = session?.session?.activeOrganizationId;
 
 	return useMutation({
 		mutationFn: async ({ invitationId }: { invitationId: string }) => {
-			await authClient.organization.cancelInvitation({
+			const result = await authClient.organization.cancelInvitation({
 				invitationId,
 			});
+			if (result.error) {
+				throw new Error(result.error.message || "Failed to cancel invitation");
+			}
+			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["organization", "invitations"],
-			});
+			if (orgId) {
+				queryClient.invalidateQueries({
+					queryKey: ["organization", orgId, "invitations"],
+				});
+			}
 			toast.success("Invitation canceled successfully");
 		},
 		onError: (error: Error) => {

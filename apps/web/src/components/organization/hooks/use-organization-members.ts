@@ -15,14 +15,19 @@ export interface UseOrganizationMembersResult {
 
 /**
  * Fetches the list of members for the current organization.
+ * Query key includes org ID to ensure proper reactivity when switching organizations.
  */
 export function useOrganizationMembers(): UseOrganizationMembersResult {
+	const { data: session } = authClient.useSession();
+	const orgId = session?.session?.activeOrganizationId;
+
 	const query = useQuery({
-		queryKey: ["organization", "members"],
+		queryKey: ["organization", orgId, "members"],
 		queryFn: async () => {
 			const response = await authClient.organization.listMembers();
 			return (response.data?.members ?? []) as Member[];
 		},
+		enabled: !!orgId,
 	});
 
 	return {

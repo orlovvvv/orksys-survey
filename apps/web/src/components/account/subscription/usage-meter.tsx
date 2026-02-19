@@ -5,11 +5,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Progress,
-	ProgressLabel,
-	ProgressTrack,
-} from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 
 export interface UsageMeterProps {
 	surveysUsed?: number;
@@ -57,19 +53,12 @@ export function UsageMeter({
 				{!isPro && (
 					<div className="space-y-2">
 						<div className="flex items-center justify-between text-sm">
-							<ProgressLabel>Surveys</ProgressLabel>
+							<span className="font-medium">Surveys</span>
 							<span className="text-muted-foreground tabular-nums">
 								{surveysDisplay}
 							</span>
 						</div>
-						<Progress value={surveysPercent}>
-							<ProgressTrack>
-								<div
-									className="h-full bg-primary transition-all"
-									style={{ width: `${surveysPercent}%` }}
-								/>
-							</ProgressTrack>
-						</Progress>
+						<Progress value={surveysPercent} className="h-2" />
 					</div>
 				)}
 
@@ -77,19 +66,12 @@ export function UsageMeter({
 				{!isPro && (
 					<div className="space-y-2">
 						<div className="flex items-center justify-between text-sm">
-							<ProgressLabel>Responses (this month)</ProgressLabel>
+							<span className="font-medium">Responses (this month)</span>
 							<span className="text-muted-foreground tabular-nums">
 								{responsesDisplay}
 							</span>
 						</div>
-						<Progress value={responsesPercent}>
-							<ProgressTrack>
-								<div
-									className="h-full bg-primary transition-all"
-									style={{ width: `${responsesPercent}%` }}
-								/>
-							</ProgressTrack>
-						</Progress>
+						<Progress value={responsesPercent} className="h-2" />
 					</div>
 				)}
 

@@ -1,60 +1,36 @@
 "use client";
 
-import { Building2, Check, ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useState } from "react";
 
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { authClient } from "@/lib/auth-client";
-
-import { Button } from "./ui/button";
-import { Skeleton } from "./ui/skeleton";
-
-interface Org {
-	id: string;
-	name: string;
-	slug: string;
-}
+import { CreateOrgDialog } from "./organization-switcher/create-org-dialog";
+import { OrgListContent } from "./organization-switcher/org-list-content";
+import { OrgSwitcherTrigger } from "./organization-switcher/org-switcher-trigger";
+import { useOrgActions } from "./organization-switcher/use-org-actions";
+import { useOrganizations } from "./organization-switcher/use-organizations";
 
 export default function OrganizationSwitcher() {
 	const router = useRouter();
+	const isMobile = useIsMobile();
 	const { data: session, isPending: isSessionPending } =
 		authClient.useSession();
-	const [organizations, setOrganizations] = useState<Org[]>([]);
-	const [isOrgsPending, setIsOrgsPending] = useState(true);
+	const { organizations, isPending: isOrgsPending } = useOrganizations({
+		session,
+	});
+	const { switchOrganization, refetchOrganizations } = useOrgActions();
 
-	useEffect(() => {
-		async function fetchOrganizations() {
-			try {
-				const result = await authClient.organization.list();
-				if (result.data) {
-					setOrganizations(result.data);
-				}
-			} catch (error) {
-				console.error("Failed to fetch organizations:", error);
-			} finally {
-				setIsOrgsPending(false);
-			}
-		}
-
-		if (session?.user) {
-			fetchOrganizations();
-		}
-	}, [session?.user]);
+	const [open, setOpen] = useState(false);
+	const [showCreateDialog, setShowCreateDialog] = useState(false);
+	const [isSwitching, setIsSwitching] = useState(false);
 
 	const isPending = isSessionPending || isOrgsPending;
 
 	if (isPending) {
-		return <Skeleton className="h-9 w-40" />;
+		return <Skeleton className="h-9 w-48" />;
 	}
 
 	if (!session || !organizations || organizations.length === 0) {
@@ -62,55 +38,58 @@ export default function OrganizationSwitcher() {
 	}
 
 	const currentOrg = organizations.find(
-		(org: Org) => org.id === session.session.activeOrganizationId,
+		(org) => org.id === session.session.activeOrganizationId,
 	);
 
-	const handleSwitchOrganization = async (organizationId: string) => {
-		try {
-			const result = await authClient.organization.setActive({
-				organizationId,
-			});
+	const handleSwitchOrg = async (organizationId: string) => {
+		if (isSwitching) return;
 
-			if (result.error) {
-				toast.error(result.error.message || "Failed to switch organization");
-				return;
-			}
+		setIsSwitching(true);
+		const success = await switchOrganization(organizationId);
+		setIsSwitching(false);
 
-			router.refresh();
-		} catch (_error) {
-			toast.error("An unexpected error occurred");
+		if (success) {
+			setOpen(false);
 		}
 	};
 
+	const handleCreateSuccess = useCallback(async () => {
+		const updatedOrgs = await refetchOrganizations();
+		// Update local state after creation
+		if (updatedOrgs.length > 0) {
+			router.refresh();
+		}
+		setShowCreateDialog(false);
+	}, [refetchOrganizations, router]);
+
+	const handleCreateClick = useCallback(() => {
+		setOpen(false);
+		setShowCreateDialog(true);
+	}, []);
+
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={<Button variant="outline" className="gap-2" />}
-			>
-				<Building2 className="h-4 w-4" />
-				<span className="max-w-32 truncate">
-					{currentOrg?.name || "Select org"}
-				</span>
-				<ChevronsUpDown className="h-4 w-4 opacity-50" />
-			</DropdownMenuTrigger>
-			<DropdownMenuContent className="w-56 bg-card">
-				<DropdownMenuGroup>
-					<DropdownMenuLabel>Organizations</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					{organizations.map((org: Org) => (
-						<DropdownMenuItem
-							key={org.id}
-							onClick={() => handleSwitchOrganization(org.id)}
-							className="justify-between"
-						>
-							<span className="truncate">{org.name}</span>
-							{org.id === session.session.activeOrganizationId && (
-								<Check className="h-4 w-4" />
-							)}
-						</DropdownMenuItem>
-					))}
-				</DropdownMenuGroup>
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<>
+			<CreateOrgDialog
+				open={showCreateDialog}
+				onOpenChange={setShowCreateDialog}
+				onSuccess={handleCreateSuccess}
+			/>
+
+			<Popover open={open} onOpenChange={setOpen}>
+				<OrgSwitcherTrigger orgName={currentOrg?.name} open={open} />
+				<PopoverContent
+					className="w-[280px] p-0"
+					align={isMobile ? "center" : "end"}
+					side="bottom"
+				>
+					<OrgListContent
+						organizations={organizations}
+						activeOrgId={session.session.activeOrganizationId ?? undefined}
+						onSelectOrg={handleSwitchOrg}
+						onCreateOrg={handleCreateClick}
+					/>
+				</PopoverContent>
+			</Popover>
+		</>
 	);
 }

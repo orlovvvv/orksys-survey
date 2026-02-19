@@ -17,3 +17,16 @@ export interface Invitation {
 	expiresAt: Date;
 	createdAt: Date;
 }
+
+export interface ReceivedInvitation {
+	id: string;
+	email: string;
+	role: MemberRole;
+	status: InvitationStatus;
+	expiresAt: Date;
+	createdAt: Date;
+	organizationId: string;
+	organizationName: string;
+	organizationSlug?: string;
+	inviter?: { email: string };
+}

@@ -2,7 +2,7 @@ import { db } from "@orksys-survey/db";
 import { user } from "@orksys-survey/db/schema/auth";
 import { organization } from "@orksys-survey/db/schema/organization";
 import { survey } from "@orksys-survey/db/schema/survey";
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import {
@@ -132,6 +132,35 @@ export const surveyRouter = {
 				},
 			};
 		}),
+
+	// Get survey counts by status for the organization
+	stats: organizationProcedure.handler(async ({ context }) => {
+		const counts = await db
+			.select({
+				status: survey.status,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(survey)
+			.where(eq(survey.organizationId, context.activeOrganization.id))
+			.groupBy(survey.status);
+
+		const result = {
+			total: 0,
+			draft: 0,
+			published: 0,
+			closed: 0,
+			archived: 0,
+		};
+
+		for (const row of counts) {
+			result.total += row.count;
+			if (row.status in result) {
+				result[row.status as keyof typeof result] = row.count;
+			}
+		}
+
+		return result;
+	}),
 
 	// Get survey by ID (organization members)
 	getById: organizationProcedure
@@ -369,6 +398,38 @@ export const surveyRouter = {
 
 			await db.delete(survey).where(eq(survey.id, input.id));
 			return { success: true };
+		}),
+
+	// Bulk change survey status (admin only)
+	bulkChangeStatus: adminProcedure
+		.input(
+			z.object({
+				ids: z.array(z.string()),
+				status: z.enum(["draft", "published", "closed", "archived"]),
+			}),
+		)
+		.handler(async ({ input, context }) => {
+			// Verify all surveys belong to organization
+			const surveysToUpdate = await db
+				.select()
+				.from(survey)
+				.where(
+					and(
+						inArray(survey.id, input.ids),
+						eq(survey.organizationId, context.activeOrganization.id),
+					),
+				);
+
+			if (surveysToUpdate.length !== input.ids.length) {
+				throw new Error("Some surveys not found or not accessible");
+			}
+
+			await db
+				.update(survey)
+				.set({ status: input.status })
+				.where(inArray(survey.id, input.ids));
+
+			return { success: true, updatedCount: surveysToUpdate.length };
 		}),
 
 	// Bulk delete surveys (owner only)

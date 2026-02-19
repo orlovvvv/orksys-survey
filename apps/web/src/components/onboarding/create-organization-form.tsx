@@ -2,26 +2,48 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
 import { FormField } from "../forms/form-field";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
-export default function CreateOrganizationForm() {
+interface CreateOrganizationFormProps {
+	onSuccess?: () => void;
+}
+
+const generateSlug = (name: string) => {
+	return name
+		.toLowerCase()
+		.trim()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+};
+
+const validateSlugLength = (name: string) => {
+	const slug = generateSlug(name);
+	return slug.length >= 2 && slug.length <= 50;
+};
+
+export default function CreateOrganizationForm({
+	onSuccess,
+}: CreateOrganizationFormProps) {
 	const router = useRouter();
 
 	const form = useForm({
 		defaultValues: {
 			name: "",
-			slug: "",
 		},
 		onSubmit: async ({ value }) => {
+			const slug = generateSlug(value.name);
 			try {
 				const result = await authClient.organization.create({
 					name: value.name,
-					slug: value.slug,
+					slug,
 				});
 
 				if (result.error) {
@@ -29,7 +51,6 @@ export default function CreateOrganizationForm() {
 					return;
 				}
 
-				// Set the newly created organization as active
 				if (result.data?.id) {
 					await authClient.organization.setActive({
 						organizationId: result.data.id,
@@ -37,7 +58,8 @@ export default function CreateOrganizationForm() {
 				}
 
 				toast.success("Organization created successfully");
-				router.push("/dashboard");
+				onSuccess?.();
+				form.reset();
 				router.refresh();
 			} catch (_error) {
 				toast.error("An unexpected error occurred");
@@ -45,26 +67,17 @@ export default function CreateOrganizationForm() {
 		},
 		validators: {
 			onSubmit: z.object({
-				name: z.string().min(2, "Name must be at least 2 characters"),
-				slug: z
+				name: z
 					.string()
-					.min(2, "Slug must be at least 2 characters")
-					.max(50, "Slug must be at most 50 characters")
-					.regex(
-						/^[a-z0-9-]+$/,
-						"Slug can only contain lowercase letters, numbers, and hyphens",
+					.min(2, "Name must be at least 2 characters")
+					.max(100, "Name must be at most 100 characters")
+					.refine(
+						validateSlugLength,
+						"Name must generate a valid slug between 2-50 characters",
 					),
 			}),
 		},
 	});
-
-	// Auto-generate slug from name
-	const generateSlug = (name: string) => {
-		return name
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/^-|-$/g, "");
-	};
 
 	return (
 		<form
@@ -80,14 +93,7 @@ export default function CreateOrganizationForm() {
 					<FormField
 						label="Organization Name"
 						value={field.state.value}
-						onChange={(value) => {
-							field.handleChange(value);
-							// Auto-generate slug if empty
-							const slugField = field.form.getFieldValue("slug");
-							if (!slugField) {
-								field.form.setFieldValue("slug", generateSlug(value));
-							}
-						}}
+						onChange={field.handleChange}
 						onBlur={field.handleBlur}
 						error={field.state.meta.errors[0]?.message}
 						placeholder="My Organization"
@@ -95,30 +101,38 @@ export default function CreateOrganizationForm() {
 				)}
 			</form.Field>
 
-			<form.Field name="slug">
-				{(field) => (
-					<FormField
-						label="Slug"
-						value={field.state.value}
-						onChange={field.handleChange}
-						onBlur={field.handleBlur}
-						error={field.state.meta.errors[0]?.message}
-						hint="Used in URLs and identifiers"
-						placeholder="my-organization"
-					/>
-				)}
-			</form.Field>
-
-			<form.Subscribe>
-				{(state) => (
-					<Button
-						type="submit"
-						className="w-full"
-						disabled={!state.canSubmit || state.isSubmitting}
-					>
-						{state.isSubmitting ? "Creating..." : "Create Organization"}
-					</Button>
-				)}
+			<form.Subscribe selector={(state) => state.values.name}>
+				{(nameValue) => {
+					const slug = generateSlug(nameValue);
+					return (
+						<>
+							<div className="space-y-2">
+								<Label htmlFor="slug">Slug</Label>
+								<Input
+									id="slug"
+									value={slug}
+									disabled
+									placeholder="auto-generated-from-name"
+									className="bg-muted"
+								/>
+								<p className="text-muted-foreground text-sm">
+									Used in URLs and identifiers
+								</p>
+							</div>
+							<Button
+								type="submit"
+								className="w-full"
+								disabled={
+									!form.state.canSubmit || form.state.isSubmitting || !slug
+								}
+							>
+								{form.state.isSubmitting
+									? "Creating..."
+									: "Create Organization"}
+							</Button>
+						</>
+					);
+				}}
 			</form.Subscribe>
 		</form>
 	);

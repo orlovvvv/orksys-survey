@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { Building2, CreditCard, LogOut, Shield, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -11,7 +11,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -50,8 +49,8 @@ export default function UserMenu() {
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<Button variant="ghost" className="h-auto rounded-full p-1">
-						<Avatar size="sm">
+					<Button variant="ghost" className="h-8 w-8 rounded-full p-0">
+						<Avatar className="h-9 w-9">
 							<AvatarImage
 								src={session.user.image ?? undefined}
 								alt={session.user.name ?? "User"}
@@ -63,38 +62,47 @@ export default function UserMenu() {
 					</Button>
 				}
 			/>
-			<DropdownMenuContent align="end" className="min-w-[220px] max-w-[300px]">
+			<DropdownMenuContent align="end" className="w-56">
+				<div className="px-1.5 py-1.5">
+					<p className="truncate font-medium text-sm">{session.user.name}</p>
+					<p className="truncate text-muted-foreground text-xs">
+						{session.user.email}
+					</p>
+				</div>
+				<DropdownMenuSeparator />
 				<DropdownMenuGroup>
-					<DropdownMenuLabel className="font-normal">
-						<div className="flex flex-col gap-1">
-							<p className="truncate font-medium text-sm">
-								{session.user.name}
-							</p>
-							<p className="truncate text-muted-foreground text-xs">
-								{session.user.email}
-							</p>
-						</div>
-					</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					<DropdownMenuItem render={<Link href="/settings/organization" />}>
-						<Settings className="mr-2 size-4" />
-						Settings
+					<DropdownMenuItem render={<Link href="/settings/profile" />}>
+						<User className="mr-2 size-4" />
+						Profile
 					</DropdownMenuItem>
-					<DropdownMenuItem
-						variant="destructive"
-						onClick={() => {
-							authClient.signOut({
-								fetchOptions: {
-									onSuccess: () => {
-										router.push("/");
-									},
-								},
-							});
-						}}
-					>
-						Sign Out
+					<DropdownMenuItem render={<Link href="/settings/organization" />}>
+						<Building2 className="mr-2 size-4" />
+						Organization
+					</DropdownMenuItem>
+					<DropdownMenuItem render={<Link href="/settings/subscription" />}>
+						<CreditCard className="mr-2 size-4" />
+						Subscription
+					</DropdownMenuItem>
+					<DropdownMenuItem render={<Link href="/settings/security" />}>
+						<Shield className="mr-2 size-4" />
+						Security
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					onClick={() => {
+						authClient.signOut({
+							fetchOptions: {
+								onSuccess: () => {
+									router.push("/");
+								},
+							},
+						});
+					}}
+				>
+					<LogOut className="mr-2 size-4" />
+					Sign Out
+				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

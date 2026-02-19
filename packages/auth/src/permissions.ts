@@ -5,7 +5,7 @@ const statement = {
 	organization: ["create", "read", "update", "delete"],
 	survey: ["create", "read", "update", "delete", "publish"],
 	response: ["read", "delete", "export"],
-	member: ["invite", "remove", "update-role"],
+	member: ["create", "update", "delete"],
 	invitation: ["create", "cancel"],
 	billing: ["manage"],
 } as const;
@@ -24,7 +24,7 @@ export const admin = ac.newRole({
 	organization: ["read", "update"],
 	survey: ["create", "read", "update", "delete", "publish"],
 	response: ["read", "delete", "export"],
-	member: ["invite", "remove", "update-role"],
+	member: ["create", "update", "delete"],
 	invitation: ["create", "cancel"],
 });
 
@@ -32,7 +32,7 @@ export const owner = ac.newRole({
 	organization: ["create", "read", "update", "delete"],
 	survey: ["create", "read", "update", "delete", "publish"],
 	response: ["read", "delete", "export"],
-	member: ["invite", "remove", "update-role"],
+	member: ["create", "update", "delete"],
 	invitation: ["create", "cancel"],
 	billing: ["manage"],
 });
