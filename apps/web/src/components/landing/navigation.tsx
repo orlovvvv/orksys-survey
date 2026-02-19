@@ -1,9 +1,9 @@
 "use client";
 
-import { Handshake } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 
+import { Logo } from "@/components/brand";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
@@ -15,13 +15,11 @@ export function Navigation({ className }: { className?: string }) {
 		<nav className={cn("w-full max-w-4xl px-4", className)}>
 			<div className="flex w-full min-w-0 items-center rounded-full border border-white/10 bg-zinc-900 px-3 py-2 shadow-xl backdrop-blur-md sm:px-4">
 				{/* Logo - always visible, left side */}
-				<Link
+				<Logo
 					href="/"
-					className="flex shrink-0 items-center gap-2 font-display font-semibold text-white tracking-tight"
-				>
-					<Handshake className="h-5 w-5 text-primary sm:h-[22px] sm:w-[22px]" />
-					<span className="hidden sm:inline">Handshake</span>
-				</Link>
+					variant="compact"
+					className="shrink-0 text-white [&_[class*='text-muted-foreground']]:text-zinc-400"
+				/>
 
 				{/* Center - nav links or spacer */}
 				<div className="flex flex-1 items-center justify-center">

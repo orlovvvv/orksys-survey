@@ -2,8 +2,8 @@ import { db } from "@orksys-survey/db";
 import { question, survey } from "@orksys-survey/db/schema/survey";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-
 import { adminProcedure, organizationProcedure } from "../index";
+import { getDefaultConfigForQuestionType } from "../lib/question-defaults";
 
 // Input schemas
 const questionConfigSchema = z.object({
@@ -116,7 +116,7 @@ export const questionRouter = {
 				type: input.type,
 				title: input.title,
 				description: input.description ?? null,
-				config: input.config ?? null,
+				config: input.config ?? getDefaultConfigForQuestionType(input.type),
 				required: input.required,
 				order: input.order,
 			});
@@ -265,7 +265,7 @@ export const questionRouter = {
 				type: q.type,
 				title: q.title,
 				description: q.description ?? null,
-				config: q.config ?? null,
+				config: q.config ?? getDefaultConfigForQuestionType(q.type),
 				required: q.required ?? false,
 				order: q.order ?? index,
 			}));

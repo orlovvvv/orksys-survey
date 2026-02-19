@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 import { QuestionField } from "./question-field";
 import type { NumberQuestionProps } from "./types";
 
@@ -10,20 +13,21 @@ export function RatingQuestion({
 
 	return (
 		<QuestionField question={question} error={undefined}>
-			<div className="mt-3 flex gap-2">
+			<div className="mt-3 flex flex-wrap gap-1 sm:gap-2">
 				{Array.from({ length: max }, (_, i) => i + 1).map((rating) => (
-					<button
+					<Button
 						key={rating}
 						type="button"
+						variant={value === rating ? "default" : "outline"}
+						size="icon"
 						onClick={() => onChange(rating)}
-						className={`h-10 w-10 rounded-lg border font-medium text-sm transition-colors ${
-							value === rating
-								? "border-primary bg-primary text-primary-foreground"
-								: "border-input text-muted-foreground hover:bg-accent"
-						}`}
+						className={cn(
+							"h-8 w-8 sm:h-10 sm:w-10",
+							value === rating && "border-primary",
+						)}
 					>
 						{rating}
-					</button>
+					</Button>
 				))}
 			</div>
 		</QuestionField>
@@ -37,20 +41,21 @@ export function NpsQuestion({
 }: NumberQuestionProps) {
 	return (
 		<QuestionField question={question} error={undefined} className="space-y-3">
-			<div className="mt-3 flex gap-1">
+			<div className="mt-3 flex flex-wrap gap-1 sm:gap-2">
 				{Array.from({ length: 11 }, (_, i) => i).map((rating) => (
-					<button
+					<Button
 						key={rating}
 						type="button"
+						variant={value === rating ? "default" : "outline"}
+						size="icon"
 						onClick={() => onChange(rating)}
-						className={`h-10 w-10 rounded-lg border font-medium text-sm transition-colors ${
-							value === rating
-								? "border-primary bg-primary text-primary-foreground"
-								: "border-input text-muted-foreground hover:bg-accent"
-						}`}
+						className={cn(
+							"h-8 w-8 sm:h-10 sm:w-10",
+							value === rating && "border-primary",
+						)}
 					>
 						{rating}
-					</button>
+					</Button>
 				))}
 			</div>
 			<div className="flex justify-between text-muted-foreground text-xs">
@@ -73,13 +78,15 @@ export function LinearScaleQuestion({
 		<QuestionField question={question} error={undefined}>
 			<div className="mt-3 flex items-center gap-4">
 				<span className="text-muted-foreground text-sm">{min}</span>
-				<input
-					type="range"
+				<Slider
 					min={min}
 					max={max}
-					value={value ?? min}
-					onChange={(e) => onChange(Number(e.target.value))}
-					className="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-muted"
+					value={[value ?? min]}
+					onValueChange={(values) => {
+						const v = Array.isArray(values) ? values[0] : values;
+						if (typeof v === "number") onChange(v);
+					}}
+					className="flex-1"
 				/>
 				<span className="text-muted-foreground text-sm">{max}</span>
 			</div>

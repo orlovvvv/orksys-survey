@@ -1,6 +1,7 @@
 "use client";
 
 import type { Question } from "@orksys-survey/db";
+import { createContext, useContext } from "react";
 import { useSurveyRunner } from "../context";
 import { CheckboxQuestion, ChoiceQuestion } from "./choice-question";
 import { EmailQuestion, PhoneQuestion } from "./contact-question";
@@ -19,8 +20,27 @@ export interface QuestionRendererProps {
 	question: Question;
 }
 
+interface QuestionContextValue {
+	answers: Map<string, unknown>;
+	setAnswer: (questionId: string, value: unknown) => void;
+	currentError: string | null;
+}
+
+// Optional preview context - will be undefined in survey runner mode
+export const PreviewContext = createContext<QuestionContextValue | null>(null);
+
+function useQuestionContext(): QuestionContextValue {
+	// Check for preview context first
+	const previewContext = useContext(PreviewContext);
+	if (previewContext) {
+		return previewContext;
+	}
+	// Fall back to survey runner context
+	return useSurveyRunner();
+}
+
 export function QuestionRenderer({ question }: QuestionRendererProps) {
-	const { answers, setAnswer, currentError } = useSurveyRunner();
+	const { answers, setAnswer, currentError } = useQuestionContext();
 	const value = answers.get(question.id);
 	const error = currentError;
 

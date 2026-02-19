@@ -3,7 +3,7 @@ import { db, eq, schema } from "@orksys-survey/db";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { AuthLogo } from "@/components/auth";
+import { Logo } from "@/components/brand";
 import CreateOrganizationForm from "@/components/onboarding/create-organization-form";
 import { OnboardingCard } from "@/components/onboarding/onboarding-card";
 import SelectOrganization from "@/components/onboarding/select-organization";
@@ -39,7 +39,7 @@ export default async function OnboardingPage() {
 	return (
 		<div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
 			<div className="w-full max-w-sm md:max-w-4xl">
-				<AuthLogo />
+				<Logo className="self-center" />
 				<div className="mt-6">
 					<OnboardingCard>
 						<div className="flex flex-col items-center gap-2 text-center">

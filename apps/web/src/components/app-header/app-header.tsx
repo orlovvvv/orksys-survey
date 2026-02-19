@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 
+import { Logo } from "@/components/brand";
 import { ModeToggle } from "@/components/mode-toggle";
 import OrganizationSwitcher from "@/components/organization-switcher";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -37,17 +38,12 @@ export function AppHeader({
 				"bg-background/95 supports-[backdrop-filter]:bg-background/80",
 			)}
 		>
-			<nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
+			<nav className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4">
 				{/* Logo */}
-				<Link
+				<Logo
 					href="/dashboard"
-					className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-accent"
-				>
-					<div className="flex size-6 items-center justify-center rounded-md bg-primary">
-						<span className="font-bold text-primary-foreground text-sm">O</span>
-					</div>
-					<p className="font-bold font-sans text-lg tracking-tight">orksys</p>
-				</Link>
+					className="rounded-md px-2 py-1 hover:bg-accent"
+				/>
 
 				{/* Desktop Navigation */}
 				<div className="flex items-center gap-2">
@@ -94,16 +90,7 @@ export function AppHeader({
 						>
 							{/* Mobile Header */}
 							<div className="border-b px-4 py-4">
-								<div className="flex items-center gap-2">
-									<div className="flex size-6 items-center justify-center rounded-md bg-primary">
-										<span className="font-bold text-primary-foreground text-sm">
-											O
-										</span>
-									</div>
-									<p className="font-bold font-sans text-lg tracking-tight">
-										orksys
-									</p>
-								</div>
+								<Logo href="/dashboard" />
 							</div>
 
 							{/* Mobile Navigation */}
@@ -151,5 +138,4 @@ export function AppHeader({
 const defaultNavItems: NavItem[] = [
 	{ href: "/dashboard", label: "Dashboard" },
 	{ href: "/surveys", label: "Surveys" },
-	{ href: "/todos", label: "Todos" },
 ];

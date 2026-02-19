@@ -6,7 +6,6 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
-import type { Organization } from "./use-organizations";
 
 export function useOrgActions() {
 	const router = useRouter();
@@ -41,10 +40,22 @@ export function useOrgActions() {
 		[router, queryClient],
 	);
 
+	/**
+	 * Invalidates the organizations query cache, triggering a refetch.
+	 * Use this instead of refetchOrganizations for proper cache management.
+	 */
+	const invalidateOrganizations = useCallback(() => {
+		queryClient.invalidateQueries({ queryKey: ["organizations"] });
+	}, [queryClient]);
+
+	/**
+	 * @deprecated Use invalidateOrganizations instead.
+	 * This bypasses the TanStack Query cache and makes a direct API call.
+	 */
 	const refetchOrganizations = useCallback(async () => {
 		const result = await authClient.organization.list();
 		return result.data ?? [];
 	}, []);
 
-	return { switchOrganization, refetchOrganizations };
+	return { switchOrganization, invalidateOrganizations, refetchOrganizations };
 }

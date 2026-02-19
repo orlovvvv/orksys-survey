@@ -63,14 +63,16 @@ export function BarChart({
 							type="number"
 							tickLine={false}
 							axisLine={false}
-							tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+							tick={{ fill: "currentColor", fontSize: 12 }}
+							className="text-muted-foreground"
 						/>
 						<YAxis
 							dataKey="name"
 							type="category"
 							tickLine={false}
 							axisLine={false}
-							tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+							tick={{ fill: "currentColor", fontSize: 12 }}
+							className="text-muted-foreground"
 							width={100}
 							interval={0}
 						/>
@@ -105,13 +107,15 @@ export function BarChart({
 						dataKey="name"
 						tickLine={false}
 						axisLine={false}
-						tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+						tick={{ fill: "currentColor", fontSize: 12 }}
+						className="text-muted-foreground"
 						interval="preserveStartEnd"
 					/>
 					<YAxis
 						tickLine={false}
 						axisLine={false}
-						tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+						tick={{ fill: "currentColor", fontSize: 12 }}
+						className="text-muted-foreground"
 					/>
 					<Tooltip content={<ChartTooltip formatter={formatter} />} />
 					<Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={maxBarSize}>

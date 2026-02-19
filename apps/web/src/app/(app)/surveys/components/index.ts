@@ -1,3 +1,4 @@
+export { SurveyActionsMenu } from "./survey-actions-menu";
 export {
 	SurveysEmpty,
 	type SurveysEmptyProps,

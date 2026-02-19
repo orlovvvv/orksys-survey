@@ -4,19 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { use } from "react";
-
-import { AnalyticsOverview } from "@/components/analytics/analytics-overview";
-import { AnalyticsTabs } from "@/components/analytics/analytics-tabs";
+import { use, useEffect } from "react";
+import {
+	SurveyAnalyticsProvider,
+	SurveyAnalyticsTabs,
+	useSurveyAnalytics,
+} from "@/components/survey-analytics";
 import { Button } from "@/components/ui/button";
 import { orpc } from "@/utils/orpc";
 
-export default function AnalyticsPage({
-	params,
-}: {
-	params: Promise<{ surveyId: string }>;
-}) {
-	const { surveyId } = use(params);
+function AnalyticsContent({ surveyId }: { surveyId: string }) {
+	const { setSurvey, setQuestions } = useSurveyAnalytics();
 
 	const survey = useQuery(
 		orpc.survey.getById.queryOptions({ input: { id: surveyId } }),
@@ -26,9 +24,18 @@ export default function AnalyticsPage({
 		orpc.question.list.queryOptions({ input: { surveyId } }),
 	);
 
-	const summary = useQuery(
-		orpc.analytics.getSummary.queryOptions({ input: { surveyId } }),
-	);
+	// Update provider context when data loads
+	useEffect(() => {
+		if (survey.data) {
+			setSurvey(survey.data);
+		}
+	}, [survey.data, setSurvey]);
+
+	useEffect(() => {
+		if (questions.data) {
+			setQuestions(questions.data);
+		}
+	}, [questions.data, setQuestions]);
 
 	if (survey.isLoading || questions.isLoading) {
 		return (
@@ -63,17 +70,25 @@ export default function AnalyticsPage({
 
 			{/* Content */}
 			<div className="flex-1 overflow-auto">
-				<div className="mx-auto max-w-6xl p-6">
-					{/* Summary Cards */}
-					<AnalyticsOverview
-						summary={summary.data}
-						isLoading={summary.isLoading}
-					/>
-
+				<div className="mx-auto w-full max-w-7xl p-4 md:p-6">
 					{/* Tabs for detailed analytics */}
-					<AnalyticsTabs surveyId={surveyId} questions={questions.data || []} />
+					<SurveyAnalyticsTabs />
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export default function AnalyticsPage({
+	params,
+}: {
+	params: Promise<{ surveyId: string }>;
+}) {
+	const { surveyId } = use(params);
+
+	return (
+		<SurveyAnalyticsProvider surveyId={surveyId}>
+			<AnalyticsContent surveyId={surveyId} />
+		</SurveyAnalyticsProvider>
 	);
 }

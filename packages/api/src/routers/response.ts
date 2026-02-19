@@ -42,6 +42,32 @@ const submitResponseSchema = z.object({
 	isComplete: z.boolean().default(false),
 });
 
+const saveProgressSchema = z.object({
+	surveyId: z.string(),
+	respondentId: z.string(),
+	fingerprint: z.string().optional(),
+	answers: z.array(
+		z.object({
+			questionId: z.string(),
+			value: z.unknown(),
+		}),
+	),
+	currentQuestionIndex: z.number().optional(),
+	isComplete: z.boolean().default(false),
+	metadata: z
+		.object({
+			userAgent: z.string().optional(),
+			referrer: z.string().optional(),
+			browser: z.string().optional(),
+			os: z.string().optional(),
+			device: z.string().optional(),
+			country: z.string().optional(),
+			language: z.string().optional(),
+			timezone: z.string().optional(),
+		})
+		.optional(),
+});
+
 const responseListSchema = z.object({
 	surveyId: z.string(),
 	page: z.number().int().min(1).default(1),
@@ -192,6 +218,138 @@ export const responseRouter = {
 				id: responseId,
 				surveyId: input.surveyId,
 				respondentId: input.respondentId ?? null,
+				fingerprint: input.fingerprint ?? null,
+				metadata: input.metadata ?? null,
+				isComplete: input.isComplete,
+				startedAt: now,
+				completedAt: input.isComplete ? now : null,
+			});
+
+			// Insert answers
+			if (input.answers.length > 0) {
+				const answersToInsert = input.answers.map((a) => ({
+					id: generateAnswerId(),
+					responseId,
+					questionId: a.questionId,
+					value: a.value,
+				}));
+
+				await db.insert(answer).values(answersToInsert);
+			}
+
+			return { success: true, responseId };
+		}),
+
+	// PUBLIC - Get existing incomplete response by respondentId
+	getExistingResponse: publicProcedure
+		.input(
+			z.object({
+				surveyId: z.string(),
+				respondentId: z.string(),
+			}),
+		)
+		.handler(async ({ input }) => {
+			const existingResponse = await db
+				.select()
+				.from(response)
+				.where(
+					and(
+						eq(response.surveyId, input.surveyId),
+						eq(response.respondentId, input.respondentId),
+						eq(response.isComplete, false),
+					),
+				)
+				.limit(1);
+
+			if (!existingResponse[0]) {
+				return null;
+			}
+
+			// Get the answers for this response
+			const answers = await db
+				.select()
+				.from(answer)
+				.where(eq(answer.responseId, existingResponse[0].id));
+
+			return {
+				response: existingResponse[0],
+				answers: answers.map((a) => ({
+					questionId: a.questionId,
+					value: a.value,
+				})),
+			};
+		}),
+
+	// PUBLIC - Save or update progress
+	saveProgress: publicProcedure
+		.input(saveProgressSchema)
+		.handler(async ({ input }) => {
+			// Verify survey exists and is published
+			const surveyResult = await db
+				.select()
+				.from(survey)
+				.where(
+					and(eq(survey.id, input.surveyId), eq(survey.status, "published")),
+				)
+				.limit(1);
+
+			if (!surveyResult[0]) {
+				throw new Error("Survey not found or not published");
+			}
+
+			// Check for existing incomplete response by respondentId
+			const existingResponse = await db
+				.select()
+				.from(response)
+				.where(
+					and(
+						eq(response.surveyId, input.surveyId),
+						eq(response.respondentId, input.respondentId),
+						eq(response.isComplete, false),
+					),
+				)
+				.limit(1);
+
+			const now = new Date();
+
+			if (existingResponse[0]) {
+				// Update existing response
+				const responseId = existingResponse[0].id;
+
+				await db
+					.update(response)
+					.set({
+						metadata: input.metadata ?? null,
+						isComplete: input.isComplete,
+						completedAt: input.isComplete ? now : null,
+						updatedAt: now,
+					})
+					.where(eq(response.id, responseId));
+
+				// Delete existing answers and insert new ones
+				await db.delete(answer).where(eq(answer.responseId, responseId));
+
+				if (input.answers.length > 0) {
+					const answersToInsert = input.answers.map((a) => ({
+						id: generateAnswerId(),
+						responseId,
+						questionId: a.questionId,
+						value: a.value,
+					}));
+
+					await db.insert(answer).values(answersToInsert);
+				}
+
+				return { success: true, responseId };
+			}
+
+			// Create new response
+			const responseId = generateResponseId();
+
+			await db.insert(response).values({
+				id: responseId,
+				surveyId: input.surveyId,
+				respondentId: input.respondentId,
 				fingerprint: input.fingerprint ?? null,
 				metadata: input.metadata ?? null,
 				isComplete: input.isComplete,

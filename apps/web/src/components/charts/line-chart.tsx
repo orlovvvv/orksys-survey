@@ -59,13 +59,15 @@ export function LineChart({
 						dataKey={xKey}
 						tickLine={false}
 						axisLine={false}
-						tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+						tick={{ fill: "currentColor", fontSize: 12 }}
+						className="text-muted-foreground"
 						interval="preserveStartEnd"
 					/>
 					<YAxis
 						tickLine={false}
 						axisLine={false}
-						tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+						tick={{ fill: "currentColor", fontSize: 12 }}
+						className="text-muted-foreground"
 					/>
 					<Tooltip content={<ChartTooltip formatter={formatter} />} />
 					{showLegend && (

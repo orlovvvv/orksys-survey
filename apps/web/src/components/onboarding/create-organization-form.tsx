@@ -1,12 +1,10 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import { useRouter } from "next/navigation";
-import { useMemo } from "react";
-import { toast } from "sonner";
 import z from "zod";
 
-import { authClient } from "@/lib/auth-client";
+import { useCreateOrganization } from "@/components/organization/hooks";
+import { generateSlug } from "@/utils/slug";
 import { FormField } from "../forms/form-field";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -16,14 +14,6 @@ interface CreateOrganizationFormProps {
 	onSuccess?: () => void;
 }
 
-const generateSlug = (name: string) => {
-	return name
-		.toLowerCase()
-		.trim()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-};
-
 const validateSlugLength = (name: string) => {
 	const slug = generateSlug(name);
 	return slug.length >= 2 && slug.length <= 50;
@@ -32,7 +22,7 @@ const validateSlugLength = (name: string) => {
 export default function CreateOrganizationForm({
 	onSuccess,
 }: CreateOrganizationFormProps) {
-	const router = useRouter();
+	const createOrg = useCreateOrganization();
 
 	const form = useForm({
 		defaultValues: {
@@ -41,28 +31,11 @@ export default function CreateOrganizationForm({
 		onSubmit: async ({ value }) => {
 			const slug = generateSlug(value.name);
 			try {
-				const result = await authClient.organization.create({
-					name: value.name,
-					slug,
-				});
-
-				if (result.error) {
-					toast.error(result.error.message || "Failed to create organization");
-					return;
-				}
-
-				if (result.data?.id) {
-					await authClient.organization.setActive({
-						organizationId: result.data.id,
-					});
-				}
-
-				toast.success("Organization created successfully");
+				await createOrg.mutateAsync({ name: value.name, slug });
 				onSuccess?.();
 				form.reset();
-				router.refresh();
 			} catch (_error) {
-				toast.error("An unexpected error occurred");
+				// Error handling is done in the hook
 			}
 		},
 		validators: {
@@ -107,26 +80,31 @@ export default function CreateOrganizationForm({
 					return (
 						<>
 							<div className="space-y-2">
-								<Label htmlFor="slug">Slug</Label>
+								<Label htmlFor="slug">
+									Slug
+									<span className="ml-2 font-normal text-muted-foreground text-xs">
+										(auto-generated)
+									</span>
+								</Label>
 								<Input
 									id="slug"
-									value={slug}
-									disabled
-									placeholder="auto-generated-from-name"
-									className="bg-muted"
+									value={slug || "auto-generated-from-name"}
+									readOnly
+									tabIndex={-1}
+									className="cursor-default bg-muted/50"
 								/>
-								<p className="text-muted-foreground text-sm">
-									Used in URLs and identifiers
-								</p>
 							</div>
 							<Button
 								type="submit"
 								className="w-full"
 								disabled={
-									!form.state.canSubmit || form.state.isSubmitting || !slug
+									!form.state.canSubmit ||
+									form.state.isSubmitting ||
+									createOrg.isPending ||
+									!slug
 								}
 							>
-								{form.state.isSubmitting
+								{form.state.isSubmitting || createOrg.isPending
 									? "Creating..."
 									: "Create Organization"}
 							</Button>

@@ -4,11 +4,14 @@ import type {
 	Survey,
 	SurveySettings,
 } from "@orksys-survey/db";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { AnswerValue } from "../context";
 import { useFingerprint } from "./use-fingerprint";
 import { useLogicEvaluator } from "./use-logic-evaluator";
+import { useRespondentToken } from "./use-respondent-token";
+import type { ExistingResponse } from "./use-response-persistence";
+import { useResponsePersistence } from "./use-response-persistence";
 
 export interface UseRunnerStateOptions {
 	survey: Survey;
@@ -38,11 +41,21 @@ export interface UseRunnerStateResult {
 
 	// Metadata
 	fingerprint: string | null;
+	respondentId: string | null;
 
-	// Setters
+	// Persistence state
+	isLoadingToken: boolean;
+	isLoadingExisting: boolean;
+	existingResponse: ExistingResponse | null;
+	isSaving: boolean;
+	hasRestored: boolean;
+
+	// Actions
 	setAnswers: React.Dispatch<React.SetStateAction<Map<string, AnswerValue>>>;
 	setCurrentQuestionIndex: React.Dispatch<React.SetStateAction<number>>;
 	setIsComplete: React.Dispatch<React.SetStateAction<boolean>>;
+	restoreFromExisting: (existing: ExistingResponse) => void;
+	saveProgress: () => Promise<void>;
 }
 
 /**
@@ -53,6 +66,8 @@ export interface UseRunnerStateResult {
  * - Managing answer state
  * - Evaluating logic rules to determine visibility
  * - Computing navigation state (canGoBack, canGoNext)
+ * - Token-based respondent tracking
+ * - Response persistence and restoration
  */
 export function useRunnerState({
 	survey,
@@ -60,9 +75,24 @@ export function useRunnerState({
 	logicRules,
 }: UseRunnerStateOptions): UseRunnerStateResult {
 	const fingerprint = useFingerprint();
+	const { respondentId, isLoading: isLoadingToken } = useRespondentToken(
+		survey.id,
+	);
 	const [answers, setAnswers] = useState<Map<string, AnswerValue>>(new Map());
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 	const [isComplete, setIsComplete] = useState(false);
+	const [hasRestored, setHasRestored] = useState(false);
+
+	// Response persistence
+	const { existingResponse, isLoadingExisting, isSaving, saveNow } =
+		useResponsePersistence({
+			surveyId: survey.id,
+			respondentId,
+			answers,
+			fingerprint,
+			currentQuestionIndex,
+			enabled: !hasRestored, // Only check for existing before restoration
+		});
 
 	// Sort questions by order
 	const sortedQuestions = useMemo(
@@ -98,6 +128,16 @@ export function useRunnerState({
 	const displayMode =
 		(survey.settings as SurveySettings | null)?.displayMode ?? "one_at_a_time";
 
+	// Restore state from existing response
+	const restoreFromExisting = useCallback((existing: ExistingResponse) => {
+		const restoredAnswers = new Map<string, AnswerValue>();
+		for (const answer of existing.answers) {
+			restoredAnswers.set(answer.questionId, answer.value as AnswerValue);
+		}
+		setAnswers(restoredAnswers);
+		setHasRestored(true);
+	}, []);
+
 	return {
 		survey,
 		questions: sortedQuestions,
@@ -113,8 +153,16 @@ export function useRunnerState({
 		canGoNext,
 		isComplete,
 		fingerprint,
+		respondentId,
+		isLoadingToken,
+		isLoadingExisting,
+		existingResponse,
+		isSaving,
+		hasRestored,
 		setAnswers,
 		setCurrentQuestionIndex,
 		setIsComplete,
+		restoreFromExisting,
+		saveProgress: saveNow,
 	};
 }

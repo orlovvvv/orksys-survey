@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { Popover, PopoverContent } from "@/components/ui/popover";
@@ -14,14 +13,13 @@ import { useOrgActions } from "./organization-switcher/use-org-actions";
 import { useOrganizations } from "./organization-switcher/use-organizations";
 
 export default function OrganizationSwitcher() {
-	const router = useRouter();
 	const isMobile = useIsMobile();
 	const { data: session, isPending: isSessionPending } =
 		authClient.useSession();
 	const { organizations, isPending: isOrgsPending } = useOrganizations({
 		session,
 	});
-	const { switchOrganization, refetchOrganizations } = useOrgActions();
+	const { switchOrganization } = useOrgActions();
 
 	const [open, setOpen] = useState(false);
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -53,14 +51,9 @@ export default function OrganizationSwitcher() {
 		}
 	};
 
-	const handleCreateSuccess = useCallback(async () => {
-		const updatedOrgs = await refetchOrganizations();
-		// Update local state after creation
-		if (updatedOrgs.length > 0) {
-			router.refresh();
-		}
+	const handleCreateSuccess = useCallback(() => {
 		setShowCreateDialog(false);
-	}, [refetchOrganizations, router]);
+	}, []);
 
 	const handleCreateClick = useCallback(() => {
 		setOpen(false);

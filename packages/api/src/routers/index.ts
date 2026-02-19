@@ -2,12 +2,12 @@ import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure, publicProcedure } from "../index";
 import { analyticsRouter } from "./analytics";
+import { dashboardRouter } from "./dashboard";
 import { insightsRouter } from "./insights";
 import { logicRuleRouter } from "./logic-rule";
 import { questionRouter } from "./question";
 import { responseRouter } from "./response";
 import { surveyRouter } from "./survey";
-import { todoRouter } from "./todo";
 import { usageRouter } from "./usage";
 
 export const appRouter = {
@@ -20,7 +20,6 @@ export const appRouter = {
 			user: context.session?.user,
 		};
 	}),
-	todo: todoRouter,
 	survey: surveyRouter,
 	question: questionRouter,
 	logicRule: logicRuleRouter,
@@ -28,6 +27,7 @@ export const appRouter = {
 	analytics: analyticsRouter,
 	insights: insightsRouter,
 	usage: usageRouter,
+	dashboard: dashboardRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

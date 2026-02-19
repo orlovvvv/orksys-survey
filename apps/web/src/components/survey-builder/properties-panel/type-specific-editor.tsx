@@ -6,6 +6,10 @@ import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChoiceEditor } from "../question-editors/choice-editor";
+import { DateEditor } from "../question-editors/date-editor";
+import { EmailEditor } from "../question-editors/email-editor";
+import { FileUploadEditor } from "../question-editors/file-upload-editor";
+import { PhoneEditor } from "../question-editors/phone-editor";
 import { RatingEditor } from "../question-editors/rating-editor";
 
 interface TypeSpecificEditorProps {
@@ -99,6 +103,18 @@ export function TypeSpecificEditor({
 					</div>
 				</motion.div>
 			);
+
+		case "file_upload":
+			return <FileUploadEditor config={config} onChange={onConfigChange} />;
+
+		case "date":
+			return <DateEditor config={config} onChange={onConfigChange} />;
+
+		case "email":
+			return <EmailEditor config={config} onChange={onConfigChange} />;
+
+		case "phone":
+			return <PhoneEditor config={config} onChange={onConfigChange} />;
 
 		default:
 			return null;

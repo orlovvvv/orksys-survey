@@ -194,7 +194,7 @@ function SurveysPageContent() {
 
 	return (
 		<div className="flex justify-center">
-			<div className="w-full max-w-screen-2xl space-y-6 p-4 md:p-6">
+			<div className="w-full max-w-7xl space-y-6 p-4 md:p-6">
 				<SurveysHeader
 					organizationName={currentOrg?.name}
 					surveyCount={statsQuery.data?.total ?? 0}
@@ -266,7 +266,7 @@ function SurveysPageContent() {
 function SurveysPageSkeleton() {
 	return (
 		<div className="flex justify-center">
-			<div className="w-full max-w-screen-2xl space-y-6 p-4 md:p-6">
+			<div className="w-full max-w-7xl space-y-6 p-4 md:p-6">
 				<div className="h-8 w-48 animate-pulse rounded bg-muted" />
 				<div className="flex gap-3">
 					{[1, 2, 3, 4].map((i) => (

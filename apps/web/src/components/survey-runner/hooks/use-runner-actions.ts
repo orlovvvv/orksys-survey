@@ -1,4 +1,15 @@
 import type { Question, Survey, SurveySettings } from "@orksys-survey/db";
+
+// Extended survey type that includes organization from API
+interface SurveyWithOrganization extends Survey {
+	organization?: {
+		id: string;
+		name: string;
+		slug: string;
+		logo: string | null;
+	};
+}
+
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
@@ -16,6 +27,7 @@ export interface UseRunnerActionsOptions {
 	currentQuestionIndex: number;
 	answers: Map<string, AnswerValue>;
 	fingerprint: string | null;
+	respondentId: string | null;
 	setAnswers: React.Dispatch<React.SetStateAction<Map<string, AnswerValue>>>;
 	setCurrentQuestionIndex: React.Dispatch<React.SetStateAction<number>>;
 	setIsComplete: React.Dispatch<React.SetStateAction<boolean>>;
@@ -52,6 +64,7 @@ export function useRunnerActions({
 	currentQuestionIndex,
 	answers,
 	fingerprint,
+	respondentId,
 	setAnswers,
 	setCurrentQuestionIndex,
 	setIsComplete,
@@ -82,6 +95,24 @@ export function useRunnerActions({
 				}),
 			);
 
+			// If we have a respondentId, use saveProgress to maintain consistency
+			if (respondentId) {
+				return client.response.saveProgress({
+					surveyId: survey.id,
+					respondentId,
+					fingerprint: fingerprint ?? undefined,
+					answers: answersArray,
+					currentQuestionIndex,
+					isComplete: true,
+					metadata: {
+						userAgent: navigator.userAgent,
+						language: navigator.language,
+						timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+					},
+				});
+			}
+
+			// Fallback to original submit endpoint
 			return client.response.submit({
 				surveyId: survey.id,
 				fingerprint: fingerprint ?? undefined,
@@ -100,7 +131,11 @@ export function useRunnerActions({
 				onComplete();
 			} else {
 				// Navigate to complete page
-				const completeUrl = `/s/${survey.slug}/complete`;
+				const surveyWithOrg = survey as SurveyWithOrganization;
+				const orgSlug = surveyWithOrg.organization?.slug;
+				const completeUrl = orgSlug
+					? `/s/${orgSlug}/${survey.slug}/complete`
+					: `/s/${survey.slug}/complete`;
 				const settings = survey.settings as SurveySettings | null;
 				if (settings?.thankYouMessage || settings?.redirectUrl) {
 					const params = new URLSearchParams();

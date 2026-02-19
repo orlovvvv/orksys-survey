@@ -8,6 +8,10 @@ import type {
 } from "@orksys-survey/db";
 import { createContext, useContext } from "react";
 
+import type { ExistingResponse } from "./hooks/use-response-persistence";
+import { useRunnerActions } from "./hooks/use-runner-actions";
+import { useRunnerState } from "./hooks/use-runner-state";
+
 interface SurveyOrganization {
 	id: string;
 	name: string;
@@ -18,9 +22,6 @@ interface SurveyOrganization {
 interface SurveyWithOrg extends Omit<Survey, "organization"> {
 	organization: SurveyOrganization;
 }
-
-import { useRunnerActions } from "./hooks/use-runner-actions";
-import { useRunnerState } from "./hooks/use-runner-state";
 
 export type AnswerValue = unknown;
 
@@ -53,6 +54,18 @@ interface SurveyRunnerContextValue {
 
 	// Metadata
 	fingerprint: string | null;
+	respondentId: string | null;
+
+	// Persistence state
+	isLoadingToken: boolean;
+	isLoadingExisting: boolean;
+	existingResponse: ExistingResponse | null;
+	isSaving: boolean;
+	hasRestored: boolean;
+
+	// Persistence actions
+	restoreFromExisting: (existing: ExistingResponse) => void;
+	saveProgress: () => Promise<void>;
 
 	// Error state
 	currentError: string | null;
@@ -103,6 +116,7 @@ export function SurveyRunnerProvider({
 		currentQuestionIndex: state.currentQuestionIndex,
 		answers: state.answers,
 		fingerprint: state.fingerprint,
+		respondentId: state.respondentId,
 		setAnswers: state.setAnswers,
 		setCurrentQuestionIndex: state.setCurrentQuestionIndex,
 		setIsComplete: state.setIsComplete,
@@ -129,6 +143,14 @@ export function SurveyRunnerProvider({
 		submit: actions.submit,
 		validateAllQuestions: actions.validateAllQuestions,
 		fingerprint: state.fingerprint,
+		respondentId: state.respondentId,
+		isLoadingToken: state.isLoadingToken,
+		isLoadingExisting: state.isLoadingExisting,
+		existingResponse: state.existingResponse,
+		isSaving: state.isSaving,
+		hasRestored: state.hasRestored,
+		restoreFromExisting: state.restoreFromExisting,
+		saveProgress: state.saveProgress,
 		currentError: actions.currentError,
 		clearError: actions.clearError,
 	};

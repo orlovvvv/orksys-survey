@@ -1,20 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import {
-	Archive,
-	BarChart3,
-	Calendar,
-	ClipboardList,
-	Columns3,
-	Edit,
-	Loader2,
-	MoreHorizontal,
-	Trash2,
-} from "lucide-react";
+import { Calendar, Columns3, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-
+import { SurveyEditDialog } from "@/components/survey-settings";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,8 +13,6 @@ import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -35,6 +23,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+
+import { SurveyActionsMenu } from "./survey-actions-menu";
 
 const statusColors = {
 	draft: "bg-muted text-muted-foreground",
@@ -92,84 +82,6 @@ function getInitials(name: string | null): string {
 		.slice(0, 2);
 }
 
-interface SurveyActionsProps {
-	survey: Survey;
-	onDelete: (id: string) => void;
-	onStatusChange: (id: string, status: Status) => void;
-}
-
-function SurveyActions({
-	survey,
-	onDelete,
-	onStatusChange,
-}: SurveyActionsProps) {
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
-				render={
-					<Button variant="ghost" size="icon">
-						<MoreHorizontal className="h-4 w-4" />
-					</Button>
-				}
-			/>
-			<DropdownMenuContent align="end">
-				<DropdownMenuItem
-					render={
-						<Link
-							href={`/surveys/${survey.id}`}
-							className="flex items-center"
-						/>
-					}
-				>
-					<Edit className="mr-2 h-4 w-4" />
-					Edit
-				</DropdownMenuItem>
-				<DropdownMenuItem
-					render={
-						<Link
-							href={`/surveys/${survey.id}/analytics`}
-							className="flex items-center"
-						/>
-					}
-				>
-					<BarChart3 className="mr-2 h-4 w-4" />
-					Analytics
-				</DropdownMenuItem>
-				{survey.status === "draft" && (
-					<>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onClick={() => onStatusChange(survey.id, "published")}
-						>
-							<ClipboardList className="mr-2 h-4 w-4" />
-							Publish
-						</DropdownMenuItem>
-					</>
-				)}
-				{survey.status === "published" && (
-					<>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onClick={() => onStatusChange(survey.id, "closed")}
-						>
-							<Archive className="mr-2 h-4 w-4" />
-							Close
-						</DropdownMenuItem>
-					</>
-				)}
-				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					variant="destructive"
-					onClick={() => onDelete(survey.id)}
-				>
-					<Trash2 className="mr-2 h-4 w-4" />
-					Delete
-				</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
-	);
-}
-
 export function SurveysTable({
 	surveys,
 	isLoading,
@@ -183,6 +95,13 @@ export function SurveysTable({
 		created: true,
 		owner: true,
 	});
+	const [editDialogOpen, setEditDialogOpen] = useState(false);
+	const [editingSurveyId, setEditingSurveyId] = useState<string | null>(null);
+
+	const handleEdit = (id: string) => {
+		setEditingSurveyId(id);
+		setEditDialogOpen(true);
+	};
 
 	const allSelected =
 		surveys.length > 0 && surveys.every((s) => selectedIds.has(s.id));
@@ -391,10 +310,11 @@ export function SurveysTable({
 									)}
 								</TableCell>
 								<TableCell>
-									<SurveyActions
+									<SurveyActionsMenu
 										survey={survey}
 										onDelete={onDelete}
 										onStatusChange={onStatusChange}
+										onEdit={handleEdit}
 									/>
 								</TableCell>
 							</motion.tr>
@@ -402,6 +322,15 @@ export function SurveysTable({
 					</AnimatePresence>
 				</TableBody>
 			</Table>
+
+			{/* Edit Dialog */}
+			{editingSurveyId && (
+				<SurveyEditDialog
+					surveyId={editingSurveyId}
+					open={editDialogOpen}
+					onOpenChange={setEditDialogOpen}
+				/>
+			)}
 		</div>
 	);
 }

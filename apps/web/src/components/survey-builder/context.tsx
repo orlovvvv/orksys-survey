@@ -1,7 +1,7 @@
 "use client";
 
 import type { Question } from "@orksys-survey/db";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 
 import type {
 	SurveyBuilderContextValue,
@@ -30,7 +30,7 @@ export interface SurveyBuilderProviderProps {
 }
 
 export function SurveyBuilderProvider({
-	survey,
+	survey: initialSurvey,
 	questions,
 	selectedQuestionId,
 	setSelectedQuestionId,
@@ -45,6 +45,14 @@ export function SurveyBuilderProvider({
 	setSettingsOpen,
 	children,
 }: SurveyBuilderProviderProps) {
+	const [survey, setSurvey] = useState(initialSurvey);
+
+	const updateSurveyStatus: SurveyBuilderContextValue["updateSurveyStatus"] = (
+		status,
+	) => {
+		setSurvey((prev) => ({ ...prev, status }));
+	};
+
 	const contextValue: SurveyBuilderContextValue = {
 		survey,
 		questions,
@@ -59,6 +67,7 @@ export function SurveyBuilderProvider({
 		setPropertiesOpen,
 		settingsOpen,
 		setSettingsOpen,
+		updateSurveyStatus,
 	};
 
 	return (

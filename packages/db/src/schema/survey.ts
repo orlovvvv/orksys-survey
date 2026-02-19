@@ -166,6 +166,7 @@ export const response = pgTable(
 		index("response_surveyId_idx").on(table.surveyId),
 		index("response_fingerprint_idx").on(table.fingerprint),
 		index("response_isComplete_idx").on(table.isComplete),
+		index("response_respondentId_idx").on(table.respondentId),
 		// Composite indexes for analytics queries
 		index("response_surveyId_completedAt_idx").on(
 			table.surveyId,

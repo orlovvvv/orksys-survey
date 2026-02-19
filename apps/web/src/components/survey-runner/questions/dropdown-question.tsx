@@ -1,3 +1,10 @@
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { QuestionField } from "./question-field";
 import type { TextQuestionProps } from "./types";
 
@@ -8,20 +15,24 @@ export function DropdownQuestion({
 }: TextQuestionProps) {
 	const options = question.config?.options ?? [];
 
+	const handleValueChange = (newValue: string | null) => {
+		onChange(newValue ?? "");
+	};
+
 	return (
 		<QuestionField question={question} error={undefined}>
-			<select
-				value={value ?? ""}
-				onChange={(e) => onChange(e.target.value)}
-				className="w-full rounded-lg border border-input bg-card px-4 py-2.5 text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-			>
-				<option value="">Select an option</option>
-				{options.map((option) => (
-					<option key={option.value} value={option.value}>
-						{option.label}
-					</option>
-				))}
-			</select>
+			<Select value={value ?? ""} onValueChange={handleValueChange}>
+				<SelectTrigger className="w-full">
+					<SelectValue placeholder="Select an option" />
+				</SelectTrigger>
+				<SelectContent>
+					{options.map((option) => (
+						<SelectItem key={option.value} value={option.value}>
+							{option.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 		</QuestionField>
 	);
 }

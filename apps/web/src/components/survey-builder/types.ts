@@ -25,6 +25,9 @@ export interface SurveyBuilderContextValue {
 	setPropertiesOpen: (open: boolean) => void;
 	settingsOpen: boolean;
 	setSettingsOpen: (open: boolean) => void;
+	updateSurveyStatus: (
+		status: "draft" | "published" | "closed" | "archived",
+	) => void;
 }
 
 // Drag item types

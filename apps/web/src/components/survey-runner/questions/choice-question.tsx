@@ -1,3 +1,6 @@
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { QuestionField } from "./question-field";
 import type { ArrayQuestionProps, TextQuestionProps } from "./types";
 
@@ -17,24 +20,26 @@ function SingleChoice({
 }: SingleChoiceProps) {
 	return (
 		<QuestionField question={question} error={undefined}>
-			<div className="mt-3 space-y-2">
+			<RadioGroup
+				value={value ?? ""}
+				onValueChange={onChange}
+				className="mt-3 gap-2"
+			>
 				{options.map((option) => (
-					<label
+					<div
 						key={option.value}
 						className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent"
 					>
-						<input
-							type="radio"
-							name={question.id}
-							value={option.value}
-							checked={value === option.value}
-							onChange={(e) => onChange(e.target.value)}
-							className="h-4 w-4 text-primary"
-						/>
-						<span className="text-foreground">{option.label}</span>
-					</label>
+						<RadioGroupItem value={option.value} id={option.value} />
+						<Label
+							htmlFor={option.value}
+							className="cursor-pointer text-foreground"
+						>
+							{option.label}
+						</Label>
+					</div>
 				))}
-			</div>
+			</RadioGroup>
 		</QuestionField>
 	);
 }
@@ -59,18 +64,22 @@ function MultipleChoice({
 		<QuestionField question={question} error={undefined}>
 			<div className="mt-3 space-y-2">
 				{options.map((option) => (
-					<label
+					<div
 						key={option.value}
 						className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent"
 					>
-						<input
-							type="checkbox"
+						<Checkbox
 							checked={selectedValues.includes(option.value)}
-							onChange={() => handleToggle(option.value)}
-							className="h-4 w-4 rounded text-primary"
+							onCheckedChange={() => handleToggle(option.value)}
+							id={option.value}
 						/>
-						<span className="text-foreground">{option.label}</span>
-					</label>
+						<Label
+							htmlFor={option.value}
+							className="cursor-pointer text-foreground"
+						>
+							{option.label}
+						</Label>
+					</div>
 				))}
 			</div>
 		</QuestionField>

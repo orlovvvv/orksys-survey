@@ -7,8 +7,8 @@ import {
 	Eye,
 	Loader2,
 	MoreHorizontal,
+	Pencil,
 	Send,
-	Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -43,14 +43,23 @@ export function BuilderHeader({
 	leftActions,
 	rightActions,
 }: BuilderHeaderProps) {
-	const { survey, activeTab, setActiveTab, settingsOpen, setSettingsOpen } =
-		useSurveyBuilder();
+	const {
+		survey,
+		activeTab,
+		setActiveTab,
+		settingsOpen,
+		setSettingsOpen,
+		updateSurveyStatus,
+	} = useSurveyBuilder();
 	const queryClient = useQueryClient();
 
 	const publishMutation = useMutation(
 		orpc.survey.changeStatus.mutationOptions({
 			onSuccess: () => {
 				toast.success("Survey published!");
+				// Update local state immediately for responsive UI
+				updateSurveyStatus("published");
+				// Also invalidate queries to keep server state in sync
 				queryClient.invalidateQueries({ queryKey: ["survey"] });
 			},
 			onError: (error) => {
@@ -116,8 +125,8 @@ export function BuilderHeader({
 							</Link>
 						</DropdownMenuItem>
 						<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-							<Settings className="mr-2 h-4 w-4" />
-							Survey Settings
+							<Pencil className="mr-2 h-4 w-4" />
+							Edit
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem className="text-destructive">
@@ -126,7 +135,7 @@ export function BuilderHeader({
 					</DropdownMenuContent>
 				</DropdownMenu>
 
-				{survey.status === "draft" ? (
+				{survey.status === "draft" && (
 					<Button onClick={handlePublish} disabled={publishMutation.isPending}>
 						{publishMutation.isPending ? (
 							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -135,13 +144,14 @@ export function BuilderHeader({
 						)}
 						Publish
 					</Button>
-				) : (
+				)}
+				{survey.status === "published" && (
 					<Button
 						variant="outline"
 						nativeButton={false}
 						render={
 							<a
-								href={`/s/${survey.slug}`}
+								href={`/s/${survey.organization?.slug}/${survey.slug}`}
 								target="_blank"
 								rel="noopener noreferrer"
 							/>

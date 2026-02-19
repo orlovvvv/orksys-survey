@@ -4,7 +4,10 @@ import type { Question } from "@orksys-survey/db";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardList } from "lucide-react";
 
+import { QuestionRenderer } from "@/components/survey-runner/questions";
 import { Card, CardContent } from "@/components/ui/card";
+
+import { PreviewProvider } from "./preview-context";
 
 interface PreviewCanvasProps {
 	questions: Question[];
@@ -35,39 +38,29 @@ export function PreviewCanvas({ questions }: PreviewCanvasProps) {
 							</Card>
 						</motion.div>
 					) : (
-						<div className="space-y-6">
-							{safeQuestions.map((question, index) => (
-								<motion.div
-									key={question.id}
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, x: -100 }}
-									transition={{ duration: 0.2, delay: index * 0.05 }}
-									layout
-								>
-									<Card>
-										<CardContent className="p-6">
-											<div className="mb-4">
-												<span className="mb-2 block font-bold text-[10px] text-primary uppercase tracking-widest">
+						<PreviewProvider>
+							<div className="space-y-6">
+								{safeQuestions.map((question, index) => (
+									<motion.div
+										key={question.id}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										exit={{ opacity: 0, x: -100 }}
+										transition={{ duration: 0.2, delay: index * 0.05 }}
+										layout
+									>
+										<Card>
+											<CardContent className="p-6">
+												<span className="mb-3 block font-bold text-[10px] text-primary uppercase tracking-widest">
 													Question {index + 1} of {safeQuestions.length}
 												</span>
-												<h2 className="font-semibold text-lg">
-													{question.title}
-												</h2>
-												{question.description && (
-													<p className="mt-1 text-muted-foreground text-sm">
-														{question.description}
-													</p>
-												)}
-											</div>
-											<div className="rounded-lg border border-border border-dashed bg-muted/50 p-4 text-center text-muted-foreground text-sm">
-												{question.type.replace("_", " ")} question preview
-											</div>
-										</CardContent>
-									</Card>
-								</motion.div>
-							))}
-						</div>
+												<QuestionRenderer question={question} />
+											</CardContent>
+										</Card>
+									</motion.div>
+								))}
+							</div>
+						</PreviewProvider>
 					)}
 				</AnimatePresence>
 			</div>
