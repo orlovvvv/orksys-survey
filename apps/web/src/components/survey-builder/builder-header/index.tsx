@@ -1,17 +1,13 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	ArrowLeft,
 	BarChart3,
 	Eye,
-	Loader2,
 	MoreHorizontal,
 	Pencil,
-	Send,
 } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,8 +18,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { orpc } from "@/utils/orpc";
-import { useSurveyBuilder } from "../context";
+import { SurveyBuilderContext } from "../context";
 import { SurveySettingsDialog } from "../survey-settings-dialog";
 import { BuilderTabs } from "./builder-tabs";
 
@@ -43,39 +38,17 @@ export function BuilderHeader({
 	leftActions,
 	rightActions,
 }: BuilderHeaderProps) {
-	const {
-		survey,
-		activeTab,
-		setActiveTab,
-		settingsOpen,
-		setSettingsOpen,
-		updateSurveyStatus,
-	} = useSurveyBuilder();
-	const queryClient = useQueryClient();
-
-	const publishMutation = useMutation(
-		orpc.survey.changeStatus.mutationOptions({
-			onSuccess: () => {
-				toast.success("Survey published!");
-				// Update local state immediately for responsive UI
-				updateSurveyStatus("published");
-				// Also invalidate queries to keep server state in sync
-				queryClient.invalidateQueries({ queryKey: ["survey"] });
-			},
-			onError: (error) => {
-				toast.error(error.message || "Failed to publish survey");
-			},
-		}),
+	const send = SurveyBuilderContext.useActorRef().send;
+	const survey = SurveyBuilderContext.useSelector((s) => s.context.survey);
+	const activeTab = SurveyBuilderContext.useSelector(
+		(s) => s.context.activeTab,
+	);
+	const settingsOpen = SurveyBuilderContext.useSelector(
+		(s) => s.context.settingsOpen,
 	);
 
-	const handlePublish = () => {
-		if (survey.status === "draft") {
-			publishMutation.mutate({ id: survey.id, status: "published" });
-		}
-	};
-
 	const handleTabChange = (tab: "build" | "preview" | "share") => {
-		setActiveTab(tab);
+		send({ type: "SET_TAB", tab });
 	};
 
 	return (
@@ -124,7 +97,9 @@ export function BuilderHeader({
 								Analytics
 							</Link>
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+						<DropdownMenuItem
+							onClick={() => send({ type: "TOGGLE_SETTINGS", open: true })}
+						>
 							<Pencil className="mr-2 h-4 w-4" />
 							Edit
 						</DropdownMenuItem>
@@ -135,16 +110,6 @@ export function BuilderHeader({
 					</DropdownMenuContent>
 				</DropdownMenu>
 
-				{survey.status === "draft" && (
-					<Button onClick={handlePublish} disabled={publishMutation.isPending}>
-						{publishMutation.isPending ? (
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-						) : (
-							<Send className="mr-2 h-4 w-4" />
-						)}
-						Publish
-					</Button>
-				)}
 				{survey.status === "published" && (
 					<Button
 						variant="outline"
@@ -165,7 +130,7 @@ export function BuilderHeader({
 
 			<SurveySettingsDialog
 				open={settingsOpen}
-				onOpenChange={setSettingsOpen}
+				onOpenChange={(open) => send({ type: "TOGGLE_SETTINGS", open })}
 			/>
 		</header>
 	);

@@ -2,16 +2,14 @@
 
 import type { Question } from "@orksys-survey/db";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useSurveyBuilder } from "../index";
+import { SurveyBuilderContext } from "../context";
 import { LogicBuilder } from "../logic-builder";
 import { ToggleField } from "../primitives/toggle-field";
-import { useDebouncedSave } from "./hooks/use-debounced-save";
 import { TypeSpecificEditor } from "./type-specific-editor";
 
 interface QuestionPropertiesPanelProps {
@@ -21,14 +19,20 @@ interface QuestionPropertiesPanelProps {
 export function QuestionPropertiesPanel({
 	question,
 }: QuestionPropertiesPanelProps) {
-	const { questions, onQuestionsChange } = useSurveyBuilder();
+	const send = SurveyBuilderContext.useActorRef().send;
+	const questions = SurveyBuilderContext.useSelector(
+		(s) => s.context.questions,
+	);
 	const [localQuestion, setLocalQuestion] = useState(question);
-	const { debouncedSave, isPending } = useDebouncedSave(question.id);
+	const prevQuestionIdRef = useRef(question.id);
 
-	// Sync local state when question changes
+	// Sync local state only when switching to a different question
 	useEffect(() => {
-		setLocalQuestion(question);
-	}, [question]);
+		if (prevQuestionIdRef.current !== question.id) {
+			setLocalQuestion(question);
+			prevQuestionIdRef.current = question.id;
+		}
+	}, [question.id]);
 
 	const handleFieldChange = <K extends keyof Question>(
 		field: K,
@@ -37,13 +41,12 @@ export function QuestionPropertiesPanel({
 		const updated = { ...localQuestion, [field]: value };
 		setLocalQuestion(updated);
 
-		// Update parent state
-		onQuestionsChange(
-			(questions || []).map((q) => (q.id === question.id ? updated : q)),
-		);
-
-		// Debounced save to server
-		debouncedSave({ [field]: value });
+		// Update parent state via XState event
+		send({
+			type: "QUESTION_UPDATE",
+			id: question.id,
+			updates: { [field]: value },
+		});
 	};
 
 	const handleConfigChange = (config: Question["config"]) => {
@@ -57,15 +60,6 @@ export function QuestionPropertiesPanel({
 					<h3 className="font-bold font-sans text-[10px] text-foreground uppercase tracking-widest">
 						Settings
 					</h3>
-					{isPending && (
-						<motion.div
-							initial={{ opacity: 0, scale: 0.8 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.8 }}
-						>
-							<Loader2 className="h-4 w-4 animate-spin text-primary" />
-						</motion.div>
-					)}
 				</div>
 			</div>
 			<div className="flex-1 space-y-6 overflow-y-auto p-4">
@@ -115,6 +109,7 @@ export function QuestionPropertiesPanel({
 				<TypeSpecificEditor
 					question={localQuestion}
 					onConfigChange={handleConfigChange}
+					onFieldChange={handleFieldChange}
 				/>
 
 				{/* Logic Section */}

@@ -1,88 +1,100 @@
 "use client";
 
 import type { Question } from "@orksys-survey/db";
-import { createContext, useContext, useState } from "react";
+import { useActorRef, useSelector } from "@xstate/react";
+import { createContext, type ReactNode, useContext, useMemo } from "react";
+import type { AnyActorRef } from "xstate";
+import {
+	createSurveyBuilderMachine,
+	type SurveyBuilderContext as MachineContext,
+	type SurveyBuilderEvent,
+} from "./machines/survey-builder-machine";
+import type { SurveyWithOrganization } from "./types";
 
-import type {
-	SurveyBuilderContextValue,
-	SurveyWithOrganization,
-} from "./types";
-
-const SurveyBuilderContext = createContext<SurveyBuilderContextValue | null>(
-	null,
-);
+// Re-export types
+export type { SurveyBuilderEvent };
+export type { MachineContext as SurveyBuilderMachineContext };
 
 export interface SurveyBuilderProviderProps {
 	survey: SurveyWithOrganization;
-	questions: Question[];
-	selectedQuestionId: string | null;
-	setSelectedQuestionId: (id: string | null) => void;
-	activeTab: "build" | "preview" | "share";
-	setActiveTab: (tab: "build" | "preview" | "share") => void;
-	onQuestionsChange: (questions: Question[]) => void;
-	paletteOpen: boolean;
-	setPaletteOpen: (open: boolean) => void;
-	propertiesOpen: boolean;
-	setPropertiesOpen: (open: boolean) => void;
-	settingsOpen: boolean;
-	setSettingsOpen: (open: boolean) => void;
-	children: React.ReactNode;
+	initialQuestions: Question[];
+	children: ReactNode;
 }
 
+// Create a React context for the actor
+const ActorContext = createContext<AnyActorRef | null>(null);
+
 export function SurveyBuilderProvider({
-	survey: initialSurvey,
-	questions,
-	selectedQuestionId,
-	setSelectedQuestionId,
-	activeTab,
-	setActiveTab,
-	onQuestionsChange,
-	paletteOpen,
-	setPaletteOpen,
-	propertiesOpen,
-	setPropertiesOpen,
-	settingsOpen,
-	setSettingsOpen,
+	survey,
+	initialQuestions,
 	children,
 }: SurveyBuilderProviderProps) {
-	const [survey, setSurvey] = useState(initialSurvey);
+	const machine = useMemo(
+		() => createSurveyBuilderMachine(survey, initialQuestions),
+		[survey, initialQuestions],
+	);
 
-	const updateSurveyStatus: SurveyBuilderContextValue["updateSurveyStatus"] = (
-		status,
-	) => {
-		setSurvey((prev) => ({ ...prev, status }));
-	};
-
-	const contextValue: SurveyBuilderContextValue = {
-		survey,
-		questions,
-		selectedQuestionId,
-		setSelectedQuestionId,
-		activeTab,
-		setActiveTab,
-		onQuestionsChange,
-		paletteOpen,
-		setPaletteOpen,
-		propertiesOpen,
-		setPropertiesOpen,
-		settingsOpen,
-		setSettingsOpen,
-		updateSurveyStatus,
-	};
+	const actorRef = useActorRef(machine as any);
 
 	return (
-		<SurveyBuilderContext.Provider value={contextValue}>
-			{children}
-		</SurveyBuilderContext.Provider>
+		<ActorContext.Provider value={actorRef}>{children}</ActorContext.Provider>
 	);
 }
 
-export function useSurveyBuilder() {
-	const context = useContext(SurveyBuilderContext);
-	if (!context) {
+// Hook to get the actor ref
+export function useSurveyBuilderActor() {
+	const actorRef = useContext(ActorContext);
+	if (!actorRef) {
 		throw new Error(
-			"useSurveyBuilder must be used within a SurveyBuilder component",
+			"useSurveyBuilderActor must be used within a SurveyBuilderProvider",
 		);
 	}
-	return context;
+	return actorRef as AnyActorRef;
+}
+
+// Selector hook with proper typing
+export function useSurveyBuilderSelector<T>(
+	selector: (snapshot: { context: MachineContext; value: string }) => T,
+	equalityFn?: (a: T, b: T) => boolean,
+): T {
+	const actorRef = useSurveyBuilderActor();
+	// Cast to any to bypass the strict type checking from XState
+	return useSelector(actorRef as any, selector as any, equalityFn) as T;
+}
+
+// Convenience object for the context
+export const SurveyBuilderContext = {
+	useActorRef: useSurveyBuilderActor,
+	useSelector: useSurveyBuilderSelector,
+};
+
+// Alias for backward compatibility
+export const useSurveyBuilder = useSurveyBuilderSelector;
+
+// Legacy hook for backward compatibility
+export function useSurveyBuilderLegacy() {
+	const actorRef = useSurveyBuilderActor();
+	const snapshot = useSelector(actorRef as any, (s: any) => s) as {
+		context: MachineContext;
+		value: string;
+	};
+
+	return {
+		actorRef,
+		send: actorRef.send,
+		state: {
+			survey: snapshot.context.survey,
+			questions: snapshot.context.questions,
+			selectedQuestionId: snapshot.context.selectedQuestionId,
+			activeTab: snapshot.context.activeTab,
+			paletteOpen: snapshot.context.paletteOpen,
+			propertiesOpen: snapshot.context.propertiesOpen,
+			settingsOpen: snapshot.context.settingsOpen,
+			activeDragItem: snapshot.context.activeDragItem,
+			overId: snapshot.context.overId,
+			isDirty: snapshot.context.isDirty,
+			error: snapshot.context.error,
+		},
+		machineState: snapshot.value,
+	};
 }

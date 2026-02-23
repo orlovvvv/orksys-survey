@@ -7,7 +7,6 @@ import {
 	LeaveOrgDialog,
 	useLeaveOrganization,
 	useOrganizationMembers,
-	useSettingsPermissions,
 } from "@/components/organization";
 import {
 	Card,

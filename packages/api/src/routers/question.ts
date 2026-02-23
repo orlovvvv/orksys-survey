@@ -26,27 +26,43 @@ const questionConfigSchema = z.object({
 	maxFiles: z.number().int().min(1).optional(),
 	maxFileSize: z.number().int().min(1).optional(),
 	acceptedFileTypes: z.array(z.string()).optional(),
+	layout: z.enum(["radio", "checkbox", "select", "combobox"]).optional(),
+	showLabel: z.boolean().optional(),
+	defaultValue: z.any().optional(),
 });
 
 const questionCreateSchema = z.object({
 	surveyId: z.string(),
 	type: z.enum([
 		"text",
-		"textarea",
-		"multiple_choice",
-		"checkbox",
+		"long_text",
+		"choice",
 		"dropdown",
 		"rating",
 		"nps",
-		"linear_scale",
 		"date",
+		"slider",
+		"file_upload",
+		"input",
+		"textarea",
+		"select",
+		"radio_group",
+		"checkbox_group",
+		"switch",
+		"date_picker",
+		"combobox",
+		"otp",
+		"multiple_choice",
+		"checkbox",
 		"email",
 		"phone",
-		"file_upload",
+		"linear_scale",
 	]),
 	title: z.string().min(1).max(500),
 	description: z.string().max(2000).optional(),
 	config: questionConfigSchema.optional(),
+	ruleSetId: z.string().optional(),
+	ruleSetConfigOverrides: z.record(z.string(), z.any()).optional(),
 	required: z.boolean().default(false),
 	order: z.number().int().min(0).default(0),
 });
@@ -109,24 +125,31 @@ export const questionRouter = {
 		.handler(async ({ input, context }) => {
 			await verifySurveyAccess(input.surveyId, context.activeOrganization.id);
 
-			const id = generateId();
-			await db.insert(question).values({
-				id,
-				surveyId: input.surveyId,
-				type: input.type,
-				title: input.title,
-				description: input.description ?? null,
-				config: input.config ?? getDefaultConfigForQuestionType(input.type),
-				required: input.required,
-				order: input.order,
-			});
+			try {
+				const id = generateId();
+				await db.insert(question).values({
+					id,
+					surveyId: input.surveyId,
+					type: input.type,
+					title: input.title,
+					description: input.description ?? null,
+					config: input.config ?? getDefaultConfigForQuestionType(input.type),
+					ruleSetId: input.ruleSetId ?? null,
+					ruleSetConfigOverrides: input.ruleSetConfigOverrides ?? null,
+					required: input.required,
+					order: input.order,
+				});
 
-			const result = await db
-				.select()
-				.from(question)
-				.where(eq(question.id, id))
-				.limit(1);
-			return result[0];
+				const result = await db
+					.select()
+					.from(question)
+					.where(eq(question.id, id))
+					.limit(1);
+				return result[0];
+			} catch (error) {
+				console.error("[QUESTION_CREATE_ERROR]", error);
+				throw error;
+			}
 		}),
 
 	// Update question
@@ -159,6 +182,12 @@ export const questionRouter = {
 					}),
 					...(input.data.config !== undefined && {
 						config: input.data.config ?? null,
+					}),
+					...(input.data.ruleSetId !== undefined && {
+						ruleSetId: input.data.ruleSetId ?? null,
+					}),
+					...(input.data.ruleSetConfigOverrides !== undefined && {
+						ruleSetConfigOverrides: input.data.ruleSetConfigOverrides ?? null,
 					}),
 					...(input.data.required !== undefined && {
 						required: input.data.required,

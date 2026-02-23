@@ -15,5 +15,7 @@ export function createMockQuestion(type: Question["type"]): Question {
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		config: null,
+		ruleSetId: null,
+		ruleSetConfigOverrides: null,
 	};
 }

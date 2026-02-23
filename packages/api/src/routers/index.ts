@@ -7,6 +7,7 @@ import { insightsRouter } from "./insights";
 import { logicRuleRouter } from "./logic-rule";
 import { questionRouter } from "./question";
 import { responseRouter } from "./response";
+import { ruleSetRouter } from "./ruleset";
 import { surveyRouter } from "./survey";
 import { usageRouter } from "./usage";
 
@@ -22,6 +23,7 @@ export const appRouter = {
 	}),
 	survey: surveyRouter,
 	question: questionRouter,
+	ruleSet: ruleSetRouter,
 	logicRule: logicRuleRouter,
 	response: responseRouter,
 	analytics: analyticsRouter,

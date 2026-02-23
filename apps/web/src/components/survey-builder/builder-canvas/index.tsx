@@ -6,81 +6,77 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { Question } from "@orksys-survey/db";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus } from "lucide-react";
-import React from "react";
-import { toast } from "sonner";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { orpc } from "@/utils/orpc";
-import { useSurveyBuilder } from "../index";
+import { SurveyBuilderContext } from "../context";
+import { useQuestionMutations } from "../hooks/use-question-mutations";
 import { QuestionCard } from "../question-card";
-import { DropIndicator } from "./drop-indicator";
 import { PreviewCanvas } from "./preview-canvas";
 import { ShareCanvas } from "./share-canvas";
 
-// Drag item types
-export interface PaletteDragItem {
-	type: "palette";
-	questionType: Question["type"];
+interface RenderableItem {
+	question: Question;
+	isPreview: boolean;
 }
 
-export interface QuestionDragItem {
-	type: "question";
-	id: string;
-}
-
-export type DragItem = PaletteDragItem | QuestionDragItem;
-
-interface BuilderCanvasProps {
-	questions: Question[];
-	onQuestionsChange: (questions: Question[]) => void;
-	activeDragItem: DragItem | null;
-	overId: string | null;
-}
-
-export function BuilderCanvas({
-	questions,
-	onQuestionsChange,
-	activeDragItem,
-	overId,
-}: BuilderCanvasProps) {
-	const { survey, selectedQuestionId, setSelectedQuestionId, activeTab } =
-		useSurveyBuilder();
-
-	const queryClient = useQueryClient();
+export function BuilderCanvas() {
+	const send = SurveyBuilderContext.useActorRef().send;
+	const survey = SurveyBuilderContext.useSelector((s) => s.context.survey);
+	const selectedQuestionId = SurveyBuilderContext.useSelector(
+		(s) => s.context.selectedQuestionId,
+	);
+	const activeTab = SurveyBuilderContext.useSelector(
+		(s) => s.context.activeTab,
+	);
+	const questions = SurveyBuilderContext.useSelector(
+		(s) => s.context.questions,
+	);
+	const activeDragItem = SurveyBuilderContext.useSelector(
+		(s) => s.context.activeDragItem,
+	);
+	const pendingQuestion = SurveyBuilderContext.useSelector(
+		(s) => s.context.pendingQuestion,
+	);
 
 	// Make canvas droppable
 	const { setNodeRef, isOver } = useDroppable({
 		id: "canvas",
 	});
 
-	const safeQuestions = questions || [];
+	const safeQuestions = useMemo(() => questions ?? [], [questions]);
 
-	const createMutation = useMutation(
-		orpc.question.create.mutationOptions({
-			onSuccess: (newQuestion) => {
-				onQuestionsChange([...questions, newQuestion]);
-				setSelectedQuestionId(newQuestion.id);
-				queryClient.invalidateQueries({ queryKey: ["question"] });
-				toast.success("Question added");
-			},
-			onError: (error) => {
-				toast.error(error.message || "Failed to create question");
-			},
-		}),
-	);
+	const { addQuestion } = useQuestionMutations();
 
 	const handleAddQuestion = () => {
-		createMutation.mutate({
-			surveyId: survey.id,
-			type: "text",
-			title: "New Question",
-			order: safeQuestions.length,
-		});
+		addQuestion("text", safeQuestions.length);
 	};
+
+	// Merge pending question with real questions for rendering
+	const renderableItems: RenderableItem[] = useMemo(() => {
+		if (!pendingQuestion) {
+			return safeQuestions.map((q) => ({ question: q, isPreview: false }));
+		}
+
+		const { insertIndex, ...questionData } = pendingQuestion;
+		const items = [
+			...safeQuestions.map((q) => ({ question: q, isPreview: false })),
+		];
+		items.splice(insertIndex, 0, {
+			question: questionData as Question,
+			isPreview: true,
+		});
+		return items;
+	}, [safeQuestions, pendingQuestion]);
+
+	// Get sortable IDs (exclude preview items from sortable context)
+	const sortableIds = useMemo(
+		() => safeQuestions.map((q: Question) => q.id),
+		[safeQuestions],
+	);
 
 	// Render different tabs
 	if (activeTab === "share") {
@@ -109,18 +105,6 @@ export function BuilderCanvas({
 		return <PreviewCanvas questions={safeQuestions} />;
 	}
 
-	// Calculate drop position based on overId
-	const rawDropIndex = overId
-		? safeQuestions.findIndex((q) => q.id === overId)
-		: -1;
-	const dropIndex = rawDropIndex === -1 ? safeQuestions.length : rawDropIndex;
-
-	// Get the question type being dragged
-	const isDraggingPalette = activeDragItem?.type === "palette";
-	const draggedQuestionType = isDraggingPalette
-		? activeDragItem.questionType
-		: undefined;
-
 	return (
 		<div
 			ref={setNodeRef}
@@ -130,71 +114,51 @@ export function BuilderCanvas({
 		>
 			<div className="mx-auto w-full max-w-2xl space-y-3">
 				<AnimatePresence mode="popLayout" initial={false}>
-					{safeQuestions.length === 0 ? (
-						<EmptyCanvas
-							isOver={isOver}
-							onAddQuestion={handleAddQuestion}
-							isPending={createMutation.isPending}
-						/>
+					{renderableItems.length === 0 ? (
+						<EmptyCanvas isOver={isOver} onAddQuestion={handleAddQuestion} />
 					) : (
 						<>
 							<SortableContext
-								items={safeQuestions.map((q) => q.id)}
+								items={sortableIds}
 								strategy={verticalListSortingStrategy}
 							>
-								{safeQuestions.map((question, index) => (
-									<React.Fragment key={question.id}>
-										{/* Add drop indicator before this question if dragging over it */}
-										{isDraggingPalette &&
-											index === dropIndex &&
-											draggedQuestionType && (
-												<DropIndicator
-													questionType={draggedQuestionType}
-													position="middle"
-												/>
-											)}
-
-										{/* Add the question card */}
+								{renderableItems.map((item) => {
+									const { question, isPreview } = item;
+									return (
 										<motion.div
-											layout={!activeDragItem ? "position" : false}
-											initial={
-												question.id.startsWith("temp-")
-													? { opacity: 0, y: 20, scale: 0.95 }
-													: false
-											}
-											animate={{ opacity: 1, y: 0, scale: 1 }}
+											key={question.id}
+											layout={false}
+											initial={isPreview ? { opacity: 0, scale: 0.95 } : false}
+											animate={{ opacity: isPreview ? 0.6 : 1, scale: 1 }}
 											exit={{
 												opacity: 0,
 												scale: 0.95,
 												transition: { duration: 0.15 },
 											}}
 											transition={{
-												type: "spring",
-												stiffness: 400,
-												damping: 30,
-												mass: 0.8,
+												type: "tween",
+												duration: 0.15,
+												ease: "easeOut",
 											}}
 										>
 											<QuestionCard
 												question={question}
 												isSelected={selectedQuestionId === question.id}
-												onSelect={() => setSelectedQuestionId(question.id)}
+												onSelect={() =>
+													send({ type: "SELECT_QUESTION", id: question.id })
+												}
 												questions={safeQuestions}
-												onQuestionsChange={onQuestionsChange}
+												onQuestionsChange={(newQuestions) =>
+													send({
+														type: "QUESTIONS_SET",
+														questions: newQuestions,
+													})
+												}
+												isPlaceholder={isPreview}
 											/>
 										</motion.div>
-									</React.Fragment>
-								))}
-
-								{/* Add indicator at end if hovering at last position or over canvas */}
-								{isDraggingPalette &&
-									dropIndex >= safeQuestions.length &&
-									draggedQuestionType && (
-										<DropIndicator
-											questionType={draggedQuestionType}
-											position="end"
-										/>
-									)}
+									);
+								})}
 							</SortableContext>
 
 							<motion.div
@@ -206,7 +170,6 @@ export function BuilderCanvas({
 									variant="outline"
 									className="w-full border-dashed"
 									onClick={handleAddQuestion}
-									disabled={createMutation.isPending}
 								>
 									<Plus className="mr-2 h-4 w-4" />
 									Add Question
@@ -223,10 +186,9 @@ export function BuilderCanvas({
 interface EmptyCanvasProps {
 	isOver: boolean;
 	onAddQuestion: () => void;
-	isPending: boolean;
 }
 
-function EmptyCanvas({ isOver, onAddQuestion, isPending }: EmptyCanvasProps) {
+function EmptyCanvas({ isOver, onAddQuestion }: EmptyCanvasProps) {
 	return (
 		<motion.div
 			key="empty-state"

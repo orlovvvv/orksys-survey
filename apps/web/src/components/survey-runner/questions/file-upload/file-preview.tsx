@@ -1,8 +1,7 @@
 "use client";
 
-import { FileIcon, ImageIcon, XIcon } from "lucide-react";
+import { FileIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
 
 interface FilePreviewProps {
 	file: File;

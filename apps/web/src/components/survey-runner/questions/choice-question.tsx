@@ -1,97 +1,69 @@
+"use client";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useQuestion } from "./question-context";
 import { QuestionField } from "./question-field";
-import type { ArrayQuestionProps, TextQuestionProps } from "./types";
 
-interface SingleChoiceProps extends TextQuestionProps {
-	options: Array<{ value: string; label: string }>;
-}
-
-interface MultipleChoiceProps extends ArrayQuestionProps {
-	options: Array<{ value: string; label: string }>;
-}
-
-function SingleChoice({
-	question,
-	value,
-	onChange,
-	options,
-}: SingleChoiceProps) {
-	return (
-		<QuestionField question={question} error={undefined}>
-			<RadioGroup
-				value={value ?? ""}
-				onValueChange={onChange}
-				className="mt-3 gap-2"
-			>
-				{options.map((option) => (
-					<div
-						key={option.value}
-						className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent"
-					>
-						<RadioGroupItem value={option.value} id={option.value} />
-						<Label
-							htmlFor={option.value}
-							className="cursor-pointer text-foreground"
-						>
-							{option.label}
-						</Label>
-					</div>
-				))}
-			</RadioGroup>
-		</QuestionField>
-	);
-}
-
-function MultipleChoice({
-	question,
-	value,
-	onChange,
-	options,
-}: MultipleChoiceProps) {
-	const selectedValues = value ?? [];
+export function ChoiceQuestion() {
+	const { question, value, onChange } = useQuestion();
+	const options = question.config?.options || [];
+	const allowMultiple =
+		question.config?.allowMultiple ||
+		question.type === "checkbox_group" ||
+		question.type === "checkbox";
+	const selectedValues = Array.isArray(value) ? value : value ? [value] : [];
 
 	const handleToggle = (optionValue: string) => {
-		if (selectedValues.includes(optionValue)) {
-			onChange(selectedValues.filter((v) => v !== optionValue));
+		if (allowMultiple) {
+			if (selectedValues.includes(optionValue)) {
+				onChange(selectedValues.filter((v) => v !== optionValue));
+			} else {
+				onChange([...selectedValues, optionValue]);
+			}
 		} else {
-			onChange([...selectedValues, optionValue]);
+			onChange(optionValue);
 		}
 	};
 
 	return (
-		<QuestionField question={question} error={undefined}>
-			<div className="mt-3 space-y-2">
-				{options.map((option) => (
-					<div
-						key={option.value}
-						className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-[:checked]:border-primary has-[:checked]:bg-accent"
-					>
-						<Checkbox
-							checked={selectedValues.includes(option.value)}
-							onCheckedChange={() => handleToggle(option.value)}
-							id={option.value}
-						/>
+		<QuestionField>
+			{allowMultiple ? (
+				<div className="mt-3 space-y-2">
+					{options.map((option) => (
 						<Label
+							key={option.value}
 							htmlFor={option.value}
-							className="cursor-pointer text-foreground"
+							className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent"
 						>
-							{option.label}
+							<Checkbox
+								checked={selectedValues.includes(option.value)}
+								onCheckedChange={() => handleToggle(option.value)}
+								id={option.value}
+							/>
+							<span className="text-foreground">{option.label}</span>
 						</Label>
-					</div>
-				))}
-			</div>
+					))}
+				</div>
+			) : (
+				<RadioGroup
+					value={value || ""}
+					onValueChange={onChange}
+					className="mt-3 gap-2"
+				>
+					{options.map((option) => (
+						<Label
+							key={option.value}
+							htmlFor={option.value}
+							className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent"
+						>
+							<RadioGroupItem value={option.value} id={option.value} />
+							<span className="text-foreground">{option.label}</span>
+						</Label>
+					))}
+				</RadioGroup>
+			)}
 		</QuestionField>
 	);
-}
-
-export function ChoiceQuestion(props: TextQuestionProps) {
-	const options = props.question.config?.options ?? [];
-	return <SingleChoice {...props} options={options} />;
-}
-
-export function CheckboxQuestion(props: ArrayQuestionProps) {
-	const options = props.question.config?.options ?? [];
-	return <MultipleChoice {...props} options={options} />;
 }

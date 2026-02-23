@@ -1,12 +1,9 @@
 "use client";
 
 import type { Question } from "@orksys-survey/db";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
-import { orpc } from "@/utils/orpc";
-
-import { useSurveyBuilder } from "..";
+import { SurveyBuilderContext } from "../context";
+import { useQuestionMutations } from "../hooks/use-question-mutations";
 import { CancelDropZone } from "./cancel-drop-zone";
 import { questionTypes } from "./constants";
 import {
@@ -16,36 +13,19 @@ import {
 import { StructureItem } from "./structure-item";
 
 export function QuestionPalette() {
-	const {
-		survey,
-		questions,
-		selectedQuestionId,
-		setSelectedQuestionId,
-		onQuestionsChange,
-	} = useSurveyBuilder();
-	const queryClient = useQueryClient();
-
-	const createMutation = useMutation(
-		orpc.question.create.mutationOptions({
-			onSuccess: (newQuestion) => {
-				onQuestionsChange([...(questions || []), newQuestion]);
-				setSelectedQuestionId(newQuestion.id);
-				queryClient.invalidateQueries({ queryKey: ["question"] });
-				toast.success("Question added");
-			},
-			onError: (error) => {
-				toast.error(error.message || "Failed to create question");
-			},
-		}),
+	const send = SurveyBuilderContext.useActorRef().send;
+	const survey = SurveyBuilderContext.useSelector((s) => s.context.survey);
+	const questions = SurveyBuilderContext.useSelector(
+		(s) => s.context.questions,
+	);
+	const selectedQuestionId = SurveyBuilderContext.useSelector(
+		(s) => s.context.selectedQuestionId,
 	);
 
+	const { addQuestion } = useQuestionMutations();
+
 	const handleAddQuestion = (type: Question["type"]) => {
-		createMutation.mutate({
-			surveyId: survey.id,
-			type,
-			title: `New ${questionTypes.find((q) => q.type === type)?.label || type}`,
-			order: (questions || []).length,
-		});
+		addQuestion(type, (questions || []).length);
 	};
 
 	return (
@@ -61,7 +41,6 @@ export function QuestionPalette() {
 							key={qType.type}
 							config={qType}
 							onClick={() => handleAddQuestion(qType.type)}
-							disabled={createMutation.isPending}
 							index={index}
 						/>
 					))}
@@ -76,7 +55,6 @@ export function QuestionPalette() {
 							key={qType.type}
 							config={qType}
 							onClick={() => handleAddQuestion(qType.type)}
-							disabled={createMutation.isPending}
 							index={index}
 						/>
 					))}
@@ -97,7 +75,9 @@ export function QuestionPalette() {
 								number={index + 1}
 								label={question.title}
 								isActive={selectedQuestionId === question.id}
-								onClick={() => setSelectedQuestionId(question.id)}
+								onClick={() =>
+									send({ type: "SELECT_QUESTION", id: question.id })
+								}
 								index={index}
 							/>
 						))

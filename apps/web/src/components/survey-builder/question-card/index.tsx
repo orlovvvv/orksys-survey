@@ -1,15 +1,19 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { type AnimateLayoutChanges, useSortable } from "@dnd-kit/sortable";
+import {
+	type AnimateLayoutChanges,
+	defaultAnimateLayoutChanges,
+	useSortable,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Question } from "@orksys-survey/db";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { createContext, memo, useContext } from "react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { orpc } from "@/utils/orpc";
+import { useQuestionMutations } from "../hooks/use-question-mutations";
 import { DeleteConfirmButton } from "../primitives/delete-confirm-button";
 import type { questionTypeIcons, questionTypeLabels } from "./constants";
 import {
@@ -60,11 +64,18 @@ interface QuestionCardProps {
 	onSelect: () => void;
 	questions: Question[];
 	onQuestionsChange: (questions: Question[]) => void;
+	isPlaceholder?: boolean;
 	children?: React.ReactNode;
 }
 
-const animateLayoutChanges: AnimateLayoutChanges = () => {
-	return false;
+const animateLayoutChanges: AnimateLayoutChanges = (args) => {
+	const { isSorting, wasDragging } = args;
+
+	if (isSorting || wasDragging) {
+		return defaultAnimateLayoutChanges(args);
+	}
+
+	return true;
 };
 
 export const QuestionCard = memo(function QuestionCard({
@@ -73,9 +84,10 @@ export const QuestionCard = memo(function QuestionCard({
 	onSelect,
 	questions,
 	onQuestionsChange,
+	isPlaceholder,
 	children,
 }: QuestionCardProps) {
-	const queryClient = useQueryClient();
+	const { deleteQuestion } = useQuestionMutations();
 
 	// Sortable for reordering within canvas
 	const {
@@ -95,38 +107,25 @@ export const QuestionCard = memo(function QuestionCard({
 		id: question.id,
 	});
 
-	// Combine refs so element is both sortable and droppable
 	const setNodeRef = (node: HTMLElement | null) => {
 		setSortableRef(node);
 		setDroppableRef(node);
 	};
 
-	const deleteMutation = useMutation(
-		orpc.question.delete.mutationOptions({
-			onSuccess: () => {
-				onQuestionsChange(questions.filter((q) => q.id !== question.id));
-				queryClient.invalidateQueries({ queryKey: ["question"] });
-				toast.success("Question deleted");
-			},
-			onError: (error) => {
-				toast.error(error.message || "Failed to delete question");
-			},
-		}),
-	);
-
 	// Query logic rules to check if this question has any
-	const logicRules = useQuery(
-		orpc.logicRule.list.queryOptions({
+	const logicRules = useQuery({
+		...orpc.logicRule.list.queryOptions({
 			input: { surveyId: question.surveyId },
 		}),
-	);
+		enabled: !isPlaceholder && !!question.surveyId,
+	});
 
 	const hasLogic = logicRules.data?.some(
 		(rule) => rule.sourceQuestionId === question.id,
 	);
 
 	const style = {
-		transform: CSS.Translate.toString(transform),
+		transform: isPlaceholder ? undefined : CSS.Translate.toString(transform),
 		transition,
 		zIndex: isDragging ? 50 : undefined,
 	};
@@ -152,10 +151,11 @@ export const QuestionCard = memo(function QuestionCard({
 					dragHandleProps={{ ...attributes, ...listeners }}
 					isDragging={isDragging}
 					isOver={isOver}
+					isPlaceholder={isPlaceholder}
 				>
 					<QuestionCardActions
-						onDelete={() => deleteMutation.mutate({ id: question.id })}
-						isDeleting={deleteMutation.isPending}
+						onDelete={() => deleteQuestion(question.id)}
+						isDeleting={false}
 					/>
 				</QuestionCardContent>
 			</motion.div>

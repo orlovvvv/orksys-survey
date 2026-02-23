@@ -24,17 +24,29 @@ export const surveyStatusEnum = pgEnum("survey_status", [
 // Question type enum
 export const questionTypeEnum = pgEnum("question_type", [
 	"text",
-	"textarea",
-	"multiple_choice",
-	"checkbox",
+	"long_text",
+	"choice",
 	"dropdown",
 	"rating",
 	"nps",
-	"linear_scale",
 	"date",
+	"slider",
+	"file_upload",
+	// Legacy types
+	"input",
+	"textarea",
+	"select",
+	"radio_group",
+	"checkbox_group",
+	"switch",
+	"date_picker",
+	"combobox",
+	"otp",
+	"multiple_choice",
+	"checkbox",
 	"email",
 	"phone",
-	"file_upload",
+	"linear_scale",
 ]);
 
 // Logic operator enum
@@ -56,6 +68,21 @@ export const logicActionEnum = pgEnum("logic_action", [
 	"hide",
 	"end_survey",
 ]);
+
+// Rule set table for specialized inputs
+export const ruleSet = pgTable("rule_set", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	description: text("description"),
+	type: text("type").notNull(), // e.g., "input"
+	config: json("config").$type<RuleSetConfig>().notNull(),
+	isSystem: boolean("is_system").default(false).notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
+		.notNull(),
+});
 
 // Survey table
 export const survey = pgTable(
@@ -99,6 +126,12 @@ export const question = pgTable(
 		title: text("title").notNull(),
 		description: text("description"),
 		config: json("config").$type<QuestionConfig>(),
+		ruleSetId: text("rule_set_id").references(() => ruleSet.id, {
+			onDelete: "set null",
+		}),
+		ruleSetConfigOverrides: json("rule_set_config_overrides").$type<
+			Partial<RuleSetConfig>
+		>(),
 		required: boolean("required").default(false).notNull(),
 		order: integer("order").default(0).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -110,6 +143,7 @@ export const question = pgTable(
 	(table) => [
 		index("question_surveyId_idx").on(table.surveyId),
 		index("question_order_idx").on(table.order),
+		index("question_ruleSetId_idx").on(table.ruleSetId),
 	],
 );
 
@@ -232,6 +266,10 @@ export const questionRelations = relations(question, ({ one, many }) => ({
 		fields: [question.surveyId],
 		references: [survey.id],
 	}),
+	ruleSet: one(ruleSet, {
+		fields: [question.ruleSetId],
+		references: [ruleSet.id],
+	}),
 	answers: many(answer),
 	sourceLogicRules: many(logicRule, {
 		relationName: "sourceQuestion",
@@ -239,6 +277,10 @@ export const questionRelations = relations(question, ({ one, many }) => ({
 	targetLogicRules: many(logicRule, {
 		relationName: "targetQuestion",
 	}),
+}));
+
+export const ruleSetRelations = relations(ruleSet, ({ many }) => ({
+	questions: many(question),
 }));
 
 export const logicRuleRelations = relations(logicRule, ({ one }) => ({
@@ -308,6 +350,25 @@ export interface QuestionConfig {
 	maxFiles?: number;
 	maxFileSize?: number;
 	acceptedFileTypes?: string[];
+	// New fields for Shadcn components
+	layout?: "radio" | "checkbox" | "select" | "combobox";
+	variant?: "standard" | "searchable";
+	showLabel?: boolean;
+	defaultValue?: unknown;
+	searchable?: boolean;
+}
+
+export interface RuleSetConfig {
+	pattern?: string;
+	mask?: string;
+	prefix?: string;
+	suffix?: string;
+	inputType?: string; // 'text', 'tel', 'email', 'number', 'url'
+	placeholder?: string;
+	min?: number;
+	max?: number;
+	step?: number;
+	validationMessage?: string;
 }
 
 export interface ResponseMetadata {

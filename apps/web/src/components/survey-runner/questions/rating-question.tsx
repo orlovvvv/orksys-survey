@@ -1,18 +1,17 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { useQuestion } from "./question-context";
 import { QuestionField } from "./question-field";
-import type { NumberQuestionProps } from "./types";
 
-export function RatingQuestion({
-	question,
-	value,
-	onChange,
-}: NumberQuestionProps) {
+export function RatingQuestion() {
+	const { question, value, onChange } = useQuestion();
 	const max = question.config?.max ?? 5;
 
 	return (
-		<QuestionField question={question} error={undefined}>
+		<QuestionField>
 			<div className="mt-3 flex flex-wrap gap-1 sm:gap-2">
 				{Array.from({ length: max }, (_, i) => i + 1).map((rating) => (
 					<Button
@@ -34,13 +33,10 @@ export function RatingQuestion({
 	);
 }
 
-export function NpsQuestion({
-	question,
-	value,
-	onChange,
-}: NumberQuestionProps) {
+export function NpsQuestion() {
+	const { value, onChange } = useQuestion();
 	return (
-		<QuestionField question={question} error={undefined} className="space-y-3">
+		<QuestionField className="space-y-3">
 			<div className="mt-3 flex flex-wrap gap-1 sm:gap-2">
 				{Array.from({ length: 11 }, (_, i) => i).map((rating) => (
 					<Button
@@ -58,7 +54,7 @@ export function NpsQuestion({
 					</Button>
 				))}
 			</div>
-			<div className="flex justify-between text-muted-foreground text-xs">
+			<div className="flex justify-between text-muted-foreground text-xs uppercase tracking-wider">
 				<span>0 = Not likely</span>
 				<span>10 = Very likely</span>
 			</div>
@@ -66,16 +62,13 @@ export function NpsQuestion({
 	);
 }
 
-export function LinearScaleQuestion({
-	question,
-	value,
-	onChange,
-}: NumberQuestionProps) {
+export function LinearScaleQuestion() {
+	const { question, value, onChange } = useQuestion();
 	const min = question.config?.min ?? 1;
 	const max = question.config?.max ?? 10;
 
 	return (
-		<QuestionField question={question} error={undefined}>
+		<QuestionField>
 			<div className="mt-3 flex items-center gap-4">
 				<span className="text-muted-foreground text-sm">{min}</span>
 				<Slider
@@ -90,7 +83,7 @@ export function LinearScaleQuestion({
 				/>
 				<span className="text-muted-foreground text-sm">{max}</span>
 			</div>
-			<p className="text-center font-medium text-foreground">
+			<p className="text-center font-bold text-primary">
 				Selected: {value ?? min}
 			</p>
 		</QuestionField>

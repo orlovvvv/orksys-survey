@@ -5,48 +5,89 @@ import { motion } from "framer-motion";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { ChoiceEditor } from "../question-editors/choice-editor";
 import { DateEditor } from "../question-editors/date-editor";
-import { EmailEditor } from "../question-editors/email-editor";
 import { FileUploadEditor } from "../question-editors/file-upload-editor";
-import { PhoneEditor } from "../question-editors/phone-editor";
 import { RatingEditor } from "../question-editors/rating-editor";
+import { RuleSetSelector } from "./ruleset-selector";
 
 interface TypeSpecificEditorProps {
 	question: Question;
 	onConfigChange: (config: Question["config"]) => void;
+	onFieldChange: <K extends keyof Question>(
+		field: K,
+		value: Question[K],
+	) => void;
 }
 
 export function TypeSpecificEditor({
 	question,
 	onConfigChange,
+	onFieldChange,
 }: TypeSpecificEditorProps) {
 	const config = question.config || {};
 
 	switch (question.type) {
+		case "choice":
+		case "radio_group":
+		case "checkbox_group":
 		case "multiple_choice":
 		case "checkbox":
-		case "dropdown":
 			return (
 				<ChoiceEditor
 					config={config}
 					onChange={onConfigChange}
-					allowMultiple={question.type === "checkbox"}
+					allowMultiple={true}
 				/>
+			);
+
+		case "dropdown":
+		case "select":
+		case "combobox":
+			return (
+				<div className="space-y-4">
+					<div className="flex items-center justify-between border-border border-b pb-4">
+						<div className="flex flex-col">
+							<span className="font-medium text-foreground text-sm">
+								Searchable
+							</span>
+							<span className="text-[10px] text-muted-foreground">
+								Allow searching through options
+							</span>
+						</div>
+						<Switch
+							checked={config.searchable || false}
+							onCheckedChange={(checked) =>
+								onConfigChange({ ...config, searchable: checked })
+							}
+						/>
+					</div>
+					<ChoiceEditor
+						config={config}
+						onChange={onConfigChange}
+						allowMultiple={false}
+					/>
+				</div>
 			);
 
 		case "rating":
 		case "nps":
+		case "slider":
 		case "linear_scale":
 			return (
 				<RatingEditor
 					config={config}
 					onChange={onConfigChange}
-					type={question.type}
+					type={question.type as any}
 				/>
 			);
 
 		case "text":
+		case "input":
+		case "email":
+		case "phone":
+		case "long_text":
 		case "textarea":
 			return (
 				<motion.div
@@ -55,6 +96,13 @@ export function TypeSpecificEditor({
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.2 }}
 				>
+					{["text", "input", "email", "phone"].includes(question.type) && (
+						<RuleSetSelector
+							type="input"
+							value={question.ruleSetId}
+							onValueChange={(val) => onFieldChange("ruleSetId", val)}
+						/>
+					)}
 					<div className="space-y-2">
 						<Label className="text-xs uppercase tracking-wide">
 							Placeholder
@@ -108,13 +156,8 @@ export function TypeSpecificEditor({
 			return <FileUploadEditor config={config} onChange={onConfigChange} />;
 
 		case "date":
+		case "date_picker":
 			return <DateEditor config={config} onChange={onConfigChange} />;
-
-		case "email":
-			return <EmailEditor config={config} onChange={onConfigChange} />;
-
-		case "phone":
-			return <PhoneEditor config={config} onChange={onConfigChange} />;
 
 		default:
 			return null;

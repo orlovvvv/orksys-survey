@@ -33,6 +33,7 @@ export interface SurveyBuilderContextValue {
 // Drag item types
 export interface PaletteDragItem {
 	type: "palette";
+	id: string;
 	questionType: Question["type"];
 }
 

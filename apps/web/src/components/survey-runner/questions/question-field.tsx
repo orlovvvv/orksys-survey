@@ -1,19 +1,16 @@
-import type { Question } from "@orksys-survey/db";
+"use client";
+
 import { cn } from "@/lib/utils";
+import { useQuestion } from "./question-context";
 
 interface QuestionFieldProps {
-	question: Question;
-	error?: string | null;
 	children: React.ReactNode;
 	className?: string;
 }
 
-export function QuestionField({
-	question,
-	error,
-	children,
-	className,
-}: QuestionFieldProps) {
+export function QuestionField({ children, className }: QuestionFieldProps) {
+	const { question, error } = useQuestion();
+
 	return (
 		<div className={cn("space-y-2", className)}>
 			{/* biome-ignore lint/a11y/noLabelWithoutControl: Label is visually associated with children inputs */}

@@ -1,4 +1,2 @@
-import { cn } from "@/lib/utils";
-
 export const triggerClassName =
 	"group/button inline-flex h-8 w-48 shrink-0 select-none items-center justify-between gap-2 whitespace-nowrap rounded-lg border border-border border-transparent bg-background bg-clip-padding px-2.5 font-medium text-sm outline-none transition-all hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-expanded:bg-muted aria-expanded:text-foreground aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:border-input dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0";

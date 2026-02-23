@@ -62,6 +62,76 @@ function generateId(): string {
 	return `survey_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
+const questionConfigSchema = z.object({
+	placeholder: z.string().optional(),
+	minLength: z.number().int().min(0).optional(),
+	maxLength: z.number().int().min(1).optional(),
+	options: z
+		.array(
+			z.object({
+				label: z.string(),
+				value: z.string(),
+			}),
+		)
+		.optional(),
+	min: z.number().optional(),
+	max: z.number().optional(),
+	step: z.number().optional(),
+	allowOther: z.boolean().optional(),
+	allowMultiple: z.boolean().optional(),
+	maxFiles: z.number().int().min(1).optional(),
+	maxFileSize: z.number().int().min(1).optional(),
+	acceptedFileTypes: z.array(z.string()).optional(),
+	layout: z.enum(["radio", "checkbox", "select", "combobox"]).optional(),
+	showLabel: z.boolean().optional(),
+	defaultValue: z.any().optional(),
+});
+
+const surveySaveSchema = z.object({
+	id: z.string(),
+	questions: z.array(
+		z.object({
+			id: z.string(),
+			type: z.enum([
+				"text",
+				"long_text",
+				"choice",
+				"dropdown",
+				"rating",
+				"nps",
+				"date",
+				"slider",
+				"file_upload",
+				"input",
+				"textarea",
+				"select",
+				"radio_group",
+				"checkbox_group",
+				"switch",
+				"date_picker",
+				"combobox",
+				"otp",
+				"multiple_choice",
+				"checkbox",
+				"email",
+				"phone",
+				"linear_scale",
+			]),
+			title: z.string().min(1).max(500),
+			description: z.string().max(2000).optional().nullable(),
+			config: questionConfigSchema.optional().nullable(),
+			ruleSetId: z.string().optional().nullable(),
+			ruleSetConfigOverrides: z
+				.record(z.string(), z.any())
+				.optional()
+				.nullable(),
+			required: z.boolean().default(false),
+			order: z.number().int().min(0).default(0),
+			isPlaceholder: z.boolean().optional(),
+		}),
+	),
+});
+
 export const surveyRouter = {
 	// List surveys for the organization
 	list: organizationProcedure
@@ -341,6 +411,90 @@ export const surveyRouter = {
 				.where(eq(survey.id, input.id))
 				.limit(1);
 			return result[0];
+		}),
+
+	// Fully synchronize the builder state (Questions and Logic Rules)
+	save: adminProcedure
+		.input(surveySaveSchema)
+		.handler(async ({ input, context }) => {
+			const { id: surveyId, questions } = input;
+
+			// Verify ownership
+			const existing = await db
+				.select()
+				.from(survey)
+				.where(
+					and(
+						eq(survey.id, surveyId),
+						eq(survey.organizationId, context.activeOrganization.id),
+					),
+				)
+				.limit(1);
+
+			if (!existing[0]) {
+				throw new Error("Survey not found");
+			}
+
+			// Perform full-tree replacement within a transaction
+			await db.transaction(async (tx) => {
+				const incomingQuestionIds = questions
+					.map((q) => q.id)
+					.filter(
+						(id) => !id.startsWith("temp-") && !id.startsWith("palette-"),
+					);
+
+				const { question } = await import("@orksys-survey/db/schema/survey");
+
+				// 1. Delete questions that no longer exist in the payload
+				if (incomingQuestionIds.length > 0) {
+					await tx
+						.delete(question)
+						.where(
+							and(
+								eq(question.surveyId, surveyId),
+								sql`${question.id} NOT IN ${incomingQuestionIds}`,
+							),
+						);
+				} else {
+					await tx.delete(question).where(eq(question.surveyId, surveyId));
+				}
+
+				// 2. Upsert each incoming question
+				for (const q of questions) {
+					const isNew = q.id.startsWith("temp-") || q.id.startsWith("palette-");
+
+					const questionData = {
+						surveyId,
+						type: q.type,
+						title: q.title,
+						description: q.description ?? null,
+						config: q.config ?? null,
+						ruleSetId: q.ruleSetId ?? null,
+						ruleSetConfigOverrides: q.ruleSetConfigOverrides ?? null,
+						required: q.required,
+						order: q.order,
+					};
+
+					if (isNew) {
+						// Create new UUID database ID for temporary elements
+						const newId = `q_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+						await tx.insert(question).values({
+							id: newId,
+							...questionData,
+						});
+					} else {
+						// Update existing question
+						await tx
+							.update(question)
+							.set(questionData)
+							.where(
+								and(eq(question.id, q.id), eq(question.surveyId, surveyId)),
+							);
+					}
+				}
+			});
+
+			return { success: true };
 		}),
 
 	// Change survey status

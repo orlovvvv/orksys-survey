@@ -17,14 +17,17 @@ export function ToggleField({
 	description,
 }: ToggleFieldProps) {
 	return (
-		<div className="flex items-center justify-between">
+		<Label
+			htmlFor={id}
+			className="flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent"
+		>
 			<div className="space-y-0.5">
-				<Label htmlFor={id}>{label}</Label>
+				<span className="font-medium">{label}</span>
 				{description && (
 					<p className="text-muted-foreground text-xs">{description}</p>
 				)}
 			</div>
 			<Switch id={id} checked={checked ?? false} onCheckedChange={onChange} />
-		</div>
+		</Label>
 	);
 }

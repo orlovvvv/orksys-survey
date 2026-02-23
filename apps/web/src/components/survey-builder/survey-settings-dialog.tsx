@@ -1,7 +1,7 @@
 "use client";
 
 import { SurveyEditDialog } from "../survey-settings";
-import { useSurveyBuilder } from "./index";
+import { SurveyBuilderContext } from "./context";
 
 interface SurveySettingsDialogProps {
 	open: boolean;
@@ -12,7 +12,7 @@ export function SurveySettingsDialog({
 	open,
 	onOpenChange,
 }: SurveySettingsDialogProps) {
-	const { survey } = useSurveyBuilder();
+	const survey = SurveyBuilderContext.useSelector((s) => s.context.survey);
 
 	return (
 		<SurveyEditDialog

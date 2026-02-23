@@ -36,7 +36,7 @@ export function SurveyEditDialog({
 		orpc.survey.getById.queryOptions({ input: { id: surveyId } }),
 	);
 
-	const initialSettings = (survey?.settings as SurveySettings) || {};
+	const _initialSettings = (survey?.settings as SurveySettings) || {};
 
 	const [localTitle, setLocalTitle] = useState("");
 	const [localDescription, setLocalDescription] = useState("");

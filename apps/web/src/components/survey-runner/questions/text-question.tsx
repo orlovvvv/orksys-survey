@@ -1,21 +1,67 @@
-import { QuestionField } from "./question-field";
-import type { TextQuestionProps } from "./types";
+"use client";
 
-export function TextQuestion({
-	question,
-	value,
-	onChange,
-	error,
-}: TextQuestionProps) {
+import { useMemo } from "react";
+import { Input } from "@/components/ui/input";
+import { useQuestion } from "./question-context";
+import { QuestionField } from "./question-field";
+
+export function TextQuestion() {
+	const { question, value, onChange, ruleSet } = useQuestion();
+	const config = question.config || {};
+
+	const rsConfig = useMemo(
+		() => ({
+			...(ruleSet?.config || {}),
+			...(question.ruleSetConfigOverrides || {}),
+		}),
+		[ruleSet, question.ruleSetConfigOverrides],
+	);
+
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const newValue = e.target.value;
+		if (rsConfig.inputType === "number") {
+			const num = Number(newValue);
+			if (!Number.isNaN(num)) {
+				onChange(num);
+				return;
+			}
+		}
+		onChange(newValue);
+	};
+
+	const displayValue =
+		value === undefined || value === null ? "" : String(value);
+
 	return (
-		<QuestionField question={question} error={error}>
-			<input
-				type="text"
-				value={value ?? ""}
-				onChange={(e) => onChange(e.target.value)}
-				placeholder={question.config?.placeholder}
-				className="w-full rounded-lg border border-input bg-card px-4 py-2.5 text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-			/>
+		<QuestionField>
+			<div className="flex items-center gap-2">
+				{rsConfig.prefix && (
+					<span className="font-medium text-muted-foreground">
+						{rsConfig.prefix}
+					</span>
+				)}
+				<Input
+					type={rsConfig.inputType || "text"}
+					value={displayValue}
+					onChange={handleChange}
+					placeholder={
+						config.placeholder || rsConfig.placeholder || "Type your answer..."
+					}
+					minLength={config.minLength}
+					maxLength={config.maxLength}
+					min={rsConfig.min}
+					max={rsConfig.max}
+					step={rsConfig.step}
+					pattern={rsConfig.pattern}
+					required={question.required}
+					className="flex-1"
+				/>
+				{rsConfig.suffix && (
+					<span className="font-medium text-muted-foreground">
+						{rsConfig.suffix}
+					</span>
+				)}
+			</div>
 		</QuestionField>
 	);
 }

@@ -19,78 +19,142 @@ export const QUESTION_TYPE_CONFIG: Record<
 	text: {
 		type: "text",
 		label: "Short Text",
-		iconName: "Text",
-		description: "Single line text input",
+		iconName: "Type",
+		description: "Single line input for short answers",
 	},
-	textarea: {
-		type: "textarea",
+	long_text: {
+		type: "long_text",
 		label: "Long Text",
 		iconName: "FileText",
-		description: "Multi-line text area",
+		description: "Multi-line textarea for detailed feedback",
 	},
-	multiple_choice: {
-		type: "multiple_choice",
-		label: "Multiple Choice",
+	choice: {
+		type: "choice",
+		label: "Choice",
 		iconName: "CheckSquare",
-		description: "Single selection from options",
-	},
-	checkbox: {
-		type: "checkbox",
-		label: "Checkboxes",
-		iconName: "ListChecks",
-		description: "Multiple selections allowed",
+		description: "Single or multiple selection options",
 	},
 	dropdown: {
 		type: "dropdown",
 		label: "Dropdown",
 		iconName: "ChevronsUpDown",
-		description: "Dropdown selection list",
+		description: "Select from a list (supports search)",
 	},
 	rating: {
 		type: "rating",
 		label: "Rating",
 		iconName: "Star",
-		description: "Star or number rating",
+		description: "Star or number satisfaction rating",
 	},
 	nps: {
 		type: "nps",
 		label: "NPS",
 		iconName: "TrendingUp",
-		description: "Net Promoter Score 0-10",
-	},
-	linear_scale: {
-		type: "linear_scale",
-		label: "Linear Scale",
-		iconName: "Hash",
-		description: "Custom range scale",
+		description: "Net Promoter Score (0-10)",
 	},
 	date: {
 		type: "date",
 		label: "Date",
 		iconName: "Calendar",
-		description: "Date picker",
+		description: "Select a date from a calendar",
+	},
+	slider: {
+		type: "slider",
+		label: "Slider",
+		iconName: "SlidersHorizontal",
+		description: "Range slider for numeric values",
+	},
+	file_upload: {
+		type: "file_upload",
+		label: "File Upload",
+		iconName: "Upload",
+		description: "Upload files or attachments",
+	},
+	// Legacy mappings
+	input: {
+		type: "input",
+		label: "Input",
+		iconName: "Type",
+		description: "Legacy",
+	},
+	textarea: {
+		type: "textarea",
+		label: "Textarea",
+		iconName: "FileText",
+		description: "Legacy",
+	},
+	select: {
+		type: "select",
+		label: "Select",
+		iconName: "ChevronsUpDown",
+		description: "Legacy",
+	},
+	radio_group: {
+		type: "radio_group",
+		label: "Radio Group",
+		iconName: "CircleDot",
+		description: "Legacy",
+	},
+	checkbox_group: {
+		type: "checkbox_group",
+		label: "Checkbox Group",
+		iconName: "ListChecks",
+		description: "Legacy",
+	},
+	switch: {
+		type: "switch",
+		label: "Switch",
+		iconName: "ToggleRight",
+		description: "Legacy",
+	},
+	date_picker: {
+		type: "date_picker",
+		label: "Date Picker",
+		iconName: "Calendar",
+		description: "Legacy",
+	},
+	combobox: {
+		type: "combobox",
+		label: "Combobox",
+		iconName: "Search",
+		description: "Legacy",
+	},
+	otp: { type: "otp", label: "OTP", iconName: "Lock", description: "Legacy" },
+	multiple_choice: {
+		type: "multiple_choice",
+		label: "Multiple Choice",
+		iconName: "CheckSquare",
+		description: "Legacy",
+	},
+	checkbox: {
+		type: "checkbox",
+		label: "Checkboxes",
+		iconName: "ListChecks",
+		description: "Legacy",
 	},
 	email: {
 		type: "email",
 		label: "Email",
 		iconName: "Mail",
-		description: "Email address input",
+		description: "Legacy",
 	},
 	phone: {
 		type: "phone",
 		label: "Phone",
 		iconName: "Phone",
-		description: "Phone number input",
+		description: "Legacy",
 	},
-	file_upload: {
-		type: "file_upload",
-		label: "File Upload",
-		iconName: "ClipboardList",
-		description: "File upload field",
+	linear_scale: {
+		type: "linear_scale",
+		label: "Linear Scale",
+		iconName: "Hash",
+		description: "Legacy",
 	},
 };
 
-export const questionTypes = Object.values(QUESTION_TYPE_CONFIG);
+export const questionTypes = Object.values(QUESTION_TYPE_CONFIG).filter(
+	(q) => !q.description.includes("Legacy"),
+);
 
 export function getQuestionLabel(type: Question["type"]) {
 	return QUESTION_TYPE_CONFIG[type]?.label ?? type;

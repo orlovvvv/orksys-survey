@@ -3,239 +3,165 @@
 import {
 	DndContext,
 	DragOverlay,
+	type DropAnimation,
 	defaultDropAnimation,
+	defaultDropAnimationSideEffects,
 	KeyboardSensor,
 	PointerSensor,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import type { Question } from "@orksys-survey/db";
-import { PanelLeftClose, PanelRightClose } from "lucide-react";
-import { useEffect, useState } from "react";
-
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { CSS } from "@dnd-kit/utilities";
+import { useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
-
+import { BuilderBottomBar } from "./builder-bottom-bar";
 import { BuilderCanvas } from "./builder-canvas";
 import { BuilderHeader } from "./builder-header";
-import { SurveyBuilderProvider } from "./context";
+import { SurveyBuilderContext, SurveyBuilderProvider } from "./context";
 import { DragOverlayRenderer } from "./drag-overlay-renderer";
 import { useDragHandlers } from "./hooks/use-drag-handlers";
-import { useQuestionMutations } from "./hooks/use-question-mutations";
 import { PropertiesPanel } from "./properties-panel";
 import { QuestionPalette } from "./question-palette";
-import type { SurveyWithOrganization } from "./types";
 
-interface SurveyBuilderProps {
-	survey: SurveyWithOrganization;
-	questions: Question[];
-	className?: string;
-}
+const paletteDropAnimation: DropAnimation = {
+	...defaultDropAnimation,
+	duration: 200,
+	keyframes: ({ transform }) => [
+		{ opacity: 1, transform: CSS.Transform.toString(transform.initial) },
+		{
+			opacity: 0,
+			transform: CSS.Transform.toString(transform.initial),
+		},
+	],
+};
 
-export function SurveyBuilder({
-	survey,
-	questions: initialQuestions,
-	className,
-}: SurveyBuilderProps) {
-	const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
-		null,
+const sortableDropAnimation: DropAnimation = {
+	duration: 250,
+	easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+	sideEffects: defaultDropAnimationSideEffects({
+		styles: {
+			active: {
+				opacity: "0.5",
+			},
+		},
+	}),
+};
+
+export function SurveyBuilderDndCore({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
+	const activeDragItem = SurveyBuilderContext.useSelector(
+		(s) => s.context.activeDragItem,
 	);
-	const [activeTab, setActiveTab] = useState<"build" | "preview" | "share">(
-		"build",
+	const questions = SurveyBuilderContext.useSelector(
+		(s) => s.context.questions,
 	);
-	const [questions, setQuestions] = useState(initialQuestions);
-	const [paletteOpen, setPaletteOpen] = useState(false);
-	const [propertiesOpen, setPropertiesOpen] = useState(false);
-	const [settingsOpen, setSettingsOpen] = useState(false);
+	const selectedQuestionId = SurveyBuilderContext.useSelector(
+		(s) => s.context.selectedQuestionId,
+	);
 
-	// Responsive breakpoints
-	const isDesktop = useMediaQuery("(min-width: 1024px)");
+	const { collisionDetection, handleDragStart, handleDragOver, handleDragEnd } =
+		useDragHandlers();
 
-	// Sync state when initialQuestions changes
+	// Cache the drag item so the DragOverlay doesn't lose its animation configuration
+	// the instant it is dropped (since activeDragItem becomes null synchronously)
+	const activeDragItemRef = useRef(activeDragItem);
 	useEffect(() => {
-		setQuestions(initialQuestions);
-	}, [initialQuestions]);
+		if (activeDragItem) {
+			activeDragItemRef.current = activeDragItem;
+		}
+	}, [activeDragItem]);
 
-	// Get mutations
-	const { reorderMutation } = useQuestionMutations({
-		survey,
-		onQuestionCreated: (newQuestion) => {
-			// Replace optimistic question with real one
-			setQuestions((currentQuestions) => {
-				const tempId = selectedQuestionId?.startsWith("temp-")
-					? selectedQuestionId
-					: null;
-				if (!tempId) return currentQuestions;
+	const currentOrPreviousDragItem = activeDragItem || activeDragItemRef.current;
 
-				return currentQuestions.map((q) => (q.id === tempId ? newQuestion : q));
-			});
-
-			setSelectedQuestionId((currentId) => {
-				const tempId = currentId?.startsWith("temp-") ? currentId : null;
-				return tempId ? newQuestion.id : currentId;
-			});
-		},
-		onQuestionCreateError: () => {
-			// Revert on error
-			if (selectedQuestionId?.startsWith("temp-")) {
-				setSelectedQuestionId(null);
-			}
-		},
-	});
-
-	// Get drag handlers
-	const {
-		activeDragItem,
-		overId,
-		collisionDetection,
-		handleDragStart,
-		handleDragOver,
-		handleDragEnd,
-	} = useDragHandlers({
-		questions,
-		setQuestions,
-		survey,
-		selectedQuestionId,
-		setSelectedQuestionId,
-		reorderMutation,
-	});
-
-	// DnD sensors
-	const sensors = useSensors(
-		useSensor(PointerSensor, {
+	const pointerSensorOptions = useMemo(
+		() => ({
 			activationConstraint: {
 				distance: 5,
 			},
 		}),
-		useSensor(KeyboardSensor, {
+		[],
+	);
+	const keyboardSensorOptions = useMemo(
+		() => ({
 			coordinateGetter: sortableKeyboardCoordinates,
 		}),
+		[],
 	);
+
+	const pointerSensor = useSensor(PointerSensor, pointerSensorOptions);
+	const keyboardSensor = useSensor(KeyboardSensor, keyboardSensorOptions);
+
+	const sensors = useSensors(pointerSensor, keyboardSensor);
 
 	const safeQuestions = questions || [];
 
 	return (
-		<SurveyBuilderProvider
-			survey={survey}
-			questions={questions}
-			selectedQuestionId={selectedQuestionId}
-			setSelectedQuestionId={setSelectedQuestionId}
-			activeTab={activeTab}
-			setActiveTab={setActiveTab}
-			onQuestionsChange={setQuestions}
-			paletteOpen={paletteOpen}
-			setPaletteOpen={setPaletteOpen}
-			propertiesOpen={propertiesOpen}
-			setPropertiesOpen={setPropertiesOpen}
-			settingsOpen={settingsOpen}
-			setSettingsOpen={setSettingsOpen}
+		<DndContext
+			sensors={sensors}
+			collisionDetection={collisionDetection}
+			onDragStart={handleDragStart}
+			onDragOver={handleDragOver}
+			onDragEnd={handleDragEnd}
 		>
-			<DndContext
-				sensors={sensors}
-				collisionDetection={collisionDetection}
-				onDragStart={handleDragStart}
-				onDragOver={handleDragOver}
-				onDragEnd={handleDragEnd}
+			{children}
+			<DragOverlay
+				dropAnimation={
+					currentOrPreviousDragItem?.type === "palette"
+						? paletteDropAnimation
+						: sortableDropAnimation
+				}
 			>
-				<div className={cn("flex h-full flex-col", className)}>
-					<BuilderHeader
-						leftActions={
-							!isDesktop &&
-							activeTab === "build" && (
-								<div className="flex items-center gap-1">
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => setPaletteOpen(!paletteOpen)}
-									>
-										<PanelLeftClose className="h-4 w-4" />
-									</Button>
-								</div>
-							)
-						}
-						rightActions={
-							!isDesktop &&
-							activeTab === "build" && (
-								<div className="flex items-center gap-1">
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => setPropertiesOpen(!propertiesOpen)}
-									>
-										<PanelRightClose className="h-4 w-4" />
-									</Button>
-								</div>
-							)
-						}
-					/>
-					<div className="flex flex-1 overflow-hidden">
-						{/* Left Palette - Responsive */}
-						{activeTab === "build" && (
-							<>
-								{/* Desktop: Fixed sidebar */}
-								{isDesktop && <QuestionPalette />}
-
-								{/* Tablet/Mobile: Sheet overlay */}
-								{!isDesktop && (
-									<Sheet open={paletteOpen} onOpenChange={setPaletteOpen}>
-										<SheetContent side="left" className="w-72 p-0">
-											<QuestionPalette />
-										</SheetContent>
-									</Sheet>
-								)}
-							</>
-						)}
-
-						{/* Canvas */}
-						<BuilderCanvas
-							questions={questions}
-							onQuestionsChange={setQuestions}
-							activeDragItem={activeDragItem}
-							overId={overId}
-						/>
-
-						{/* Right Properties Panel - Responsive */}
-						{activeTab === "build" && (
-							<>
-								{/* Desktop: Fixed sidebar */}
-								{isDesktop && <PropertiesPanel />}
-
-								{/* Tablet/Mobile: Sheet overlay */}
-								{!isDesktop && (
-									<Sheet open={propertiesOpen} onOpenChange={setPropertiesOpen}>
-										<SheetContent side="right" className="w-80 p-0">
-											<PropertiesPanel />
-										</SheetContent>
-									</Sheet>
-								)}
-							</>
-						)}
-					</div>
-				</div>
-
-				<DragOverlay dropAnimation={defaultDropAnimation}>
-					<DragOverlayRenderer
-						activeDragItem={activeDragItem}
-						questions={safeQuestions}
-						selectedQuestionId={selectedQuestionId}
-					/>
-				</DragOverlay>
-			</DndContext>
-		</SurveyBuilderProvider>
+				<DragOverlayRenderer
+					activeDragItem={activeDragItem}
+					questions={safeQuestions}
+					selectedQuestionId={selectedQuestionId}
+				/>
+			</DragOverlay>
+		</DndContext>
 	);
 }
 
-// Re-export sub-components for compound pattern
+export function SurveyBuilderFrame({
+	children,
+	className,
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) {
+	return (
+		<div className={cn("flex h-full flex-col", className)}>{children}</div>
+	);
+}
+
+export const SurveyBuilder = {
+	Provider: SurveyBuilderProvider,
+	DndCore: SurveyBuilderDndCore,
+	Frame: SurveyBuilderFrame,
+	Canvas: BuilderCanvas,
+	Palette: QuestionPalette,
+	Properties: PropertiesPanel,
+	Header: BuilderHeader,
+	BottomBar: BuilderBottomBar,
+};
+
+export { BuilderBottomBar } from "./builder-bottom-bar";
+// Re-export sub-components & hooks for external use
 export { BuilderCanvas } from "./builder-canvas";
 export { BuilderHeader } from "./builder-header";
 export type { TabValue } from "./builder-header/builder-tabs";
-export { useSurveyBuilder } from "./context";
+export {
+	SurveyBuilderContext,
+	useSurveyBuilder,
+	useSurveyBuilderActor,
+	useSurveyBuilderLegacy,
+	useSurveyBuilderSelector,
+} from "./context";
 export { useDragHandlers } from "./hooks/use-drag-handlers";
 export { useQuestionMutations } from "./hooks/use-question-mutations";
 export { PropertiesPanel } from "./properties-panel";
 export { QuestionPalette } from "./question-palette";
-// Re-export types and hooks for external use
 export type { DragItem, SurveyBuilderContextValue } from "./types";

@@ -31,6 +31,8 @@ export function validateAnswer(
 		case "text":
 		case "textarea":
 			return validateText(value, question.config);
+		case "choice":
+			return validateChoice(value, question.config);
 		case "multiple_choice":
 		case "dropdown":
 			return validateSingleChoice(value, question.config);
@@ -124,6 +126,21 @@ function validateText(
 	}
 
 	return null;
+}
+
+/**
+ * Validates choice selection based on allowMultiple config.
+ */
+function validateChoice(
+	value: unknown,
+	config: Question["config"],
+): string | null {
+	const allowMultiple = config?.allowMultiple ?? false;
+
+	if (allowMultiple) {
+		return validateMultipleChoice(value, config);
+	}
+	return validateSingleChoice(value, config);
 }
 
 /**

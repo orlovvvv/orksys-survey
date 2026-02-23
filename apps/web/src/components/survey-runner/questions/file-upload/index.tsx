@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { useQuestion } from "../question-context";
 import { QuestionField } from "../question-field";
-import type { BaseQuestionProps } from "../types";
 import { DropZone } from "./drop-zone";
 import { FileList } from "./file-list";
 
@@ -12,12 +12,8 @@ interface FileUploadConfig {
 	acceptedFileTypes?: string[];
 }
 
-export function FileUploadQuestion({
-	question,
-	value,
-	onChange,
-	error,
-}: BaseQuestionProps) {
+export function FileUploadQuestion() {
+	const { question, value, onChange } = useQuestion();
 	const config = question.config as FileUploadConfig | undefined;
 	const maxFiles = config?.maxFiles ?? 1;
 	const maxFileSize = config?.maxFileSize ?? 10 * 1024 * 1024; // 10MB default
@@ -70,7 +66,7 @@ export function FileUploadQuestion({
 	);
 
 	return (
-		<QuestionField question={question} error={error}>
+		<QuestionField>
 			<DropZone
 				onFilesSelected={handleFilesSelected}
 				maxFiles={maxFiles}
